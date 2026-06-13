@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingredo — Mobile Design Mockups</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- GALLERY HEADER                                            -->
+<!-- ════════════════════════════════════════════════════════ -->
+<header class="gallery-header">
+  <div class="brand">
+    <h1>Ingre<em>do</em></h1>
+    <span class="tag">Mobile Design Spec · v1</span>
+  </div>
+  <p class="lede">
+    A warm, kitchen-inspired companion for <strong>meal planning</strong>, <strong>recipes</strong>,
+    and <strong>shared household shopping</strong>. Not a task manager — no checkboxes, no dashboards.
+    Items are <strong>tapped off the list</strong> the way you'd pick them off a shelf, and land on a
+    visible <strong>“Recently Purchased”</strong> shelf below. Cream linen surfaces, clay terracotta
+    actions, sage confirmations. Fraunces for warmth, Karla for clarity.
+  </p>
+</header>
+
+<nav class="toc">
+  <a href="#nav">1 · Navigation</a>
+  <a href="#home">2 · Home</a>
+  <a href="#plan">3 · Meal Plan</a>
+  <a href="#recipes">4 · Recipe List</a>
+  <a href="#detail">5 · Recipe Detail</a>
+  <a href="#shop">6 · Shopping List</a>
+  <a href="#purchased">7 · Recently Purchased</a>
+  <a href="#add">8 · Add Recipe</a>
+  <a href="#empty">9 · Empty States</a>
+  <a href="#offline">10 · Offline</a>
+  <a href="#household">11 · Household</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 1 + 2 · NAVIGATION & HOME                                 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="home">
+  <div class="annotation" id="nav">
+    <div class="num">Screens 01 + 02</div>
+    <h2>Bottom navigation &amp; Home</h2>
+
+    <h3>Navigation structure</h3>
+    <p>Four tabs, all thumb-reachable one-handed: <strong>Today · Plan · Recipes · Shop</strong>.
+    Four (not five) keeps targets ≥80pt wide. The household lives behind the avatar
+    cluster in the header — it's social context, not a destination you visit hourly.
+    The <strong>Shop tab carries a live badge</strong> with the active item count, so the answer to
+    “do we need anything?” is visible without opening the list.</p>
+
+    <h3>Home = “Today”, not a dashboard</h3>
+    <ul>
+      <li><strong>Tonight's dinner</strong> is the hero — pulled straight from the meal plan. One tap opens the recipe ready to cook.</li>
+      <li>A <strong>shopping glance card</strong> shows the live item count and who added what, with a pulsing presence dot — collaboration you can feel.</li>
+      <li><strong>Tomorrow</strong> peeks below tonight, nudging the planning habit without demanding it.</li>
+      <li>No stats, no charts, no streaks. A kitchen, not a cockpit.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Open tonight's recipe to cook</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Jump into the store-ready list</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Add a forgotten item from home</span><b>2 taps + type</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">17:42</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div>
+            <div class="greeting">Good evening,<br><em>Bjørnar</em></div>
+            <div class="subdate">Thursday 11 June</div>
+          </div>
+          <div class="avatar-stack" style="align-items:center; gap:8px;">
+            <span class="live-dot"></span>
+            <div style="display:flex;">
+              <div class="avatar a-b">B</div>
+              <div class="avatar a-m" style="margin-left:-10px;">M</div>
+              <div class="avatar a-o" style="margin-left:-10px;">O</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-body">
+          <div class="section-label">Tonight 🍽️</div>
+          <div class="card" style="overflow:hidden;">
+            <div class="thumb t-sage" style="height:150px; border-radius:0; font-size:64px;">🍲</div>
+            <div style="padding:15px 17px 17px;">
+              <div style="font-family:'Fraunces',serif; font-size:21px; font-weight:600;">Creamy Tuscan Chicken</div>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:7px;">
+                <span style="font-size:13.5px; font-weight:700; color:var(--ink-soft);">⏱ 35 min</span>
+                <span style="font-size:13.5px; font-weight:700; color:var(--ink-soft);">· serves 4</span>
+                <span style="margin-left:auto; font-size:13px; font-weight:800; color:var(--clay-deep); background:var(--clay-soft); padding:6px 13px; border-radius:999px;">Start cooking →</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">Shopping · Rema 1000 <span class="live-dot" style="margin-left:2px;"></span></div>
+          <div class="card" style="padding:15px 17px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="thumb t-clay" style="width:44px; height:44px; font-size:22px;">🧺</div>
+              <div>
+                <div style="font-size:16.5px; font-weight:800;">7 items to buy</div>
+                <div style="font-size:13px; font-weight:600; color:var(--ink-soft); margin-top:2px;">Maja added 2 items just now</div>
+              </div>
+              <div class="avatar a-m sm" style="margin-left:auto;">M</div>
+            </div>
+            <div style="display:flex; gap:7px; margin-top:13px; overflow:hidden;">
+              <span class="chip" style="font-size:13px; padding:7px 12px;">🥑 Avocado</span>
+              <span class="chip" style="font-size:13px; padding:7px 12px;">🥛 Milk</span>
+              <span class="chip" style="font-size:13px; padding:7px 12px;">🍋 Lemons</span>
+              <span class="chip" style="font-size:13px; padding:7px 12px;">+4</span>
+            </div>
+          </div>
+
+          <div class="section-label">Tomorrow</div>
+          <div class="meal-card">
+            <div class="thumb t-butter">🌮</div>
+            <div>
+              <div class="m-title">Fish Tacos with Slaw</div>
+              <div class="m-meta">Friday · 25 min · serves 4</div>
+            </div>
+            <div class="avatar a-m sm">M</div>
+          </div>
+
+          <div style="display:flex; gap:9px; margin-top:18px;">
+            <div class="btn btn-ghost" style="flex:1; font-size:14px; padding:13px;">📅 Plan week</div>
+            <div class="btn btn-ghost" style="flex:1; font-size:14px; padding:13px;">＋ Add item</div>
+          </div>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem active"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span><span class="badge">7</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Home · “Today”</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 3 · WEEKLY MEAL PLAN                                      -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="plan">
+  <div class="annotation">
+    <div class="num">Screen 03</div>
+    <h2>Weekly meal plan</h2>
+
+    <h3>Rationale</h3>
+    <p>A <strong>vertical week</strong> — one row per day — because that's how people think
+    about dinners (“what's Wednesday?”), and it scrolls naturally with a thumb.
+    Today is anchored with a clay date token so you always know where you are in the week.</p>
+    <ul>
+      <li><strong>Empty days are invitations</strong>, not blanks: a dashed “Add dinner” slot is itself the tap target. Tapping opens the recipe picker pre-filtered to favourites and recent.</li>
+      <li>Each meal card shows <strong>who planned it</strong> — a small avatar makes the plan feel co-owned.</li>
+      <li>Long-press a meal to drag it to another day; swipe left to remove. Both are mentioned in onboarding, neither is required.</li>
+    </ul>
+
+    <h3>The bridge to shopping</h3>
+    <p>The sticky sage button — <strong>“Add week to shopping list”</strong> — is the app's
+    keystone action. It aggregates every ingredient from planned meals, merges duplicates
+    (2 onions + 1 onion = 3 onions), subtracts what's already on the list, and sorts by
+    store category. Planning becomes shopping in <strong>one tap</strong>.</p>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Plan a dinner on an empty day</span><b>2 taps</b></div>
+      <div class="tap-row"><span>Whole week → shopping list</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Move a meal to another day</span><b>long-press + drop</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">17:42</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div class="screen-title">This week</div>
+          <div class="avatar-stack">
+            <div class="avatar a-b">B</div>
+            <div class="avatar a-m">M</div>
+          </div>
+        </div>
+
+        <div class="app-body">
+          <div class="week-switch">
+            <div class="ws-arrow">‹</div>
+            <div class="ws-label"><small>Week 24</small>8 – 14 June</div>
+            <div class="ws-arrow">›</div>
+          </div>
+
+          <div style="margin-top:18px;">
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Mon</span><span class="d-num">8</span></div>
+              <div class="meal-card">
+                <div class="thumb t-rose">🍝</div>
+                <div><div class="m-title">One-Pot Pasta Bolognese</div><div class="m-meta">40 min · serves 4</div></div>
+                <div class="avatar a-b sm">B</div>
+              </div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Tue</span><span class="d-num">9</span></div>
+              <div class="meal-card">
+                <div class="thumb t-sage">🥗</div>
+                <div><div class="m-title">Halloumi Grain Bowl</div><div class="m-meta">20 min · serves 2</div></div>
+                <div class="avatar a-m sm">M</div>
+              </div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Wed</span><span class="d-num">10</span></div>
+              <div class="meal-card">
+                <div class="thumb t-butter">🍛</div>
+                <div><div class="m-title">Chickpea Coconut Curry</div><div class="m-meta">30 min · serves 4</div></div>
+                <div class="avatar a-b sm">B</div>
+              </div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag today"><span class="d-name">Thu</span><span class="d-num">11</span></div>
+              <div class="meal-card" style="border:1.5px solid var(--clay); box-shadow:0 4px 16px rgba(201,107,69,.18);">
+                <div class="thumb t-sage">🍲</div>
+                <div><div class="m-title">Creamy Tuscan Chicken</div><div class="m-meta">35 min · serves 4 · tonight</div></div>
+                <div class="avatar a-b sm">B</div>
+              </div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Fri</span><span class="d-num">12</span></div>
+              <div class="meal-card">
+                <div class="thumb t-butter">🌮</div>
+                <div><div class="m-title">Fish Tacos with Slaw</div><div class="m-meta">25 min · serves 4</div></div>
+                <div class="avatar a-m sm">M</div>
+              </div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Sat</span><span class="d-num">13</span></div>
+              <div class="meal-empty"><span class="plus-mini">＋</span> Add dinner</div>
+            </div>
+            <div class="day-row">
+              <div class="day-tag"><span class="d-name">Sun</span><span class="d-num">14</span></div>
+              <div class="meal-empty"><span class="plus-mini">＋</span> Add dinner</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sticky-cta">
+          <div class="btn btn-sage">🧺 Add week to shopping list <small>· 23 ingredients</small></div>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem active"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span><span class="badge">7</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Weekly meal plan</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 4 · RECIPE LIST                                           -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="recipes">
+  <div class="annotation">
+    <div class="num">Screen 04</div>
+    <h2>Recipe list</h2>
+
+    <h3>Rationale</h3>
+    <p>A <strong>two-column visual grid</strong> — people choose dinner with their eyes.
+    Cards are image-led with the title and time underneath; the heart marks household
+    favourites (shared, not personal — “our” recipes).</p>
+    <ul>
+      <li><strong>Search sits at the top</strong>, always visible, searching titles <em>and</em> ingredients (“what can I make with halloumi?”).</li>
+      <li><strong>Filter chips</strong> answer real weeknight questions: Quick (&lt;30 min), Favourites, Vegetarian, Recently cooked. One tap, no filter screens.</li>
+      <li>The clay <strong>floating “＋”</strong> creates a recipe from anywhere in the grid — no hunting for an add button in a menu.</li>
+    </ul>
+
+    <h3>Flow</h3>
+    <p>Tap a card → recipe detail. Long-press a card → quick actions sheet:
+    <strong>Plan it · Add ingredients to list · Favourite</strong> — so frequent flows
+    skip the detail screen entirely.</p>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Open a recipe</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Filter to quick meals</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Recipe → planned for Saturday</span><b>long-press + 1 tap</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">17:42</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div class="screen-title">Recipes</div>
+          <div class="avatar-stack">
+            <div class="avatar a-b">B</div>
+            <div class="avatar a-m">M</div>
+          </div>
+        </div>
+
+        <div class="app-body">
+          <div class="search" style="margin-top:10px;">🔍 Search recipes or ingredients…</div>
+
+          <div class="chip-row">
+            <span class="chip on">All · 48</span>
+            <span class="chip">❤️ Favourites</span>
+            <span class="chip">⚡ Quick</span>
+            <span class="chip">🌱 Veggie</span>
+            <span class="chip">🕘 Recent</span>
+          </div>
+
+          <div class="recipe-grid">
+            <div class="recipe-card">
+              <div class="r-img thumb t-sage">🍲</div>
+              <div class="r-heart">❤️</div>
+              <div class="r-body"><div class="r-title">Creamy Tuscan Chicken</div><div class="r-meta">35 min · serves 4</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="r-img thumb t-butter">🌮</div>
+              <div class="r-heart">🤍</div>
+              <div class="r-body"><div class="r-title">Fish Tacos with Slaw</div><div class="r-meta">25 min · serves 4</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="r-img thumb t-rose">🍝</div>
+              <div class="r-heart">❤️</div>
+              <div class="r-body"><div class="r-title">One-Pot Pasta Bolognese</div><div class="r-meta">40 min · serves 4</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="r-img thumb t-sage">🥗</div>
+              <div class="r-heart">🤍</div>
+              <div class="r-body"><div class="r-title">Halloumi Grain Bowl</div><div class="r-meta">20 min · serves 2</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="r-img thumb t-butter">🍛</div>
+              <div class="r-heart">❤️</div>
+              <div class="r-body"><div class="r-title">Chickpea Coconut Curry</div><div class="r-meta">30 min · serves 4</div></div>
+            </div>
+            <div class="recipe-card">
+              <div class="r-img thumb t-clay">🍕</div>
+              <div class="r-heart">🤍</div>
+              <div class="r-body"><div class="r-title">Friday Pan Pizza</div><div class="r-meta">90 min · serves 4</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fab">＋</div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem active"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span><span class="badge">7</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Recipe list</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 5 · RECIPE DETAIL                                         -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="detail">
+  <div class="annotation">
+    <div class="num">Screen 05</div>
+    <h2>Recipe detail</h2>
+
+    <h3>Rationale</h3>
+    <p>One scroll, three zones: <strong>hero → ingredients → steps</strong>. The sheet
+    pulls up over the photo so content gets the space, not chrome.</p>
+    <ul>
+      <li>The <strong>servings stepper and US ⇄ Metric toggle sit directly above the ingredients</strong> they transform. Tap “＋” and every quantity rescales in place — 250 g becomes 375 g before your eyes. No settings screen, no recalculating in your head at the stove.</li>
+      <li>Quantities are typeset in clay Fraunces — scannable at arm's length with wet hands.</li>
+      <li><strong>“Add all to shopping list”</strong> respects the current serving count and merges into the household list by category. Individual ingredients can be excluded first with a tap (e.g. you already have olive oil).</li>
+      <li>Steps use generous 1.6 line-height and oversized numerals — readable propped against a salt jar.</li>
+    </ul>
+
+    <h3>Flow</h3>
+    <p>Two stacked actions close the loop: <strong>Plan it</strong> (pick a day → lands in the week)
+    and <strong>Add to shopping list</strong>. Both are reachable without scrolling past the steps.</p>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Scale 4 → 6 servings</span><b>1 tap</b></div>
+      <div class="tap-row"><span>US → metric units</span><b>1 tap</b></div>
+      <div class="tap-row"><span>All ingredients → list</span><b>1 tap</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar" style="position:relative; z-index:31;"><span class="time">17:42</span><span class="sb-icons"></span></div>
+      <div class="app" style="padding-top:0;">
+        <div class="hero thumb t-sage" style="border-radius:0;">🍲
+          <div class="hero-btns">
+            <div class="hbtn">‹</div>
+            <div class="hbtn-group"><div class="hbtn">❤️</div><div class="hbtn">↗</div></div>
+          </div>
+        </div>
+
+        <div class="detail-sheet">
+          <h1>Creamy Tuscan Chicken</h1>
+          <div class="meta-pills">
+            <span class="meta-pill">⏱ 35 min</span>
+            <span class="meta-pill">👩‍🍳 Easy</span>
+            <span class="meta-pill">❤️ Household favourite</span>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:18px; align-items:stretch;">
+            <div class="stepper" style="flex:1;">
+              <div class="step-btn">−</div>
+              <div class="step-val">6<small>servings</small></div>
+              <div class="step-btn">＋</div>
+            </div>
+            <div class="segmented" style="width:130px; align-self:center;">
+              <span>US</span><span class="on">Metric</span>
+            </div>
+          </div>
+
+          <div class="section-label" style="margin-top:20px;">Ingredients · scaled ×1.5</div>
+          <div class="card" style="padding:6px 16px;">
+            <div class="ing-row"><span class="ing-qty">900 g</span><span class="ing-name">chicken thighs</span></div>
+            <div class="ing-row"><span class="ing-qty">375 ml</span><span class="ing-name">heavy cream</span></div>
+            <div class="ing-row"><span class="ing-qty">120 g</span><span class="ing-name">sun-dried tomatoes</span></div>
+            <div class="ing-row"><span class="ing-qty">90 g</span><span class="ing-name">baby spinach</span></div>
+            <div class="ing-row" style="border-bottom:none;"><span class="ing-qty">3 cloves</span><span class="ing-name">garlic</span> <span class="ing-note">minced</span></div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:9px; margin-top:14px;">
+            <div class="btn btn-primary">🧺 Add 5 ingredients to shopping list</div>
+            <div class="btn btn-ghost">📅 Plan it</div>
+          </div>
+
+          <div class="section-label" style="margin-top:20px;">Method</div>
+          <div class="step-row">
+            <span class="step-num">1.</span>
+            <p>Season the chicken generously and sear in a wide pan over medium-high heat until deeply golden, about 5 minutes per side.</p>
+          </div>
+          <div class="step-row">
+            <span class="step-num">2.</span>
+            <p>Lower the heat, add garlic and sun-dried tomatoes…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">Recipe detail · scaled to 6, metric</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 6 · SHOPPING LIST                                         -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="shop">
+  <div class="annotation">
+    <div class="num">Screen 06</div>
+    <h2>Shopping list</h2>
+
+    <h3>The signature interaction — no checkboxes</h3>
+    <p>Every item is a <strong>full-width tappable card</strong>. Tap anywhere on it and it
+    squeezes, blooms sage green, and <strong>glides down to the “Recently Purchased” shelf</strong>
+    below. There's nothing to aim at — the whole 60pt-tall card is the target, which is what
+    one-handed, basket-in-the-other-arm shopping demands. The milk card shows the mid-tap state.</p>
+
+    <h3>Built for the aisles</h3>
+    <ul>
+      <li><strong>Items group by store category</strong> — Produce, Dairy, Bakery, Pantry — in walking order. The list empties top-to-bottom as you move through the store.</li>
+      <li>Quantities are pre-merged across recipes: the curry's onion and the bolognese's onion arrive as one card, <strong>“3 onions”</strong>, with the recipe origins listed beneath.</li>
+      <li>Items added by a partner carry their avatar and arrive live, with a pulsing presence dot in the header — you can see Maja is in the list right now.</li>
+      <li>The quick-add bar stays at the top: type “butter”, hit return, done. Ingredo auto-categorises it into Dairy.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Mark an item purchased</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Undo / put it back</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Add a manual item</span><b>1 tap + type</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">16:18</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div>
+            <div class="screen-title">Shopping</div>
+            <div class="subdate">7 to buy · 3 in the basket</div>
+          </div>
+          <div class="avatar-stack" style="align-items:center; gap:8px;">
+            <span class="live-dot"></span>
+            <div style="display:flex;">
+              <div class="avatar a-b">B</div>
+              <div class="avatar a-m" style="margin-left:-10px;">M</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-body">
+          <div class="quickadd"><span class="plus">＋</span> Add an item…</div>
+
+          <div class="cat-header">🥬 Produce <span class="cat-count">3 items</span></div>
+          <div class="shop-item">
+            <span class="item-emoji">🧅</span>
+            <div>
+              <div class="item-name">Onions</div>
+              <div class="item-src">Curry · Bolognese</div>
+            </div>
+            <span class="item-qty">3</span>
+          </div>
+          <div class="shop-item">
+            <span class="item-emoji">🥑</span>
+            <div>
+              <div class="item-name">Avocados</div>
+              <div class="item-src"><span class="avatar a-m sm" style="width:16px;height:16px;font-size:8px;border-width:1.5px;">M</span> added by Maja</div>
+            </div>
+            <span class="item-qty">2</span>
+          </div>
+          <div class="shop-item">
+            <span class="item-emoji">🍋</span>
+            <div>
+              <div class="item-name">Lemons</div>
+              <div class="item-src">Fish Tacos</div>
+            </div>
+            <span class="item-qty">2</span>
+          </div>
+
+          <div class="cat-header">🧀 Dairy <span class="cat-count">2 items</span></div>
+          <div class="shop-item purchasing">
+            <span class="item-emoji">🥛</span>
+            <div>
+              <div class="item-name">Whole milk</div>
+              <div class="item-src">tap → into the basket</div>
+            </div>
+            <div class="check-flash">✓</div>
+          </div>
+          <div class="shop-item">
+            <span class="item-emoji">🧀</span>
+            <div>
+              <div class="item-name">Halloumi</div>
+              <div class="item-src">Grain Bowl</div>
+            </div>
+            <span class="item-qty">250 g</span>
+          </div>
+
+          <div class="cat-header">🥫 Pantry <span class="cat-count">2 items</span></div>
+          <div class="shop-item">
+            <span class="item-emoji">🥥</span>
+            <div>
+              <div class="item-name">Coconut milk</div>
+              <div class="item-src">Curry</div>
+            </div>
+            <span class="item-qty">2 cans</span>
+          </div>
+
+          <div class="shelf-divider"><span>🧺 Recently purchased</span></div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🍞</span>
+            <div><div class="item-name">Sourdough loaf</div></div>
+            <span class="return-hint">↩ tap to return</span>
+          </div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🥚</span>
+            <div><div class="item-name">Eggs · 12</div></div>
+            <span class="return-hint">↩ 2 min ago</span>
+          </div>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem active"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span><span class="badge">7</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Shopping list · mid-purchase tap</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 7 · RECENTLY PURCHASED                                    -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="purchased">
+  <div class="annotation">
+    <div class="num">Screen 07</div>
+    <h2>Recently Purchased</h2>
+
+    <h3>A shelf, not a graveyard</h3>
+    <p>Purchased items don't get struck through and dimmed into clutter — they move to a
+    <strong>visible shelf</strong> styled like things you now <em>own</em>: dashed outlines,
+    softened color, still fully legible. The metaphor is the kitchen counter after
+    unpacking, not a completed to-do list.</p>
+
+    <h3>Three jobs, one section</h3>
+    <ul>
+      <li><strong>Undo:</strong> tapped the wrong thing in a busy aisle? One tap on the shelf item and it slides straight back to its category, quantities intact.</li>
+      <li><strong>History:</strong> items group by time — <em>this trip</em>, <em>earlier this week</em> — answering “did we already buy parmesan?” without scrolling chat history with your partner.</li>
+      <li><strong>Quick re-add:</strong> staples you buy weekly live here permanently. Milk runs out → open Shop → tap milk on the shelf → it's back on the list. Faster than typing, every single week.</li>
+    </ul>
+    <p>A <strong>“Buy again” suggestion row</strong> surfaces the household's most
+    frequently purchased items at the top of the shelf — Ingredo learns your staples
+    without asking.</p>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Re-add a weekly staple</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Undo an accidental purchase</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Check “did we buy it?”</span><b>0 taps — it's visible</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">16:25</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div>
+            <div class="screen-title">Shopping</div>
+            <div class="subdate">All done! 🎉 · 10 in the basket</div>
+          </div>
+          <div class="avatar-stack"><div class="avatar a-b">B</div><div class="avatar a-m">M</div></div>
+        </div>
+
+        <div class="app-body">
+          <div class="quickadd"><span class="plus">＋</span> Add an item…</div>
+
+          <div class="section-label">Buy again · your staples</div>
+          <div style="display:flex; gap:8px; overflow:hidden;">
+            <span class="chip">🥛 Milk</span>
+            <span class="chip">🍌 Bananas</span>
+            <span class="chip">☕ Coffee</span>
+            <span class="chip">🧈 Butter</span>
+          </div>
+
+          <div class="shelf-divider"><span>🧺 This trip</span></div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🥛</span>
+            <div><div class="item-name">Whole milk</div><div class="item-src">just now · Bjørnar</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🧅</span>
+            <div><div class="item-name">Onions · 3</div><div class="item-src">2 min ago · Bjørnar</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🥑</span>
+            <div><div class="item-name">Avocados · 2</div><div class="item-src">4 min ago · Maja</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🍋</span>
+            <div><div class="item-name">Lemons · 2</div><div class="item-src">5 min ago · Bjørnar</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+
+          <div class="shelf-divider"><span>Earlier this week</span></div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🍞</span>
+            <div><div class="item-name">Sourdough loaf</div><div class="item-src">Tuesday · Maja</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">☕</span>
+            <div><div class="item-name">Coffee beans</div><div class="item-src">Monday · Bjørnar</div></div>
+            <span class="return-hint">↩ return</span>
+          </div>
+        </div>
+
+        <div class="toast">
+          <span class="t-emoji">🧺</span> Milk moved to the basket
+          <span class="t-action">Put back</span>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem active"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Recently Purchased shelf</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 8 · ADD RECIPE                                            -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="add">
+  <div class="annotation">
+    <div class="num">Screen 08</div>
+    <h2>Add recipe</h2>
+
+    <h3>Rationale</h3>
+    <p>Opens as a <strong>full-screen modal sheet</strong> — Cancel left, Save right, both
+    always visible. Saving works at any point; a title alone is a valid recipe you can
+    finish later (and offline).</p>
+    <ul>
+      <li>The <strong>“Paste a link” strip</strong> comes first because most recipes start life on a website. One tap imports title, photo, ingredients, and steps; the form below becomes a review-and-fix pass instead of data entry.</li>
+      <li><strong>Ingredients are typed as one natural line</strong> — “2 tbsp olive oil” — and Ingredo parses quantity, unit, and name into chips live. Parsed structure is what powers scaling, unit conversion, and list merging, but the user never fills three fields per ingredient.</li>
+      <li>Steps are plain numbered text boxes. Drag handles reorder both lists.</li>
+      <li>New recipes are <strong>household-shared by default</strong> — they appear on Maja's phone the moment they sync.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Import from a URL</span><b>2 taps</b></div>
+      <div class="tap-row"><span>Add an ingredient</span><b>1 tap + one line</b></div>
+      <div class="tap-row"><span>Save (even half-finished)</span><b>1 tap</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">21:03</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="modal-head">
+          <span class="mh-cancel">Cancel</span>
+          <span class="mh-title">New recipe</span>
+          <span class="mh-save">Save</span>
+        </div>
+
+        <div class="app-body" style="padding-top:8px;">
+          <div class="import-strip">
+            <span class="is-ico">🔗</span>
+            <div class="is-txt">Have a link?<small>Paste a URL — we'll import everything.</small></div>
+            <span class="is-go">Import</span>
+          </div>
+
+          <div class="photo-drop"><span class="pd-ico">📷</span> Add a photo</div>
+
+          <div style="margin-top:12px;">
+            <div class="field">
+              <div class="f-label">Title</div>
+              Lemony Salmon Traybake
+            </div>
+            <div style="display:flex; gap:9px;">
+              <div class="field" style="flex:1;"><div class="f-label">Serves</div>4</div>
+              <div class="field" style="flex:1;"><div class="f-label">Time</div>30 min</div>
+            </div>
+          </div>
+
+          <div class="section-label">Ingredients</div>
+          <div class="ing-input-row">
+            <div class="parsed"><span class="p-qty">4</span> salmon fillets</div>
+            <span class="drag">⠿</span>
+          </div>
+          <div class="ing-input-row">
+            <div class="parsed"><span class="p-qty">2</span><span class="p-unit">tbsp</span> olive oil</div>
+            <span class="drag">⠿</span>
+          </div>
+          <div class="ing-input-row">
+            <div class="parsed"><span class="p-qty">500</span><span class="p-unit">g</span> baby potatoes</div>
+            <span class="drag">⠿</span>
+          </div>
+          <div class="ing-input-row">
+            <div class="parsed" style="color:var(--ink-faint);">1 lemon, sliced|</div>
+          </div>
+          <div class="add-line"><span class="plus-mini">＋</span> Add ingredient</div>
+
+          <div class="section-label">Steps</div>
+          <div class="ing-input-row">
+            <div class="parsed" style="align-items:flex-start;"><b style="font-family:'Fraunces',serif; font-style:italic; color:var(--clay);">1.</b> Heat the oven to 200 °C. Toss potatoes with oil…</div>
+            <span class="drag">⠿</span>
+          </div>
+          <div class="add-line"><span class="plus-mini">＋</span> Add step</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">Add recipe · live ingredient parsing</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 9 · EMPTY STATES                                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="empty">
+  <div class="annotation">
+    <div class="num">Screen 09</div>
+    <h2>Empty states</h2>
+
+    <h3>Rationale</h3>
+    <p>Empty screens are the app's <strong>first impression and its weekly reset</strong> —
+    the shopping list empties after every trip, the plan empties every Sunday. So
+    emptiness is treated as a calm, warm moment with exactly <strong>one obvious next
+    action</strong>, never a dead end or a guilt trip.</p>
+    <ul>
+      <li><strong>Empty shopping list</strong> (shown): a tilted illustration tile, a friendly line, and two escape hatches — generate from this week's plan, or tap a “Buy again” staple. The fastest possible refill is one tap away.</li>
+      <li><strong>Empty meal plan:</strong> “A fresh week. What are you hungry for?” with a <em>Plan from favourites</em> button that suggests three household favourites for instant placement.</li>
+      <li><strong>Empty recipes (first run):</strong> leads with link-import — “Bring your first recipe” — because new users own zero recipes in Ingredo but dozens in browser tabs.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Empty list → filled from plan</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Empty list → staple added</span><b>1 tap</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">10:12</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div class="screen-title">Shopping</div>
+          <div class="avatar-stack"><div class="avatar a-b">B</div><div class="avatar a-m">M</div></div>
+        </div>
+
+        <div class="app-body">
+          <div class="empty-stage">
+            <div class="e-art">🧺</div>
+            <h2>The basket is empty —<br>and that's lovely.</h2>
+            <p>Pull in everything from this week's plan, or add a few staples to get going.</p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:9px; margin-top:26px;">
+            <div class="btn btn-sage">📅 Add this week's plan · 23 items</div>
+            <div class="btn btn-ghost">＋ Add an item</div>
+          </div>
+
+          <div class="section-label" style="margin-top:24px;">Buy again</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <span class="chip">🥛 Milk</span>
+            <span class="chip">🍌 Bananas</span>
+            <span class="chip">☕ Coffee</span>
+            <span class="chip">🧈 Butter</span>
+            <span class="chip">🥚 Eggs</span>
+          </div>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem active"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Empty shopping list</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 10 · OFFLINE STATES                                       -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="offline">
+  <div class="annotation">
+    <div class="num">Screen 10</div>
+    <h2>Offline states</h2>
+
+    <h3>Rationale — designed for the basement supermarket</h3>
+    <p>Grocery stores are concrete boxes with no signal. Offline is therefore a
+    <strong>first-class, expected condition</strong>, not an error: the entire UI keeps
+    working — browse, cook, plan, add, and purchase — against the local store, and
+    a sync queue replays everything when the connection returns.</p>
+    <ul>
+      <li>The <strong>butter-yellow pill</strong> is informative, never alarming: no red, no exclamation marks, no blocked buttons. It says what's true — “your list is safe.”</li>
+      <li>Locally-made changes show a quiet <strong>“syncs later” chip</strong> with a slow spinner. Everything else looks and behaves exactly as online — taps still glide items to the shelf instantly (optimistic UI).</li>
+      <li>Partner avatars and live presence dots simply hide while offline rather than showing stale state.</li>
+      <li>On reconnect the pill flips to a brief sage “All caught up ✓” and fades. Conflicts resolve item-level, last-writer-wins, with purchases never lost.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">What still works offline</div>
+      <div class="tap-row"><span>Purchase items, add items</span><b>everything</b></div>
+      <div class="tap-row"><span>View &amp; edit recipes, plan meals</span><b>everything</b></div>
+      <div class="tap-row"><span>User action required to sync</span><b>none</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">16:44</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="app-header">
+          <div>
+            <div class="screen-title">Shopping</div>
+            <div class="subdate">4 to buy · 1 in the basket</div>
+          </div>
+          <div class="avatar-stack"><div class="avatar a-b">B</div></div>
+        </div>
+
+        <div class="app-body">
+          <div class="offline-pill">
+            <span class="op-ico">🌥️</span>
+            <div class="op-txt">You're offline — your list is safe.<small>Changes will sync automatically when you're back.</small></div>
+            <span class="sync-dot"></span>
+          </div>
+
+          <div class="quickadd"><span class="plus">＋</span> Add an item…</div>
+
+          <div class="cat-header">🥬 Produce <span class="cat-count">2 items</span></div>
+          <div class="shop-item">
+            <span class="item-emoji">🍅</span>
+            <div>
+              <div class="item-name">Cherry tomatoes</div>
+              <div class="item-src">added just now</div>
+            </div>
+            <span class="pending-chip"><span class="sync-dot" style="width:7px;height:7px;"></span> syncs later</span>
+          </div>
+          <div class="shop-item">
+            <span class="item-emoji">🥬</span>
+            <div>
+              <div class="item-name">Baby spinach</div>
+              <div class="item-src">Tuscan Chicken</div>
+            </div>
+            <span class="item-qty">90 g</span>
+          </div>
+
+          <div class="cat-header">🧀 Dairy <span class="cat-count">2 items</span></div>
+          <div class="shop-item">
+            <span class="item-emoji">🧀</span>
+            <div>
+              <div class="item-name">Parmesan</div>
+              <div class="item-src">Bolognese</div>
+            </div>
+            <span class="item-qty">1</span>
+          </div>
+          <div class="shop-item">
+            <span class="item-emoji">🧈</span>
+            <div>
+              <div class="item-name">Butter</div>
+              <div class="item-src">staple</div>
+            </div>
+            <span class="item-qty">1</span>
+          </div>
+
+          <div class="shelf-divider"><span>🧺 Recently purchased</span></div>
+          <div class="shop-item purchased">
+            <span class="item-emoji">🥖</span>
+            <div><div class="item-name">Baguette</div><div class="item-src">just now · offline</div></div>
+            <span class="pending-chip"><span class="sync-dot" style="width:7px;height:7px;"></span> syncs later</span>
+          </div>
+        </div>
+
+        <nav class="bottomnav">
+          <div class="navitem"><span class="nicon nicon-home"></span><span class="nlabel">Today</span></div>
+          <div class="navitem"><span class="nicon nicon-plan"></span><span class="nlabel">Plan</span></div>
+          <div class="navitem"><span class="nicon nicon-recipes"></span><span class="nlabel">Recipes</span></div>
+          <div class="navitem active"><span class="nicon nicon-shop"></span><span class="nlabel">Shop</span><span class="badge">4</span></div>
+        </nav>
+      </div>
+    </div>
+    <div class="phone-caption">Offline · fully usable, calmly noted</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- 11 · HOUSEHOLD SHARING                                    -->
+<!-- ════════════════════════════════════════════════════════ -->
+<section class="screen-section" id="household">
+  <div class="annotation">
+    <div class="num">Screen 11</div>
+    <h2>Household sharing</h2>
+
+    <h3>Rationale</h3>
+    <p>The household is <strong>ambient, not administrative</strong>. Day to day it shows up
+    as avatars on meals and items, live presence dots, and changes appearing as they happen.
+    This screen — reached by tapping the avatar cluster in any header — is where it's
+    managed, rarely.</p>
+    <ul>
+      <li><strong>Joining must survive a kitchen conversation:</strong> a 6-letter code or a QR scan. No emails, no pending-invite purgatory — partner scans, and the shared plan appears on their phone.</li>
+      <li><strong>One pool, no permissions.</strong> Recipes, plans, and lists belong to the household. Anyone can edit anything — matching how kitchens actually work and keeping the model simple enough to never think about.</li>
+      <li>The <strong>activity feed</strong> answers “what changed?” after a day apart — gentle, reverse-chronological, person-attributed. It's a glanceable answer, not a notification firehose; pushes are reserved for direct nudges (“list is ready for pickup”).</li>
+      <li>Household-level preferences live here once, for everyone: <strong>metric by default</strong>, week starts Monday.</li>
+    </ul>
+
+    <div class="taps">
+      <div class="taps-title">Tap economics</div>
+      <div class="tap-row"><span>Open household (any screen)</span><b>1 tap</b></div>
+      <div class="tap-row"><span>Partner joins household</span><b>scan, or 6 letters</b></div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="statusbar"><span class="time">19:30</span><span class="sb-icons"></span></div>
+      <div class="app">
+        <div class="modal-head">
+          <span class="mh-cancel">‹ Back</span>
+          <span class="mh-title">Household</span>
+          <span style="width:54px;"></span>
+        </div>
+
+        <div class="app-body" style="padding-top:6px;">
+          <div style="text-align:center; margin:8px 0 18px;">
+            <div style="font-family:'Fraunces',serif; font-size:26px; font-weight:600;">Hjemme hos oss 🏡</div>
+            <div style="font-size:13.5px; font-weight:700; color:var(--ink-soft); margin-top:4px;">3 members · 48 shared recipes</div>
+          </div>
+
+          <div class="card">
+            <div class="member-row">
+              <div class="avatar a-b lg">B</div>
+              <div><div class="m-name">Bjørnar</div><div class="m-role">That's you</div></div>
+              <div class="m-state"><span class="live-dot"></span> here now</div>
+            </div>
+            <div class="member-row">
+              <div class="avatar a-m lg">M</div>
+              <div><div class="m-name">Maja</div><div class="m-role">Shopping right now 🧺</div></div>
+              <div class="m-state"><span class="live-dot"></span> in the list</div>
+            </div>
+            <div class="member-row">
+              <div class="avatar a-o lg">O</div>
+              <div><div class="m-name">Oda</div><div class="m-role">Member</div></div>
+              <div class="m-state" style="color:var(--ink-faint);">2 h ago</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;" class="invite-card">
+            <div class="qr"></div>
+            <div>
+              <div class="iv-title">Invite someone</div>
+              <div class="iv-code">Scan, or share code <b>KJN-4LM</b></div>
+            </div>
+          </div>
+
+          <div class="section-label">Recent activity</div>
+          <div class="card" style="padding:6px 16px;">
+            <div class="activity-row">
+              <div class="avatar a-m sm">M</div>
+              <div><div class="act-txt"><b>Maja</b> bought avocados and lemons</div><div class="act-time">4 min ago</div></div>
+            </div>
+            <div class="activity-row">
+              <div class="avatar a-b sm">B</div>
+              <div><div class="act-txt"><b>You</b> planned Fish Tacos for Friday</div><div class="act-time">1 h ago</div></div>
+            </div>
+            <div class="activity-row">
+              <div class="avatar a-o sm">O</div>
+              <div><div class="act-txt"><b>Oda</b> added Friday Pan Pizza to recipes</div><div class="act-time">Yesterday</div></div>
+            </div>
+          </div>
+
+          <div class="section-label">Household preferences</div>
+          <div class="card" style="padding:13px 16px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:15.5px; font-weight:700;">Units</span>
+            <div class="segmented" style="width:140px;"><span>US</span><span class="on">Metric</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-caption">Household · members, invite, activity</div>
+  </div>
+</section>
+
+<footer class="gallery-footer">
+  <p><b>Ingredo design system in one line:</b> cream linen surfaces · clay terracotta for actions ·
+  sage green for confirmation &amp; the plan→shop bridge · butter yellow for gentle status ·
+  Fraunces for warmth · Karla for legibility · 18–22px corner radii · every primary target ≥ 56pt tall.
+  Companion document: <b>DESIGN.md</b> covers flows, tap budgets, and state logic in full.</p>
+</footer>
+
+</body>
+</html>

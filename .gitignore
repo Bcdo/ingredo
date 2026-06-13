@@ -1,0 +1,43 @@
+# Root .gitignore for the ingredo monorepo.
+# Per-package ignores live in frontend/.gitignore and backend/.gitignore.
+# This file covers cross-cutting / global concerns and acts as a safety net.
+
+# --- OS files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*~
+
+# --- Editors / IDEs ---
+.idea/
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+
+# --- Environment / secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Logs & temp ---
+*.log
+*.tmp
+*.temp
+
+# --- Dependency / build dirs (safety net for any package without its own ignore) ---
+node_modules/
+dist/
+build/
+out/
+[Bb]in/
+[Oo]bj/
+
+# --- Archives accidentally dropped at the root ---
+*.zip

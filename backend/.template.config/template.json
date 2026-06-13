@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Your Name",
+  "classifications": ["Web", "WebAPI", "Modern"],
+  "identity": "ModernWebApi.Template",
+  "name": "Modern .NET 9 Web API Template",
+  "shortName": "modern-webapi",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "RestApiProject",
+  "preferNameDirectory": true,
+  "symbols": {
+    "ProjectName": {
+      "type": "parameter",
+      "datatype": "string",
+      "replaces": "RestApiProject",
+      "description": "The name of the project"
+    },
+    "UsePostgreSQL": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Use PostgreSQL instead of SQLite"
+    },
+    "IncludeAuth": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Include JWT authentication setup"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**",
+            "**/logs/**",
+            "**/*.db",
+            "**/.vs/**",
+            "**/.vscode/**"
+          ]
+        }
+      ]
+    }
+  ]
+}
