@@ -1,0 +1,77 @@
+{
+  "tabs": {
+    "today": "I dag",
+    "plan": "Plan",
+    "recipes": "Oppskrifter",
+    "shop": "Handle"
+  },
+  "placeholder": {
+    "today": "Dagen din i korte trekk kommer snart.",
+    "plan": "Ukesplanlegging av middager kommer snart.",
+    "shop": "Handlelisten din kommer snart."
+  },
+  "recipes": {
+    "title": "Oppskrifter",
+    "searchPlaceholder": "Søk i oppskrifter og ingredienser",
+    "servingsCount": "%{count} porsjoner",
+    "emptyTitle": "Ingen oppskrifter ennå",
+    "emptyBody": "Oppskriftssamlingen din starter her.",
+    "emptyAction": "Lag din første oppskrift",
+    "noResults": "Ingen oppskrifter passer søket."
+  },
+  "detail": {
+    "ingredients": "Ingredienser",
+    "method": "Fremgangsmåte",
+    "notes": "Notater",
+    "edit": "Rediger",
+    "delete": "Slett",
+    "deleteTitle": "Slette oppskriften?",
+    "deleteMessage": "«%{title}» fjernes fra oppskriftene dine.",
+    "deleteConfirm": "Slett",
+    "deleteCancel": "Behold den",
+    "notFound": "Denne oppskriften finnes ikke lenger."
+  },
+  "form": {
+    "newTitle": "Ny oppskrift",
+    "editTitle": "Rediger oppskrift",
+    "cancel": "Avbryt",
+    "save": "Lagre",
+    "titleLabel": "Tittel",
+    "titlePlaceholder": "Hva skal du lage?",
+    "titleHint": "En tittel er alt som trengs for å lagre.",
+    "descriptionLabel": "Beskrivelse",
+    "servingsLabel": "Porsjoner",
+    "notesLabel": "Notater",
+    "ingredientsLabel": "Ingredienser",
+    "addIngredient": "Legg til ingrediens",
+    "quantityPlaceholder": "Mengde",
+    "namePlaceholder": "Ingrediens",
+    "unitNone": "—",
+    "unitOther": "Annen…",
+    "unitOtherPlaceholder": "Enhet",
+    "instructionsLabel": "Fremgangsmåte",
+    "addStep": "Legg til steg",
+    "stepPlaceholder": "Beskriv dette steget",
+    "removeRow": "Fjern",
+    "discardTitle": "Forkaste endringer?",
+    "discardMessage": "Endringene dine er ikke lagret.",
+    "discardConfirm": "Forkast",
+    "discardCancel": "Fortsett å redigere",
+    "saveError": "Kunne ikke lagre — prøv igjen."
+  },
+  "startup": {
+    "preparing": "Dekker bordet…",
+    "migrationFailed": "Noe gikk galt med å klargjøre dataene dine.",
+    "retry": "Prøv igjen"
+  },
+  "units": {
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "dl": "dl",
+    "l": "l",
+    "ts": "ts",
+    "ss": "ss",
+    "stk": "stk"
+  }
+}

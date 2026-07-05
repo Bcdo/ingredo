@@ -1,0 +1,77 @@
+{
+  "tabs": {
+    "today": "Today",
+    "plan": "Plan",
+    "recipes": "Recipes",
+    "shop": "Shop"
+  },
+  "placeholder": {
+    "today": "Your day at a glance is coming soon.",
+    "plan": "Weekly meal planning is coming soon.",
+    "shop": "Your shopping list is coming soon."
+  },
+  "recipes": {
+    "title": "Recipes",
+    "searchPlaceholder": "Search recipes or ingredients",
+    "servingsCount": "%{count} servings",
+    "emptyTitle": "No recipes yet",
+    "emptyBody": "Your recipe collection starts here.",
+    "emptyAction": "Create your first recipe",
+    "noResults": "No recipes match your search."
+  },
+  "detail": {
+    "ingredients": "Ingredients",
+    "method": "Method",
+    "notes": "Notes",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteTitle": "Delete recipe?",
+    "deleteMessage": "\"%{title}\" will be removed from your recipes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "notFound": "This recipe is no longer here."
+  },
+  "form": {
+    "newTitle": "New recipe",
+    "editTitle": "Edit recipe",
+    "cancel": "Cancel",
+    "save": "Save",
+    "titleLabel": "Title",
+    "titlePlaceholder": "What are you making?",
+    "titleHint": "A title is all you need to save.",
+    "descriptionLabel": "Description",
+    "servingsLabel": "Servings",
+    "notesLabel": "Notes",
+    "ingredientsLabel": "Ingredients",
+    "addIngredient": "Add ingredient",
+    "quantityPlaceholder": "Qty",
+    "namePlaceholder": "Ingredient",
+    "unitNone": "—",
+    "unitOther": "Other…",
+    "unitOtherPlaceholder": "Unit",
+    "instructionsLabel": "Method",
+    "addStep": "Add step",
+    "stepPlaceholder": "Describe this step",
+    "removeRow": "Remove",
+    "discardTitle": "Discard changes?",
+    "discardMessage": "Your edits haven't been saved.",
+    "discardConfirm": "Discard",
+    "discardCancel": "Keep editing",
+    "saveError": "Couldn't save — try again."
+  },
+  "startup": {
+    "preparing": "Setting the table…",
+    "migrationFailed": "Something went wrong preparing your data.",
+    "retry": "Try again"
+  },
+  "units": {
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "dl": "dl",
+    "l": "l",
+    "ts": "tsp",
+    "ss": "tbsp",
+    "stk": "pcs"
+  }
+}
