@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -118,25 +119,19 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
 
   const handleCancel = () => {
     if (!dirty) {
-      requireBack();
+      router.back();
       return;
     }
     Alert.alert(t('form.discardTitle'), t('form.discardMessage'), [
       { text: t('form.discardCancel'), style: 'cancel' },
-      { text: t('form.discardConfirm'), style: 'destructive', onPress: requireBack },
+      { text: t('form.discardConfirm'), style: 'destructive', onPress: () => router.back() },
     ]);
-  };
-
-  // Router back is injected via a module import to keep this component testable.
-  const requireBack = () => {
-    const { router } = require('expo-router');
-    router.back();
   };
 
   const handleSave = () => {
     try {
       onSave(state);
-      requireBack();
+      router.back();
     } catch {
       setSaveFailed(true);
     }
