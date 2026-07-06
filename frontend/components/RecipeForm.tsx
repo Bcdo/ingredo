@@ -102,11 +102,12 @@ function UnitChip({
 export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<RecipeFormState>(initialState);
+  const [initial] = useState<RecipeFormState>(initialState);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const dirty = useMemo(
-    () => JSON.stringify(state) !== JSON.stringify(initialState),
-    [state, initialState]
+    () => JSON.stringify(state) !== JSON.stringify(initial),
+    [state, initial]
   );
   const canSave = state.title.trim() !== '';
 
@@ -149,6 +150,7 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
         <Text className="font-display text-xl text-ink">{heading}</Text>
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ disabled: !canSave }}
           disabled={!canSave}
           onPress={handleSave}
           className={`min-h-14 justify-center pl-4 ${canSave ? '' : 'opacity-40'}`}>
