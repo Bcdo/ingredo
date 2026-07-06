@@ -23,7 +23,7 @@ export default function RecipeDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: recipeRows } = useLiveQuery(
+  const { data: recipeRows, updatedAt } = useLiveQuery(
     db
       .select()
       .from(recipes)
@@ -47,8 +47,8 @@ export default function RecipeDetailScreen() {
     [id]
   );
 
-  const recipe = recipeRows?.[0];
-  if (recipeRows !== undefined && !recipe) {
+  const recipe = recipeRows[0];
+  if (updatedAt !== undefined && !recipe) {
     return <Redirect href="/(tabs)/recipes" />;
   }
   if (!recipe) return <View className="flex-1 bg-cream" />;
