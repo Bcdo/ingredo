@@ -17,6 +17,7 @@
     "emptyTitle": "No recipes yet",
     "emptyBody": "Your recipe collection starts here.",
     "emptyAction": "Create your first recipe",
+    "addRecipe": "Add recipe",
     "noResults": "No recipes match your search."
   },
   "detail": {

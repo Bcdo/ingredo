@@ -17,6 +17,7 @@
     "emptyTitle": "Ingen oppskrifter ennå",
     "emptyBody": "Oppskriftssamlingen din starter her.",
     "emptyAction": "Lag din første oppskrift",
+    "addRecipe": "Legg til oppskrift",
     "noResults": "Ingen oppskrifter passer søket."
   },
   "detail": {
