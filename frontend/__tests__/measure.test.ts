@@ -102,4 +102,11 @@ describe('displayQuantity', () => {
     expect(displayQuantity(2, 'dl', usEn)).toEqual({ amountText: '⅞', unitCode: 'cup' });
     expect(displayQuantity(1, 'l', usEn)).toEqual({ amountText: '4¼', unitCode: 'cup' });
   });
+
+  it('treats prototype-key free-text units as passthrough', () => {
+    expect(displayQuantity(2, 'toString', { scaleFactor: 2, system: 'us', locale: 'en' })).toEqual({
+      amountText: '4',
+      unitCode: 'toString',
+    });
+  });
 });

@@ -142,7 +142,8 @@ export default function RecipeDetailScreen() {
                   locale,
                   scaling: ing.scaling,
                 });
-                const showHint = ing.scaling === 'fixed' && scaleFactor !== 1;
+                const showHint =
+                  ing.scaling === 'fixed' && ing.quantity !== null && scaleFactor !== 1;
                 return (
                   <View key={ing.id} className="flex-row items-baseline gap-3">
                     <Text className="min-w-16 font-display text-base text-clay">

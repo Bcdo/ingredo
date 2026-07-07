@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { getUnitSystem, setUnitSystem } from '../lib/db/settings';
 import { settings } from '../lib/db/schema';
 
@@ -25,7 +26,7 @@ describe('settings repository', () => {
   it('falls back to metric on an unrecognized stored value', () => {
     const db = makeTestDb();
     setUnitSystem(db, 'us');
-    db.update(settings).set({ value: 'imperial-ish' }).run();
+    db.update(settings).set({ value: 'imperial-ish' }).where(eq(settings.key, 'unit_system')).run();
     expect(getUnitSystem(db)).toBe('metric');
   });
 });

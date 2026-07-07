@@ -58,7 +58,8 @@ export function displayQuantity(
   if (quantity === null) return null;
   const amount = opts.scaling === 'fixed' ? quantity : quantity * opts.scaleFactor;
 
-  const measure = unit === null ? undefined : CANONICAL_MEASURES[unit];
+  const measure =
+    unit !== null && Object.hasOwn(CANONICAL_MEASURES, unit) ? CANONICAL_MEASURES[unit] : undefined;
   if (!measure || opts.system === 'metric') {
     // stk, free text, unit-less, and all of metric mode: unit unchanged.
     return { amountText: formatQuantity(amount, opts.locale), unitCode: unit };

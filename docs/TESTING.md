@@ -83,3 +83,10 @@ Every utility function should have tests.
 Every sync-related feature should have tests.
 
 Simple UI screens can be tested manually at first.
+
+## Recipe scaling & unit conversion (manual pass)
+
+- Open a recipe → step servings up/down → quantities rescale in place; leaving and reopening resets to saved servings.
+- Toggle Metric/US → quantities convert (fractions on US); kill and relaunch the app → the toggle choice is remembered.
+- Mark an ingredient "Fixed amount" in the edit form → save → scale the recipe → that row stays constant and shows the "adjust to taste" hint.
+- Norwegian device language: decimals show commas ("1,5 dl"); all new labels localized.
