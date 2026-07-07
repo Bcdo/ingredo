@@ -81,7 +81,7 @@ displayQuantity(quantity: number | null, unit: string | null,
    - volume: `< 15 ml` → tsp · `< 59.15 ml` (¼ cup) → tbsp · else cup
    - mass: `< 453.592 g` (1 lb) → oz · else lb
 4. **Format:**
-   - Metric: round to at most 1 decimal, trim trailing zeros, locale decimal separator (comma for nb).
+   - Metric: round to at most 2 decimals (matching the existing `formatQuantity` precision, so unscaled authored values render unchanged), trim trailing zeros, locale decimal separator (comma for nb).
    - US: snap to the nearest representable value — whole numbers plus eighths and thirds (⅛, ¼, ⅓, ⅜, ½, ⅝, ⅔, ¾, ⅞) — rendered with fraction glyphs (`2¼ cup`). A non-zero quantity never snaps to zero — floor at the smallest step (⅛).
 
 Band boundaries are compared against the *unrounded* base amount so tiny floating-point noise cannot flip the chosen unit.
