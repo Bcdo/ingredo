@@ -6,7 +6,8 @@ export function parseQuantity(input: string): number | null {
   return value;
 }
 
-export function formatQuantity(quantity: number | null): string {
+export function formatQuantity(quantity: number | null, locale: string = 'en'): string {
   if (quantity === null) return '';
-  return String(Math.round(quantity * 100) / 100);
+  const text = String(Math.round(quantity * 100) / 100);
+  return locale.startsWith('nb') ? text.replace('.', ',') : text;
 }

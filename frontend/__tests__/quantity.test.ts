@@ -19,3 +19,19 @@ describe('formatQuantity', () => {
   it('rounds long fractions to 2 decimals', () => expect(formatQuantity(1 / 3)).toBe('0.33'));
   it('returns empty string for null', () => expect(formatQuantity(null)).toBe(''));
 });
+
+describe('formatQuantity locale', () => {
+  it('uses a comma separator for nb', () => {
+    expect(formatQuantity(1.5, 'nb')).toBe('1,5');
+  });
+
+  it('defaults to a dot separator', () => {
+    expect(formatQuantity(1.5)).toBe('1.5');
+    expect(formatQuantity(1.5, 'en')).toBe('1.5');
+  });
+
+  it('keeps two-decimal precision with either separator', () => {
+    expect(formatQuantity(0.333, 'nb')).toBe('0,33');
+    expect(formatQuantity(900, 'nb')).toBe('900');
+  });
+});

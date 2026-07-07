@@ -10,3 +10,7 @@ i18n.defaultLocale = 'en';
 i18n.locale = getLocales()[0]?.languageCode ?? 'en';
 
 export const t = i18n.t.bind(i18n);
+
+export function currentLocale(): 'en' | 'nb' {
+  return i18n.locale.startsWith('nb') ? 'nb' : 'en';
+}
