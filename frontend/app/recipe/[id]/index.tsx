@@ -2,26 +2,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SegmentedControl } from '../../../components/ui/SegmentedControl';
+import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
+import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
-import { t } from '../../../lib/i18n';
-import { formatQuantity } from '../../../lib/quantity';
-import { UNITS } from '../../../lib/units';
+import { currentLocale, t } from '../../../lib/i18n';
+import { displayQuantity } from '../../../lib/measure';
+import { isLocalizableUnit } from '../../../lib/units';
 
 function unitLabel(unit: string | null): string {
   if (unit === null) return '';
-  return (UNITS as readonly string[]).includes(unit) ? t(`units.${unit}`) : unit;
+  return isLocalizableUnit(unit) ? t(`units.${unit}`) : unit;
 }
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const [servingsOverride, setServingsOverride] = useState<number | null>(null);
+  const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
 
   const { data: recipeRows, updatedAt } = useLiveQuery(
     db
@@ -52,6 +58,15 @@ export default function RecipeDetailScreen() {
     return <Redirect href="/(tabs)/recipes" />;
   }
   if (!recipe) return <View className="flex-1 bg-cream" />;
+
+  const selectedServings = servingsOverride ?? recipe.servings;
+  const scaleFactor = selectedServings / recipe.servings;
+  const locale = currentLocale();
+
+  const changeSystem = (next: UnitSystem) => {
+    setSystem(next);
+    setUnitSystem(db, next);
+  };
 
   const confirmDelete = () => {
     Alert.alert(t('detail.deleteTitle'), t('detail.deleteMessage', { title: recipe.title }), [
@@ -101,22 +116,50 @@ export default function RecipeDetailScreen() {
         {recipe.description ? (
           <Text className="mt-2 font-body text-base text-ink opacity-80">{recipe.description}</Text>
         ) : null}
-        <Text className="mt-3 font-body-bold text-sm text-ink opacity-70">
-          {t('recipes.servingsCount', { count: recipe.servings })}
-        </Text>
+        <View className="mt-4 gap-3">
+          <View className="flex-row items-center justify-between">
+            <Text className="font-body-bold text-sm text-ink">{t('detail.servings')}</Text>
+            <Stepper value={selectedServings} onChange={setServingsOverride} min={1} />
+          </View>
+          <SegmentedControl
+            segments={[
+              { key: 'metric', label: t('detail.unitsMetric') },
+              { key: 'us', label: t('detail.unitsUS') },
+            ]}
+            selected={system}
+            onSelect={changeSystem}
+          />
+        </View>
 
         {(ingredients ?? []).length > 0 ? (
           <>
             <Text className="mt-8 font-display text-xl text-ink">{t('detail.ingredients')}</Text>
             <View className="mt-3 gap-3">
-              {(ingredients ?? []).map((ing) => (
-                <View key={ing.id} className="flex-row items-baseline gap-3">
-                  <Text className="min-w-16 font-display text-base text-clay">
-                    {`${formatQuantity(ing.quantity)} ${unitLabel(ing.unit)}`.trim()}
-                  </Text>
-                  <Text className="flex-1 font-body text-base text-ink">{ing.name}</Text>
-                </View>
-              ))}
+              {(ingredients ?? []).map((ing) => {
+                const display = displayQuantity(ing.quantity, ing.unit, {
+                  scaleFactor,
+                  system,
+                  locale,
+                  scaling: ing.scaling,
+                });
+                const showHint = ing.scaling === 'fixed' && scaleFactor !== 1;
+                return (
+                  <View key={ing.id} className="flex-row items-baseline gap-3">
+                    <Text className="min-w-16 font-display text-base text-clay">
+                      {display ? `${display.amountText} ${unitLabel(display.unitCode)}`.trim() : ''}
+                    </Text>
+                    <Text className="flex-1 font-body text-base text-ink">
+                      {ing.name}
+                      {showHint ? (
+                        <Text className="font-body text-xs text-ink opacity-50">
+                          {'  ·  '}
+                          {t('detail.adjustToTaste')}
+                        </Text>
+                      ) : null}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </>
         ) : null}

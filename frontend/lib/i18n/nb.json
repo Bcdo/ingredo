@@ -30,7 +30,11 @@
     "deleteMessage": "«%{title}» fjernes fra oppskriftene dine.",
     "deleteConfirm": "Slett",
     "deleteCancel": "Behold den",
-    "notFound": "Denne oppskriften finnes ikke lenger."
+    "notFound": "Denne oppskriften finnes ikke lenger.",
+    "servings": "Porsjoner",
+    "unitsMetric": "Metrisk",
+    "unitsUS": "US",
+    "adjustToTaste": "smak til"
   },
   "form": {
     "newTitle": "Ny oppskrift",
@@ -75,6 +79,9 @@
     "l": "l",
     "ts": "ts",
     "ss": "ss",
-    "stk": "stk"
+    "stk": "stk",
+    "oz": "oz",
+    "lb": "lb",
+    "cup": "cup"
   }
 }

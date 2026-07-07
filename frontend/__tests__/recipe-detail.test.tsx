@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect } from 'expo-router';
 import React from 'react';
 
 import RecipeDetailScreen from '../app/recipe/[id]/index';
+import { getUnitSystem, setUnitSystem } from '../lib/db/settings';
 import type { RecipeRow } from '../lib/db/schema';
 
 jest.mock('../lib/db/client', () => {
@@ -33,6 +34,11 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
   useLiveQuery: jest.fn(),
 }));
 
+jest.mock('../lib/db/settings', () => ({
+  getUnitSystem: jest.fn(() => 'metric'),
+  setUnitSystem: jest.fn(),
+}));
+
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const RedirectMock = Redirect as unknown as jest.Mock;
 
@@ -47,17 +53,45 @@ const recipeRow: RecipeRow = {
   deletedAt: null,
 };
 
-function mockQueries(recipeResult: { data: unknown[]; updatedAt: Date | undefined }) {
-  mockUseLiveQuery
-    .mockReturnValueOnce(recipeResult) // recipe select
-    .mockReturnValueOnce({ data: [], updatedAt: recipeResult.updatedAt }) // ingredients
-    .mockReturnValueOnce({ data: [], updatedAt: recipeResult.updatedAt }); // instructions
+const flourRow = {
+  id: 'i1',
+  recipeId: 'r1',
+  name: 'Flour',
+  quantity: 200,
+  unit: 'g',
+  scaling: 'linear',
+  sortOrder: 0,
+};
+const chiliRow = {
+  id: 'i2',
+  recipeId: 'r1',
+  name: 'Chili flakes',
+  quantity: 1,
+  unit: 'ts',
+  scaling: 'fixed',
+  sortOrder: 1,
+};
+
+function mockQueries(
+  recipeResult: { data: unknown[]; updatedAt: Date | undefined },
+  ingredients: unknown[] = []
+) {
+  let call = 0;
+  mockUseLiveQuery.mockImplementation(() => {
+    const index = call % 3;
+    call += 1;
+    if (index === 0) return recipeResult;
+    if (index === 1) return { data: ingredients, updatedAt: recipeResult.updatedAt };
+    return { data: [], updatedAt: recipeResult.updatedAt };
+  });
 }
 
 describe('RecipeDetailScreen', () => {
   beforeEach(() => {
     mockUseLiveQuery.mockReset();
     RedirectMock.mockClear();
+    (getUnitSystem as jest.Mock).mockClear().mockReturnValue('metric');
+    (setUnitSystem as jest.Mock).mockClear();
   });
 
   it('does not redirect while the live query has not resolved yet', () => {
@@ -86,5 +120,41 @@ describe('RecipeDetailScreen', () => {
 
     expect(screen.getByText(recipeRow.title)).toBeTruthy();
     expect(RedirectMock).not.toHaveBeenCalled();
+  });
+
+  it('rescales linear ingredients when servings are stepped up', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow]);
+    render(<RecipeDetailScreen />);
+
+    expect(screen.getByText('200 g')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('increment')); // 4 → 5 servings
+    expect(screen.getByText('250 g')).toBeTruthy();
+  });
+
+  it('keeps fixed ingredients constant and shows the adjust-to-taste hint when scaled', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow, chiliRow]);
+    render(<RecipeDetailScreen />);
+
+    expect(screen.queryByText(/adjust to taste/)).toBeNull();
+    fireEvent.press(screen.getByLabelText('increment'));
+    expect(screen.getByText('1 tsp')).toBeTruthy(); // unscaled, en label for ts
+    expect(screen.getByText(/adjust to taste/)).toBeTruthy();
+  });
+
+  it('converts quantities and persists the preference when toggled to US', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow]);
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByLabelText('US'));
+    expect(setUnitSystem).toHaveBeenCalledWith(expect.anything(), 'us');
+    expect(screen.getByText('7 oz')).toBeTruthy(); // 200 g = 7.05 oz → 7
+  });
+
+  it('reads the persisted unit system on mount', () => {
+    (getUnitSystem as jest.Mock).mockReturnValueOnce('us');
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow]);
+    render(<RecipeDetailScreen />);
+
+    expect(screen.getByText('7 oz')).toBeTruthy();
   });
 });

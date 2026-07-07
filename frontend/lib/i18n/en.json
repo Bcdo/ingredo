@@ -30,7 +30,11 @@
     "deleteMessage": "\"%{title}\" will be removed from your recipes.",
     "deleteConfirm": "Delete",
     "deleteCancel": "Keep it",
-    "notFound": "This recipe is no longer here."
+    "notFound": "This recipe is no longer here.",
+    "servings": "Servings",
+    "unitsMetric": "Metric",
+    "unitsUS": "US",
+    "adjustToTaste": "adjust to taste"
   },
   "form": {
     "newTitle": "New recipe",
@@ -75,6 +79,9 @@
     "l": "l",
     "ts": "tsp",
     "ss": "tbsp",
-    "stk": "pcs"
+    "stk": "pcs",
+    "oz": "oz",
+    "lb": "lb",
+    "cup": "cup"
   }
 }
