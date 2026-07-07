@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect } from 'expo-router';
 import React from 'react';
 
@@ -31,8 +32,6 @@ jest.mock('expo-router', () => ({
 jest.mock('drizzle-orm/expo-sqlite', () => ({
   useLiveQuery: jest.fn(),
 }));
-
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const RedirectMock = Redirect as unknown as jest.Mock;

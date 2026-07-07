@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 import React from 'react';
 
 import EditRecipeScreen from '../app/recipe/[id]/edit';
+import { getRecipe } from '../lib/db/recipes';
 
 jest.mock('../lib/db/client', () => {
   const node: Record<string, unknown> = {};
@@ -31,8 +32,6 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
   Redirect: jest.fn(() => null),
 }));
-
-import { getRecipe } from '../lib/db/recipes';
 
 const RedirectMock = Redirect as unknown as jest.Mock;
 const getRecipeMock = getRecipe as jest.Mock;

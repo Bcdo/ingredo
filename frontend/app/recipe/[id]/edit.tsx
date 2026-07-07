@@ -10,10 +10,7 @@ import { t } from '../../../lib/i18n';
 export default function EditRecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const details = useMemo(() => getRecipe(db, id), [id]);
-  const initialState = useMemo(
-    () => (details ? formStateFromRecipe(details) : null),
-    [details]
-  );
+  const initialState = useMemo(() => (details ? formStateFromRecipe(details) : null), [details]);
 
   if (!details || !initialState) {
     return <Redirect href="/(tabs)/recipes" />;

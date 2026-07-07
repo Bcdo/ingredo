@@ -105,10 +105,7 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
   const [initial] = useState<RecipeFormState>(initialState);
   const [saveFailed, setSaveFailed] = useState(false);
 
-  const dirty = useMemo(
-    () => JSON.stringify(state) !== JSON.stringify(initial),
-    [state, initial]
-  );
+  const dirty = useMemo(() => JSON.stringify(state) !== JSON.stringify(initial), [state, initial]);
   const canSave = state.title.trim() !== '';
 
   const patch = (partial: Partial<RecipeFormState>) => setState((s) => ({ ...s, ...partial }));

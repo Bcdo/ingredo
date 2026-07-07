@@ -1,4 +1,7 @@
 import { i18n, t } from '../lib/i18n';
+import en from '../lib/i18n/en.json';
+import nb from '../lib/i18n/nb.json';
+import { UNITS } from '../lib/units';
 
 describe('i18n', () => {
   afterEach(() => {
@@ -20,7 +23,6 @@ describe('i18n', () => {
   });
 
   it('has a label for every canonical unit in both locales', () => {
-    const { UNITS } = require('../lib/units');
     for (const locale of ['en', 'nb']) {
       i18n.locale = locale;
       for (const code of UNITS) {
@@ -32,8 +34,6 @@ describe('i18n', () => {
   });
 
   it('has identical key sets in en and nb', () => {
-    const en = require('../lib/i18n/en.json');
-    const nb = require('../lib/i18n/nb.json');
     const flatten = (obj: object, prefix = ''): string[] =>
       Object.entries(obj).flatMap(([k, v]) =>
         typeof v === 'object' && v !== null ? flatten(v, `${prefix}${k}.`) : [`${prefix}${k}`]

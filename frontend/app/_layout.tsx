@@ -29,7 +29,10 @@ function useDbMigrations() {
     setState('pending');
     migrate(db as never, migrations)
       .then(() => !cancelled && setState('ready'))
-      .catch(() => !cancelled && setState('error'));
+      .catch((err) => {
+        console.warn('migration failed', err);
+        if (!cancelled) setState('error');
+      });
     return () => {
       cancelled = true;
     };
