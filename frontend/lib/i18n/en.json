@@ -83,5 +83,19 @@
     "oz": "oz",
     "lb": "lb",
     "cup": "cup"
+  },
+  "days": {
+    "0": "Monday",
+    "1": "Tuesday",
+    "2": "Wednesday",
+    "3": "Thursday",
+    "4": "Friday",
+    "5": "Saturday",
+    "6": "Sunday"
+  },
+  "plan": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "addDinner": "Add dinner"
   }
 }

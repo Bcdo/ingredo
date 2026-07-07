@@ -79,6 +79,15 @@ export default function RootLayout() {
           name="recipe/[id]/edit"
           options={{ presentation: 'modal', headerShown: false }}
         />
+        <Stack.Screen name="plan/add" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen
+          name="plan/pick-day"
+          options={{ presentation: 'modal', headerShown: false }}
+        />
+        <Stack.Screen
+          name="plan/entry/[id]"
+          options={{ presentation: 'modal', headerShown: false }}
+        />
       </Stack>
     </SafeAreaProvider>
   );

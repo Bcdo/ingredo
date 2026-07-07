@@ -83,5 +83,19 @@
     "oz": "oz",
     "lb": "lb",
     "cup": "cup"
+  },
+  "days": {
+    "0": "mandag",
+    "1": "tirsdag",
+    "2": "onsdag",
+    "3": "torsdag",
+    "4": "fredag",
+    "5": "lørdag",
+    "6": "søndag"
+  },
+  "plan": {
+    "today": "I dag",
+    "tomorrow": "I morgen",
+    "addDinner": "Legg til middag"
   }
 }
