@@ -58,7 +58,9 @@
     "discardMessage": "Endringene dine er ikke lagret.",
     "discardConfirm": "Forkast",
     "discardCancel": "Fortsett å redigere",
-    "saveError": "Kunne ikke lagre — prøv igjen."
+    "saveError": "Kunne ikke lagre — prøv igjen.",
+    "scalingLinear": "Skaleres med porsjoner",
+    "scalingFixed": "Fast mengde"
   },
   "startup": {
     "preparing": "Dekker bordet…",

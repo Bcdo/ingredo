@@ -1,7 +1,15 @@
+import { currentLocale } from './i18n';
+import type { ScalingMode } from './units';
 import type { RecipeInput, RecipeWithDetails } from './db/recipes';
 import { parseQuantity, formatQuantity } from './quantity';
 
-export type IngredientDraft = { key: string; quantity: string; unit: string | null; name: string };
+export type IngredientDraft = {
+  key: string;
+  quantity: string;
+  unit: string | null;
+  name: string;
+  scaling: ScalingMode;
+};
 export type InstructionDraft = { key: string; text: string };
 
 export type RecipeFormState = {
@@ -31,9 +39,10 @@ export function formStateFromRecipe(details: RecipeWithDetails): RecipeFormState
     notes: details.recipe.notes ?? '',
     ingredients: details.ingredients.map((ing) => ({
       key: draftKey(),
-      quantity: formatQuantity(ing.quantity),
+      quantity: formatQuantity(ing.quantity, currentLocale()),
       unit: ing.unit,
       name: ing.name,
+      scaling: ing.scaling,
     })),
     instructions: details.instructions.map((step) => ({ key: draftKey(), text: step.text })),
   };
@@ -56,6 +65,7 @@ export function recipeInputFromForm(state: RecipeFormState): RecipeInput {
         name: ing.name.trim(),
         quantity: parseQuantity(ing.quantity),
         unit: ing.unit,
+        scaling: ing.scaling,
       })),
     instructions: state.instructions
       .filter((step) => step.text.trim() !== '')

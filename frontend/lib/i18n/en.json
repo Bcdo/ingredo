@@ -58,7 +58,9 @@
     "discardMessage": "Your edits haven't been saved.",
     "discardConfirm": "Discard",
     "discardCancel": "Keep editing",
-    "saveError": "Couldn't save — try again."
+    "saveError": "Couldn't save — try again.",
+    "scalingLinear": "Scales with servings",
+    "scalingFixed": "Fixed amount"
   },
   "startup": {
     "preparing": "Setting the table…",

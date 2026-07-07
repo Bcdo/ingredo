@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import { RecipeForm } from '../components/RecipeForm';
 import { emptyFormState, type RecipeFormState } from '../lib/form';
 import { t } from '../lib/i18n';
+import en from '../lib/i18n/en.json';
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -95,5 +96,34 @@ describe('RecipeForm', () => {
 
     expect(Alert.alert).not.toHaveBeenCalled();
     expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles an ingredient to fixed scaling and saves it', () => {
+    const onSave = jest.fn();
+    render(
+      <RecipeForm
+        heading="Edit"
+        initialState={{
+          title: 'Chili',
+          description: '',
+          servings: 4,
+          notes: '',
+          ingredients: [
+            { key: 'k1', quantity: '1', unit: 'ts', name: 'Chili flakes', scaling: 'linear' },
+          ],
+          instructions: [],
+        }}
+        onSave={onSave}
+      />
+    );
+
+    fireEvent.press(screen.getByText(en.form.scalingFixed));
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: [expect.objectContaining({ scaling: 'fixed' })],
+      })
+    );
   });
 });

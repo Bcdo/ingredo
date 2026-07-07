@@ -17,20 +17,20 @@ describe('recipeInputFromForm', () => {
     const state = emptyFormState();
     state.title = 'Soup';
     state.ingredients = [
-      { key: 'a', quantity: '1,5', unit: 'dl', name: 'Cream' },
-      { key: 'b', quantity: 'a splash', unit: null, name: 'Olive oil' },
+      { key: 'a', quantity: '1,5', unit: 'dl', name: 'Cream', scaling: 'linear' },
+      { key: 'b', quantity: 'a splash', unit: null, name: 'Olive oil', scaling: 'linear' },
     ];
     const input = recipeInputFromForm(state);
     expect(input.ingredients).toEqual([
-      { name: 'Cream', quantity: 1.5, unit: 'dl' },
-      { name: 'Olive oil', quantity: null, unit: null },
+      { name: 'Cream', quantity: 1.5, unit: 'dl', scaling: 'linear' },
+      { name: 'Olive oil', quantity: null, unit: null, scaling: 'linear' },
     ]);
   });
 
   it('drops nameless ingredient rows and empty instruction steps', () => {
     const state = emptyFormState();
     state.title = 'Soup';
-    state.ingredients = [{ key: 'a', quantity: '2', unit: 'stk', name: '   ' }];
+    state.ingredients = [{ key: 'a', quantity: '2', unit: 'stk', name: '   ', scaling: 'linear' }];
     state.instructions = [
       { key: 's1', text: 'Chop' },
       { key: 's2', text: '   ' },
@@ -76,5 +76,46 @@ describe('formStateFromRecipe', () => {
     expect(state.instructions[0]).toMatchObject({ text: 'Simmer' });
     // keys must be unique for React lists
     expect(state.ingredients[0].key).toBeTruthy();
+  });
+
+  it('round-trips the scaling flag through form state', () => {
+    const details: RecipeWithDetails = {
+      recipe: {
+        id: 'r1',
+        title: 'Chili',
+        description: null,
+        servings: 4,
+        notes: null,
+        createdAt: 1,
+        updatedAt: 1,
+        deletedAt: null,
+      },
+      ingredients: [
+        {
+          id: 'i1',
+          recipeId: 'r1',
+          name: 'Beans',
+          quantity: 400,
+          unit: 'g',
+          scaling: 'linear',
+          sortOrder: 0,
+        },
+        {
+          id: 'i2',
+          recipeId: 'r1',
+          name: 'Chili flakes',
+          quantity: 1,
+          unit: 'ts',
+          scaling: 'fixed',
+          sortOrder: 1,
+        },
+      ],
+      instructions: [],
+    };
+    const state = formStateFromRecipe(details);
+    expect(state.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
+
+    const input = recipeInputFromForm(state);
+    expect(input.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
   });
 });

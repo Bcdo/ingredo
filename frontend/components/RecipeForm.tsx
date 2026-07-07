@@ -223,6 +223,18 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
                 ingredient={ing}
                 onChange={(unit) => patchIngredient(ing.key, { unit: unit === '' ? null : unit })}
               />
+              <View className="flex-row gap-2">
+                <UnitChip
+                  label={t('form.scalingLinear')}
+                  selected={ing.scaling === 'linear'}
+                  onPress={() => patchIngredient(ing.key, { scaling: 'linear' })}
+                />
+                <UnitChip
+                  label={t('form.scalingFixed')}
+                  selected={ing.scaling === 'fixed'}
+                  onPress={() => patchIngredient(ing.key, { scaling: 'fixed' })}
+                />
+              </View>
             </View>
           ))}
           <Pressable
@@ -231,7 +243,7 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
               patch({
                 ingredients: [
                   ...state.ingredients,
-                  { key: draftKey(), quantity: '', unit: null, name: '' },
+                  { key: draftKey(), quantity: '', unit: null, name: '', scaling: 'linear' },
                 ],
               })
             }
