@@ -29,10 +29,14 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
 
 const mockParams: Record<string, string | undefined> = { date: '2026-07-07' };
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
-  router: { back: (...args: unknown[]) => mockBack(...args) },
+  router: {
+    back: (...args: unknown[]) => mockBack(...args),
+    push: (...args: unknown[]) => mockPush(...args),
+  },
   Redirect: jest.fn(() => null),
 }));
 
@@ -55,6 +59,7 @@ function mockQueries(recipeRows: unknown[], ingredientRows: unknown[] = []) {
 describe('AddPlanEntryScreen', () => {
   beforeEach(() => {
     mockBack.mockClear();
+    mockPush.mockClear();
     RedirectMock.mockClear();
     (addPlanEntry as jest.Mock).mockClear();
     mockUseLiveQuery.mockReset();
@@ -94,5 +99,30 @@ describe('AddPlanEntryScreen', () => {
       servings: 3,
     });
     expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('renders empty state when no recipes exist', () => {
+    mockQueries([]);
+
+    render(<AddPlanEntryScreen />);
+
+    expect(screen.getByText('No recipes yet')).toBeTruthy();
+    fireEvent.press(screen.getByText('Create your first recipe'));
+
+    expect(mockPush).toHaveBeenCalledWith('/recipe/new');
+  });
+
+  it('filters recipes by ingredient name', () => {
+    const ingredients = [
+      { recipeId: 'r1', name: 'halloumi' },
+      { recipeId: 'r2', name: 'beef' },
+    ];
+    mockQueries([soup, stew], ingredients);
+
+    render(<AddPlanEntryScreen />);
+    fireEvent.changeText(screen.getByPlaceholderText('Search recipes or ingredients'), 'halloumi');
+
+    expect(screen.getByText('Tomato Soup')).toBeTruthy();
+    expect(screen.queryByText('Beef Stew')).toBeNull();
   });
 });
