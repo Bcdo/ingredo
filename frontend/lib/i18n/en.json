@@ -96,6 +96,8 @@
   "plan": {
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "addDinner": "Add dinner"
+    "addDinner": "Add dinner",
+    "pickRecipeTitle": "Pick a recipe",
+    "add": "Add to plan"
   }
 }
