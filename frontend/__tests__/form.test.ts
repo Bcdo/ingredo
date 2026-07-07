@@ -55,7 +55,15 @@ describe('formStateFromRecipe', () => {
         deletedAt: null,
       },
       ingredients: [
-        { id: 'i1', recipeId: 'r1', name: 'Tomatoes', quantity: 1.5, unit: 'kg', sortOrder: 0 },
+        {
+          id: 'i1',
+          recipeId: 'r1',
+          name: 'Tomatoes',
+          quantity: 1.5,
+          unit: 'kg',
+          scaling: 'linear',
+          sortOrder: 0,
+        },
       ],
       instructions: [{ id: 's1', recipeId: 'r1', text: 'Simmer', sortOrder: 0 }],
     };
