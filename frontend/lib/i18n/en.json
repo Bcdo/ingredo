@@ -98,6 +98,9 @@
     "tomorrow": "Tomorrow",
     "addDinner": "Add dinner",
     "pickRecipeTitle": "Pick a recipe",
-    "add": "Add to plan"
+    "add": "Add to plan",
+    "openRecipe": "Open recipe",
+    "moveDay": "Move to another day",
+    "remove": "Remove from plan"
   }
 }

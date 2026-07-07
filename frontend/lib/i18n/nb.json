@@ -98,6 +98,9 @@
     "tomorrow": "I morgen",
     "addDinner": "Legg til middag",
     "pickRecipeTitle": "Velg oppskrift",
-    "add": "Legg i planen"
+    "add": "Legg i planen",
+    "openRecipe": "Åpne oppskrift",
+    "moveDay": "Flytt til en annen dag",
+    "remove": "Fjern fra planen"
   }
 }
