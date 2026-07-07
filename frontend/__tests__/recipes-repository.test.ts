@@ -83,4 +83,21 @@ describe('recipes repository', () => {
     expect(db.select().from(recipes).all()).toHaveLength(0);
     expect(db.select().from(recipeIngredients).all()).toHaveLength(0);
   });
+
+  it('round-trips the ingredient scaling flag and defaults it to linear', () => {
+    const db = makeTestDb();
+    const id = createRecipe(db, {
+      title: 'Chili',
+      description: null,
+      servings: 4,
+      notes: null,
+      ingredients: [
+        { name: 'Beans', quantity: 400, unit: 'g' },
+        { name: 'Chili flakes', quantity: 1, unit: 'ts', scaling: 'fixed' },
+      ],
+      instructions: [],
+    });
+    const details = getRecipe(db, id);
+    expect(details?.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
+  });
 });

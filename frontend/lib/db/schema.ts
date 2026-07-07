@@ -19,6 +19,9 @@ export const recipeIngredients = sqliteTable('recipe_ingredients', {
   name: text('name').notNull(),
   quantity: real('quantity'),
   unit: text('unit'),
+  scaling: text('scaling', { enum: ['linear', 'fixed'] })
+    .notNull()
+    .default('linear'),
   sortOrder: integer('sort_order').notNull(),
 });
 
@@ -31,6 +34,12 @@ export const recipeInstructions = sqliteTable('recipe_instructions', {
   sortOrder: integer('sort_order').notNull(),
 });
 
+export const settings = sqliteTable('settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
+
 export type RecipeRow = typeof recipes.$inferSelect;
 export type IngredientRow = typeof recipeIngredients.$inferSelect;
 export type InstructionRow = typeof recipeInstructions.$inferSelect;
+export type SettingRow = typeof settings.$inferSelect;

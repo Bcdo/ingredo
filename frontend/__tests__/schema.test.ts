@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
 import { makeTestDb } from './helpers/testDb';
-import { recipes, recipeIngredients } from '../lib/db/schema';
+import { recipes, recipeIngredients, settings } from '../lib/db/schema';
 
 describe('schema', () => {
   it('round-trips a recipe row', () => {
@@ -54,5 +54,24 @@ describe('schema', () => {
         })
         .run()
     ).toThrow();
+  });
+
+  it('defaults ingredient scaling to linear when not provided', () => {
+    const db = makeTestDb();
+    db.insert(recipes)
+      .values({ id: 'r1', title: 'Soup', servings: 4, createdAt: 1, updatedAt: 1 })
+      .run();
+    db.insert(recipeIngredients)
+      .values({ id: 'i1', recipeId: 'r1', name: 'Salt', quantity: null, unit: null, sortOrder: 0 })
+      .run();
+    const row = db.select().from(recipeIngredients).get();
+    expect(row?.scaling).toBe('linear');
+  });
+
+  it('has a settings table with key/value', () => {
+    const db = makeTestDb();
+    db.insert(settings).values({ key: 'unit_system', value: 'us' }).run();
+    const row = db.select().from(settings).get();
+    expect(row).toEqual({ key: 'unit_system', value: 'us' });
   });
 });

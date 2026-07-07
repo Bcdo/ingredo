@@ -11,7 +11,12 @@ import {
 } from './schema';
 import type { DB } from './types';
 
-export type IngredientInput = { name: string; quantity: number | null; unit: string | null };
+export type IngredientInput = {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  scaling?: 'linear' | 'fixed';
+};
 export type InstructionInput = { text: string };
 
 export type RecipeInput = {
@@ -38,6 +43,7 @@ function insertChildren(tx: DB, recipeId: string, input: RecipeInput) {
         name: ing.name,
         quantity: ing.quantity,
         unit: ing.unit,
+        scaling: ing.scaling ?? 'linear',
         sortOrder: index,
       })
       .run();
