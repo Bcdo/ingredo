@@ -15,6 +15,13 @@
       "when": 1783447717225,
       "tag": "0001_cultured_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783459973891,
+      "tag": "0002_free_living_mummy",
+      "breakpoints": true
     }
   ]
 }
