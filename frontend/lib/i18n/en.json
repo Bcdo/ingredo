@@ -34,7 +34,8 @@
     "servings": "Servings",
     "unitsMetric": "Metric",
     "unitsUS": "US",
-    "adjustToTaste": "adjust to taste"
+    "adjustToTaste": "adjust to taste",
+    "planIt": "Plan it"
   },
   "form": {
     "newTitle": "New recipe",
@@ -98,6 +99,7 @@
     "tomorrow": "Tomorrow",
     "addDinner": "Add dinner",
     "pickRecipeTitle": "Pick a recipe",
+    "pickDayTitle": "Pick a day",
     "add": "Add to plan",
     "openRecipe": "Open recipe",
     "moveDay": "Move to another day",

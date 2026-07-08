@@ -34,7 +34,8 @@
     "servings": "Porsjoner",
     "unitsMetric": "Metrisk",
     "unitsUS": "US",
-    "adjustToTaste": "smak til"
+    "adjustToTaste": "smak til",
+    "planIt": "Planlegg"
   },
   "form": {
     "newTitle": "Ny oppskrift",
@@ -98,6 +99,7 @@
     "tomorrow": "I morgen",
     "addDinner": "Legg til middag",
     "pickRecipeTitle": "Velg oppskrift",
+    "pickDayTitle": "Velg dag",
     "add": "Legg i planen",
     "openRecipe": "Åpne oppskrift",
     "moveDay": "Flytt til en annen dag",

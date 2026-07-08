@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
@@ -188,6 +189,13 @@ export default function RecipeDetailScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      <View className="px-5 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>
+        <Button
+          label={t('detail.planIt')}
+          onPress={() => router.push(`/plan/pick-day?recipe=${recipe.id}`)}
+        />
+      </View>
     </View>
   );
 }

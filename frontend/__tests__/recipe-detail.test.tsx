@@ -7,6 +7,13 @@ import RecipeDetailScreen from '../app/recipe/[id]/index';
 import { getUnitSystem, setUnitSystem } from '../lib/db/settings';
 import type { RecipeRow } from '../lib/db/schema';
 
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: jest.fn(), push: mockPush }),
+  useLocalSearchParams: () => ({ id: 'r1' }),
+  Redirect: jest.fn(() => null),
+}));
+
 jest.mock('../lib/db/client', () => {
   const node: Record<string, unknown> = {};
   node.select = () => node;
@@ -22,12 +29,6 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
-}));
-
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ id: 'r1' }),
-  useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
-  Redirect: jest.fn(() => null),
 }));
 
 jest.mock('drizzle-orm/expo-sqlite', () => ({
@@ -90,6 +91,7 @@ describe('RecipeDetailScreen', () => {
   beforeEach(() => {
     mockUseLiveQuery.mockReset();
     RedirectMock.mockClear();
+    mockPush.mockClear();
     (getUnitSystem as jest.Mock).mockClear().mockReturnValue('metric');
     (setUnitSystem as jest.Mock).mockClear();
   });
@@ -156,5 +158,13 @@ describe('RecipeDetailScreen', () => {
     render(<RecipeDetailScreen />);
 
     expect(screen.getByText('7 oz')).toBeTruthy();
+  });
+
+  it('routes Plan it to the day picker', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() });
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByText('Plan it'));
+    expect(mockPush).toHaveBeenCalledWith('/plan/pick-day?recipe=r1');
   });
 });
