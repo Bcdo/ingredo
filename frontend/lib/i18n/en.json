@@ -6,9 +6,13 @@
     "shop": "Shop"
   },
   "placeholder": {
-    "today": "Your day at a glance is coming soon.",
-    "plan": "Weekly meal planning is coming soon.",
     "shop": "Your shopping list is coming soon."
+  },
+  "today": {
+    "tonight": "Tonight",
+    "tomorrow": "Tomorrow",
+    "nothingTonight": "Nothing planned tonight.",
+    "planWeek": "Plan your week"
   },
   "recipes": {
     "title": "Recipes",

@@ -6,9 +6,13 @@
     "shop": "Handle"
   },
   "placeholder": {
-    "today": "Dagen din i korte trekk kommer snart.",
-    "plan": "Ukesplanlegging av middager kommer snart.",
     "shop": "Handlelisten din kommer snart."
+  },
+  "today": {
+    "tonight": "I kveld",
+    "tomorrow": "I morgen",
+    "nothingTonight": "Ingenting planlagt i kveld.",
+    "planWeek": "Planlegg uken"
   },
   "recipes": {
     "title": "Oppskrifter",
