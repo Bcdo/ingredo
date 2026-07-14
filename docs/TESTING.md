@@ -90,3 +90,14 @@ Simple UI screens can be tested manually at first.
 - Toggle Metric/US → quantities convert (fractions on US); kill and relaunch the app → the toggle choice is remembered.
 - Mark an ingredient "Fixed amount" in the edit form → save → scale the recipe → that row stays constant and shows the "adjust to taste" hint.
 - Norwegian device language: decimals show commas ("1,5 dl"); all new labels localized.
+
+## Weekly meal planning (manual pass)
+
+- Plan tab shows today (clay token) plus the next six days; every day ends with a dashed "+ Add dinner" slot.
+- Plan a dinner in 2 taps: add slot → pick recipe → Add. It appears under the right day and on Today (if planned for today).
+- Tap a meal card → entry sheet: change servings (persists), Move to another day, Remove.
+- Recipe detail → "Plan it" → pick a day → entry lands in the plan with the recipe's servings.
+- Today tab: tonight hero opens the recipe; tomorrow peek lists tomorrow's dinners; empty state's "Plan your week" jumps to the Plan tab.
+- Soft-delete a planned recipe → its plan entries disappear everywhere.
+- Norwegian device language: day names, all plan/today labels localized.
+- Kill and relaunch — the plan persists.
