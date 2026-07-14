@@ -62,6 +62,7 @@ export default function AddPlanEntryScreen() {
   };
 
   const add = () => {
+    setSaveFailed(false);
     if (!selected) return;
     try {
       addPlanEntry(db, { date, recipeId: selected.id, servings });

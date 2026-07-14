@@ -68,7 +68,7 @@ export default function TodayScreen() {
               <Pressable
                 key={item.id}
                 accessibilityRole="button"
-                className="active:opacity-80"
+                className="min-h-14 active:opacity-80"
                 onPress={() => router.push(`/recipe/${item.recipeId}`)}>
                 <Card>
                   <Text className="font-display text-base text-ink" numberOfLines={2}>
@@ -95,7 +95,7 @@ export default function TodayScreen() {
             <Pressable
               key={item.id}
               accessibilityRole="button"
-              className="active:opacity-80"
+              className="min-h-14 active:opacity-80"
               onPress={() => router.push(`/recipe/${item.recipeId}`)}>
               <Card>
                 <Text className="font-display text-base text-ink" numberOfLines={2}>

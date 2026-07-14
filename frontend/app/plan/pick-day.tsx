@@ -42,6 +42,7 @@ export default function PickDayScreen() {
   }
 
   const choose = (date: string) => {
+    setSaveFailed(false);
     try {
       if (mode === 'move' && entryRow) {
         movePlanEntry(db, entryRow.id, date);
