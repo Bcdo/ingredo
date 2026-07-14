@@ -58,6 +58,16 @@ describe('TodayScreen', () => {
 
     fireEvent.press(screen.getByText('Tomato Soup'));
     expect(mockPush).toHaveBeenCalledWith('/recipe/r1');
+
+    mockPush.mockClear();
+
+    fireEvent.press(screen.getByText('Salad'));
+    expect(mockPush).toHaveBeenCalledWith('/recipe/r2');
+
+    mockPush.mockClear();
+
+    fireEvent.press(screen.getByText('Beef Stew'));
+    expect(mockPush).toHaveBeenCalledWith('/recipe/r3');
   });
 
   it('shows the empty state with a plan-week action when nothing is planned tonight', () => {
@@ -69,5 +79,21 @@ describe('TodayScreen', () => {
     fireEvent.press(screen.getByText('Plan your week'));
     expect(mockPush).toHaveBeenCalledWith('/(tabs)/plan');
     expect(screen.queryByText('Tomorrow')).toBeNull();
+  });
+
+  it('shows empty state for tonight but still displays tomorrow peek with entries', () => {
+    mockUseLiveQuery.mockImplementation(() => ({
+      data: [{ id: 'e3', date: tomorrow, recipeId: 'r3', servings: 4, title: 'Beef Stew' }],
+      updatedAt: new Date(),
+    }));
+
+    render(<TodayScreen />);
+
+    expect(screen.getByText('Nothing planned tonight.')).toBeTruthy();
+    expect(screen.getByText('Tomorrow')).toBeTruthy();
+    expect(screen.getByText('Beef Stew')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Beef Stew'));
+    expect(mockPush).toHaveBeenCalledWith('/recipe/r3');
   });
 });
