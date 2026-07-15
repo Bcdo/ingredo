@@ -101,3 +101,16 @@ Simple UI screens can be tested manually at first.
 - Soft-delete a planned recipe → its plan entries disappear everywhere.
 - Norwegian device language: day names, all plan/today labels localized.
 - Kill and relaunch — the plan persists.
+
+## Shopping list (manual pass)
+
+- Plan a few dinners, open Plan tab → sage CTA shows "Add week to shopping list · N ingredients"; tap → items land on the Shop tab, CTA disappears; tapping into Plan again shows no CTA (nothing new to add).
+- Two recipes sharing an ingredient (e.g. kjøttdeig in Tacos + Kjøttkaker) produce ONE list item with the summed quantity and both recipe names as subtitle.
+- An ingredient in grams in one recipe and stk in another produces two separate rows.
+- Shop tab: tap an item card → it moves to the "Recently purchased" shelf; tap it on the shelf → it comes back with the quantity intact.
+- Quick-add: type an item, return → appears in the list; typing the same name again merges instead of duplicating; input stays if blank.
+- Recipe detail: bump servings, tap two ingredient rows to exclude (they dim), tap "Add N ingredients…" → sage notice, items on the Shop tab reflect the scaled quantities; excluded rows absent.
+- Adding the same recipe's ingredients twice doubles quantities on the list (merge mode), while re-tapping the Plan CTA never duplicates.
+- US units toggle on recipe detail: shopping list still shows sensible amounts (base metric stored, US displayed when toggled).
+- Norwegian device language: all shop/plan/detail strings localized.
+- Kill and relaunch — list and shelf persist.
