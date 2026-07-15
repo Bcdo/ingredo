@@ -55,8 +55,28 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull(),
 });
 
+export const shoppingItems = sqliteTable(
+  'shopping_items',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    normalizedName: text('normalized_name').notNull(),
+    quantity: real('quantity'),
+    unit: text('unit'),
+    sources: text('sources').notNull().default('[]'),
+    status: text('status', { enum: ['active', 'purchased'] })
+      .notNull()
+      .default('active'),
+    purchasedAt: integer('purchased_at'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [index('shopping_items_status_idx').on(table.status, table.normalizedName)]
+);
+
 export type RecipeRow = typeof recipes.$inferSelect;
 export type IngredientRow = typeof recipeIngredients.$inferSelect;
 export type InstructionRow = typeof recipeInstructions.$inferSelect;
 export type MealPlanEntryRow = typeof mealPlanEntries.$inferSelect;
 export type SettingRow = typeof settings.$inferSelect;
+export type ShoppingItemRow = typeof shoppingItems.$inferSelect;
