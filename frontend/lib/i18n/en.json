@@ -111,6 +111,7 @@
     "add": "Add to plan",
     "openRecipe": "Open recipe",
     "moveDay": "Move to another day",
-    "remove": "Remove from plan"
+    "remove": "Remove from plan",
+    "addWeek": "Add week to shopping list · %{count} ingredients"
   }
 }
