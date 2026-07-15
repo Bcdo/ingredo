@@ -18,6 +18,13 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
   useLiveQuery: jest.fn(),
 }));
 
+jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => void) => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    React.useEffect(callback, [callback]);
+  },
+}));
+
 jest.mock('../lib/db/settings', () => ({
   getUnitSystem: jest.fn(() => 'metric'),
 }));

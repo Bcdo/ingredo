@@ -1,13 +1,14 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import React, { useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
 import { shoppingItems } from '../../lib/db/schema';
-import { getUnitSystem } from '../../lib/db/settings';
+import { getUnitSystem, type UnitSystem } from '../../lib/db/settings';
 import { addManualItem, parseSources, purchaseItem, restoreItem } from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
@@ -15,8 +16,14 @@ import { unitLabel } from '../../lib/unitLabel';
 
 export default function ShopScreen() {
   const [draft, setDraft] = useState('');
-  const system = getUnitSystem(db);
+  const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
   const locale = currentLocale();
+
+  useFocusEffect(
+    useCallback(() => {
+      setSystem(getUnitSystem(db));
+    }, [])
+  );
 
   const { data: activeItems } = useLiveQuery(
     db
