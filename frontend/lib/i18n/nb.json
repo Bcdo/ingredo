@@ -5,8 +5,11 @@
     "recipes": "Oppskrifter",
     "shop": "Handle"
   },
-  "placeholder": {
-    "shop": "Handlelisten din kommer snart."
+  "shop": {
+    "quickAddPlaceholder": "Legg til en vare…",
+    "emptyTitle": "Ingenting å handle ennå",
+    "emptyBody": "Legg til varer her, fra en oppskrift, eller send hele uken fra Plan-fanen.",
+    "recentlyPurchased": "Nylig kjøpt"
   },
   "today": {
     "tonight": "I kveld",

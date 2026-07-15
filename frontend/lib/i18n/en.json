@@ -5,8 +5,11 @@
     "recipes": "Recipes",
     "shop": "Shop"
   },
-  "placeholder": {
-    "shop": "Your shopping list is coming soon."
+  "shop": {
+    "quickAddPlaceholder": "Add an item…",
+    "emptyTitle": "Nothing to buy yet",
+    "emptyBody": "Add items here, from a recipe, or send your whole week over from the Plan tab.",
+    "recentlyPurchased": "Recently purchased"
   },
   "today": {
     "tonight": "Tonight",

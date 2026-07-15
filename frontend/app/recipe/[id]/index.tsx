@@ -15,12 +15,7 @@ import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/s
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
 import { currentLocale, t } from '../../../lib/i18n';
 import { displayQuantity } from '../../../lib/measure';
-import { isLocalizableUnit } from '../../../lib/units';
-
-function unitLabel(unit: string | null): string {
-  if (unit === null) return '';
-  return isLocalizableUnit(unit) ? t(`units.${unit}`) : unit;
-}
+import { unitLabel } from '../../../lib/unitLabel';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
