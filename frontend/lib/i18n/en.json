@@ -22,7 +22,8 @@
     "emptyBody": "Your recipe collection starts here.",
     "emptyAction": "Create your first recipe",
     "addRecipe": "Add recipe",
-    "noResults": "No recipes match your search."
+    "noResults": "No recipes match your search.",
+    "devSeed": "Load sample data"
   },
   "detail": {
     "ingredients": "Ingredients",

@@ -22,7 +22,8 @@
     "emptyBody": "Oppskriftssamlingen din starter her.",
     "emptyAction": "Lag din første oppskrift",
     "addRecipe": "Legg til oppskrift",
-    "noResults": "Ingen oppskrifter passer søket."
+    "noResults": "Ingen oppskrifter passer søket.",
+    "devSeed": "Legg inn eksempeldata"
   },
   "detail": {
     "ingredients": "Ingredienser",

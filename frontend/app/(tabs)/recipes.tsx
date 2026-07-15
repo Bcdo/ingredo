@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
+import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
+import { seedSampleData } from '../../lib/dev/sampleData';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
@@ -86,12 +88,23 @@ export default function RecipesScreen() {
           />
         </>
       ) : (
-        <EmptyState
-          title={t('recipes.emptyTitle')}
-          body={t('recipes.emptyBody')}
-          actionLabel={t('recipes.emptyAction')}
-          onAction={() => router.push('/recipe/new')}
-        />
+        <View className="flex-1">
+          <EmptyState
+            title={t('recipes.emptyTitle')}
+            body={t('recipes.emptyBody')}
+            actionLabel={t('recipes.emptyAction')}
+            onAction={() => router.push('/recipe/new')}
+          />
+          {__DEV__ ? (
+            <View className="px-8 pb-8">
+              <Button
+                label={t('recipes.devSeed')}
+                variant="ghost"
+                onPress={() => seedSampleData(db)}
+              />
+            </View>
+          ) : null}
+        </View>
       )}
       {hasRecipes ? (
         <Pressable
