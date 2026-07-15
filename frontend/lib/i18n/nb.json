@@ -43,7 +43,9 @@
     "unitsMetric": "Metrisk",
     "unitsUS": "US",
     "adjustToTaste": "smak til",
-    "planIt": "Planlegg"
+    "planIt": "Planlegg",
+    "addToList": "Legg %{count} ingredienser i handlelisten",
+    "addedToList": "Lagt i handlelisten"
   },
   "form": {
     "newTitle": "Ny oppskrift",

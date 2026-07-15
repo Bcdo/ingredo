@@ -43,7 +43,9 @@
     "unitsMetric": "Metric",
     "unitsUS": "US",
     "adjustToTaste": "adjust to taste",
-    "planIt": "Plan it"
+    "planIt": "Plan it",
+    "addToList": "Add %{count} ingredients to shopping list",
+    "addedToList": "Added to your shopping list"
   },
   "form": {
     "newTitle": "New recipe",

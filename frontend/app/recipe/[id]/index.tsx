@@ -10,11 +10,13 @@ import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
+import { addItems } from '../../../lib/db/shoppingList';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
 import { currentLocale, t } from '../../../lib/i18n';
 import { displayQuantity } from '../../../lib/measure';
+import { aggregateRows } from '../../../lib/shopping';
 import { unitLabel } from '../../../lib/unitLabel';
 
 export default function RecipeDetailScreen() {
@@ -24,6 +26,8 @@ export default function RecipeDetailScreen() {
 
   const [servingsOverride, setServingsOverride] = useState<number | null>(null);
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [listNotice, setListNotice] = useState<'none' | 'added' | 'failed'>('none');
 
   const { data: recipeRows, updatedAt } = useLiveQuery(
     db
@@ -62,6 +66,43 @@ export default function RecipeDetailScreen() {
   const changeSystem = (next: UnitSystem) => {
     setSystem(next);
     setUnitSystem(db, next);
+  };
+
+  const changeServings = (value: number) => {
+    setServingsOverride(value);
+    setListNotice('none');
+  };
+
+  const toggleExcluded = (ingredientId: string) => {
+    setListNotice('none');
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(ingredientId)) next.delete(ingredientId);
+      else next.add(ingredientId);
+      return next;
+    });
+  };
+
+  const included = (ingredients ?? []).filter((ing) => !excluded.has(ing.id));
+
+  const addToList = () => {
+    try {
+      const items = aggregateRows(
+        included.map((ing) => ({
+          entryServings: selectedServings,
+          recipeServings: recipe.servings,
+          recipeTitle: recipe.title,
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          scaling: ing.scaling,
+        }))
+      );
+      addItems(db, items, 'merge');
+      setListNotice('added');
+    } catch {
+      setListNotice('failed');
+    }
   };
 
   const confirmDelete = () => {
@@ -115,7 +156,7 @@ export default function RecipeDetailScreen() {
         <View className="mt-4 gap-3">
           <View className="flex-row items-center justify-between">
             <Text className="font-body-bold text-sm text-ink">{t('detail.servings')}</Text>
-            <Stepper value={selectedServings} onChange={setServingsOverride} min={1} />
+            <Stepper value={selectedServings} onChange={changeServings} min={1} />
           </View>
           <SegmentedControl
             segments={[
@@ -141,23 +182,50 @@ export default function RecipeDetailScreen() {
                 const showHint =
                   ing.scaling === 'fixed' && ing.quantity !== null && scaleFactor !== 1;
                 return (
-                  <View key={ing.id} className="flex-row items-baseline gap-3">
-                    <Text className="min-w-16 font-display text-base text-clay">
-                      {display ? `${display.amountText} ${unitLabel(display.unitCode)}`.trim() : ''}
-                    </Text>
-                    <Text className="flex-1 font-body text-base text-ink">
-                      {ing.name}
-                      {showHint ? (
-                        <Text className="font-body text-xs text-ink opacity-50">
-                          {'  ·  '}
-                          {t('detail.adjustToTaste')}
-                        </Text>
-                      ) : null}
-                    </Text>
-                  </View>
+                  <Pressable
+                    key={ing.id}
+                    accessibilityRole="button"
+                    onPress={() => toggleExcluded(ing.id)}
+                    className={excluded.has(ing.id) ? 'opacity-40' : ''}>
+                    <View className="flex-row items-baseline gap-3">
+                      <Text className="min-w-16 font-display text-base text-clay">
+                        {display
+                          ? `${display.amountText} ${unitLabel(display.unitCode)}`.trim()
+                          : ''}
+                      </Text>
+                      <Text className="flex-1 font-body text-base text-ink">
+                        {ing.name}
+                        {showHint ? (
+                          <Text className="font-body text-xs text-ink opacity-50">
+                            {'  ·  '}
+                            {t('detail.adjustToTaste')}
+                          </Text>
+                        ) : null}
+                      </Text>
+                    </View>
+                  </Pressable>
                 );
               })}
             </View>
+            {listNotice === 'failed' ? (
+              <View className="mt-3 rounded-card bg-butter px-4 py-3">
+                <Text className="font-body text-sm text-ink">{t('form.saveError')}</Text>
+              </View>
+            ) : null}
+            {listNotice === 'added' ? (
+              <View className="mt-3 rounded-card bg-sage px-4 py-3">
+                <Text className="font-body text-sm text-cream">{t('detail.addedToList')}</Text>
+              </View>
+            ) : null}
+            {included.length > 0 ? (
+              <View className="mt-3">
+                <Button
+                  label={t('detail.addToList', { count: included.length })}
+                  variant="ghost"
+                  onPress={addToList}
+                />
+              </View>
+            ) : null}
           </>
         ) : null}
 

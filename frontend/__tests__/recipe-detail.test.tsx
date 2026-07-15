@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import React from 'react';
 
 import RecipeDetailScreen from '../app/recipe/[id]/index';
+import { addItems } from '../lib/db/shoppingList';
 import { getUnitSystem, setUnitSystem } from '../lib/db/settings';
 import type { RecipeRow } from '../lib/db/schema';
 
@@ -40,8 +41,13 @@ jest.mock('../lib/db/settings', () => ({
   setUnitSystem: jest.fn(),
 }));
 
+jest.mock('../lib/db/shoppingList', () => ({
+  addItems: jest.fn(() => 1),
+}));
+
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const RedirectMock = Redirect as unknown as jest.Mock;
+const addItemsMock = addItems as jest.Mock;
 
 const recipeRow: RecipeRow = {
   id: 'r1',
@@ -166,5 +172,70 @@ describe('RecipeDetailScreen', () => {
 
     fireEvent.press(screen.getByText('Plan it'));
     expect(mockPush).toHaveBeenCalledWith('/plan/pick-day?recipe=r1');
+  });
+});
+
+describe('RecipeDetailScreen — add to shopping list', () => {
+  beforeEach(() => {
+    addItemsMock.mockClear();
+  });
+
+  it('adds all ingredients scaled to the selected servings in merge mode', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow, chiliRow]);
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByLabelText('increment')); // servings 4 → 5
+    fireEvent.press(screen.getByText('Add 2 ingredients to shopping list'));
+
+    expect(addItemsMock).toHaveBeenCalledTimes(1);
+    const [, items, mode] = addItemsMock.mock.calls[0];
+    expect(mode).toBe('merge');
+    expect(items).toHaveLength(2);
+    expect(
+      items.find((i: { normalizedName: string }) => i.normalizedName === 'flour')
+    ).toMatchObject({
+      quantity: 250, // 200 g × 5/4
+      unit: 'g',
+      sources: ['Tomato Soup'],
+    });
+    expect(
+      items.find((i: { normalizedName: string }) => i.normalizedName === 'chili flakes')
+    ).toMatchObject({
+      quantity: 5, // fixed: 1 ts → 5 ml, unscaled
+      unit: 'ml',
+    });
+    expect(screen.getByText('Added to your shopping list')).toBeOnTheScreen();
+  });
+
+  it('excludes tapped ingredient rows and updates the button count', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow, chiliRow]);
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByText('Flour'));
+    fireEvent.press(screen.getByText('Add 1 ingredients to shopping list'));
+
+    const [, items] = addItemsMock.mock.calls[0];
+    expect(items).toHaveLength(1);
+    expect(items[0].normalizedName).toBe('chili flakes');
+  });
+
+  it('re-including a row restores it', () => {
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow, chiliRow]);
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByText('Flour'));
+    fireEvent.press(screen.getByText('Flour'));
+    expect(screen.getByText('Add 2 ingredients to shopping list')).toBeOnTheScreen();
+  });
+
+  it('shows the save-error notice when the write throws', () => {
+    addItemsMock.mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    mockQueries({ data: [recipeRow], updatedAt: new Date() }, [flourRow, chiliRow]);
+    render(<RecipeDetailScreen />);
+
+    fireEvent.press(screen.getByText('Add 2 ingredients to shopping list'));
+    expect(screen.getByText("Couldn't save — try again.")).toBeOnTheScreen();
   });
 });
