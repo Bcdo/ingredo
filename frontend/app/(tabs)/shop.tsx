@@ -18,18 +18,20 @@ import {
 } from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
-import { itemKey } from '../../lib/shopping';
 import { groupShelfItems } from '../../lib/shelf';
+import { itemKey } from '../../lib/shopping';
 import { unitLabel } from '../../lib/unitLabel';
 
 export default function ShopScreen() {
   const [draft, setDraft] = useState('');
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
+  const [now, setNow] = useState(() => Date.now());
   const locale = currentLocale();
 
   useFocusEffect(
     useCallback(() => {
       setSystem(getUnitSystem(db));
+      setNow(Date.now());
     }, [])
   );
 
@@ -75,7 +77,7 @@ export default function ShopScreen() {
   const shelf = groupShelfItems(
     purchasedItems ?? [],
     new Set((activeItems ?? []).map((item) => itemKey(item))),
-    Date.now()
+    now
   );
   const shelfSections = [
     { key: 'trip', label: t('shop.groupTrip'), rows: shelf.trip, onTap: restore },
