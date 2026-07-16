@@ -114,3 +114,13 @@ Simple UI screens can be tested manually at first.
 - US units toggle on recipe detail: shopping list still shows sensible amounts (base metric stored, US displayed when toggled).
 - Norwegian device language: all shop/plan/detail strings localized.
 - Kill and relaunch — list and shelf persist.
+
+## Recently purchased shelf (manual pass)
+
+- Buy a few items → they land under "This trip"; tapping one there is an undo: it returns to the list and leaves no shelf entry behind.
+- An item purchased earlier (>6h: "Earlier this week"; >7d: "Earlier") re-adds on tap: it appears on the list with its old quantity, no recipe subtitle, and its history row survives (purchase it again → it's back on the shelf).
+- An item bought several times appears exactly once on the shelf, in the group of its most recent purchase.
+- An item currently on the active list never shows on the shelf; finishing it (tap to purchase) puts it under "This trip".
+- Empty groups show no heading; the shelf heading disappears entirely when every purchased item has an active twin.
+- Norwegian device language: "Denne turen / Tidligere denne uken / Tidligere" group headings.
+- Kill and relaunch — grouping persists (recomputed from purchase timestamps).
