@@ -6,6 +6,7 @@ import {
   addManualItem,
   parseSources,
   purchaseItem,
+  readdItem,
   restoreItem,
 } from '../lib/db/shoppingList';
 import type { DB } from '../lib/db/types';
@@ -181,5 +182,54 @@ describe('parseSources', () => {
     expect(parseSources('not json')).toEqual([]);
     expect(parseSources('{"a":1}')).toEqual([]);
     expect(parseSources('["Suppe", 3]')).toEqual(['Suppe']);
+  });
+});
+
+describe('readdItem', () => {
+  it('copies a purchased row into a fresh active item with empty sources', () => {
+    const db = makeTestDb();
+    addItems(db, [item()], 'merge');
+    const original = allRows(db)[0];
+    purchaseItem(db, original.id);
+
+    readdItem(db, original.id);
+
+    const rows = allRows(db);
+    expect(rows).toHaveLength(2);
+    const purchased = rows.find((r) => r.id === original.id)!;
+    const copy = rows.find((r) => r.id !== original.id)!;
+    expect(purchased.status).toBe('purchased');
+    expect(purchased.purchasedAt).not.toBeNull();
+    expect(parseSources(purchased.sources)).toEqual(['Pannekaker']);
+    expect(copy).toMatchObject({
+      name: 'Mel',
+      normalizedName: 'mel',
+      quantity: 500,
+      unit: 'g',
+      status: 'active',
+      purchasedAt: null,
+    });
+    expect(parseSources(copy.sources)).toEqual([]);
+  });
+
+  it('merges into an existing active twin instead of duplicating', () => {
+    const db = makeTestDb();
+    addItems(db, [item()], 'merge');
+    const first = allRows(db)[0];
+    purchaseItem(db, first.id);
+    addItems(db, [item({ quantity: 200 })], 'merge');
+
+    readdItem(db, first.id);
+
+    const rows = allRows(db);
+    expect(rows).toHaveLength(2);
+    const active = rows.find((r) => r.status === 'active')!;
+    expect(active.quantity).toBe(700); // 200 existing + 500 copied
+  });
+
+  it('is a no-op for an unknown id', () => {
+    const db = makeTestDb();
+    readdItem(db, 'nope');
+    expect(allRows(db)).toHaveLength(0);
   });
 });

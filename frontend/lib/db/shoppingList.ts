@@ -116,3 +116,24 @@ export function restoreItem(db: DB, id: string): void {
     .where(eq(shoppingItems.id, id))
     .run();
 }
+
+// Quick re-add from the shelf: copy a purchased row into a fresh active
+// item. The purchased row is history and stays untouched; recipe sources
+// are dropped because last month's attribution would mislead in the aisle.
+export function readdItem(db: DB, id: string): void {
+  const row = db.select().from(shoppingItems).where(eq(shoppingItems.id, id)).get();
+  if (!row) return;
+  addItems(
+    db,
+    [
+      {
+        name: row.name,
+        normalizedName: row.normalizedName,
+        quantity: row.quantity,
+        unit: row.unit,
+        sources: [],
+      },
+    ],
+    'merge'
+  );
+}
