@@ -9,9 +9,17 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
 import { shoppingItems } from '../../lib/db/schema';
 import { getUnitSystem, type UnitSystem } from '../../lib/db/settings';
-import { addManualItem, parseSources, purchaseItem, restoreItem } from '../../lib/db/shoppingList';
+import {
+  addManualItem,
+  parseSources,
+  purchaseItem,
+  readdItem,
+  restoreItem,
+} from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
+import { itemKey } from '../../lib/shopping';
+import { groupShelfItems } from '../../lib/shelf';
 import { unitLabel } from '../../lib/unitLabel';
 
 export default function ShopScreen() {
@@ -54,10 +62,27 @@ export default function ShopScreen() {
     restoreItem(db, id);
   };
 
+  const readd = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    readdItem(db, id);
+  };
+
   const quantityText = (quantity: number | null, unit: string | null) => {
     const display = displayQuantity(quantity, unit, { scaleFactor: 1, system, locale });
     return display ? `${display.amountText} ${unitLabel(display.unitCode)}`.trim() : '';
   };
+
+  const shelf = groupShelfItems(
+    purchasedItems ?? [],
+    new Set((activeItems ?? []).map((item) => itemKey(item))),
+    Date.now()
+  );
+  const shelfSections = [
+    { key: 'trip', label: t('shop.groupTrip'), rows: shelf.trip, onTap: restore },
+    { key: 'week', label: t('shop.groupWeek'), rows: shelf.week, onTap: readd },
+    { key: 'older', label: t('shop.groupOlder'), rows: shelf.older, onTap: readd },
+  ];
+  const hasShelf = shelfSections.some((section) => section.rows.length > 0);
 
   const isEmpty = (activeItems ?? []).length === 0 && (purchasedItems ?? []).length === 0;
 
@@ -104,20 +129,29 @@ export default function ShopScreen() {
               </Pressable>
             );
           })}
-          {(purchasedItems ?? []).length > 0 ? (
+          {hasShelf ? (
             <>
               <Text className="mt-4 font-display text-lg text-ink opacity-70">
                 {t('shop.recentlyPurchased')}
               </Text>
-              {(purchasedItems ?? []).map((item) => (
-                <Pressable
-                  key={item.id}
-                  accessibilityRole="button"
-                  onPress={() => restore(item.id)}
-                  className="min-h-14 justify-center rounded-card border-2 border-dashed border-linen px-4 active:opacity-80">
-                  <Text className="font-body text-base text-ink opacity-60">{item.name}</Text>
-                </Pressable>
-              ))}
+              {shelfSections.map((section) =>
+                section.rows.length > 0 ? (
+                  <React.Fragment key={section.key}>
+                    <Text className="mt-2 font-body-bold text-sm text-ink opacity-60">
+                      {section.label}
+                    </Text>
+                    {section.rows.map((item) => (
+                      <Pressable
+                        key={item.id}
+                        accessibilityRole="button"
+                        onPress={() => section.onTap(item.id)}
+                        className="min-h-14 justify-center rounded-card border-2 border-dashed border-linen px-4 active:opacity-80">
+                        <Text className="font-body text-base text-ink opacity-60">{item.name}</Text>
+                      </Pressable>
+                    ))}
+                  </React.Fragment>
+                ) : null
+              )}
             </>
           ) : null}
         </ScrollView>

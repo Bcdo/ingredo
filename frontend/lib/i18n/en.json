@@ -9,7 +9,10 @@
     "quickAddPlaceholder": "Add an item…",
     "emptyTitle": "Nothing to buy yet",
     "emptyBody": "Add items here, from a recipe, or send your whole week over from the Plan tab.",
-    "recentlyPurchased": "Recently purchased"
+    "recentlyPurchased": "Recently purchased",
+    "groupTrip": "This trip",
+    "groupWeek": "Earlier this week",
+    "groupOlder": "Earlier"
   },
   "today": {
     "tonight": "Tonight",

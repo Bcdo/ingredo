@@ -3,7 +3,7 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import React from 'react';
 
 import ShopScreen from '../app/(tabs)/shop';
-import { addManualItem, purchaseItem, restoreItem } from '../lib/db/shoppingList';
+import { addManualItem, purchaseItem, readdItem, restoreItem } from '../lib/db/shoppingList';
 
 jest.mock('../lib/db/client', () => {
   const node: Record<string, unknown> = {};
@@ -32,6 +32,7 @@ jest.mock('../lib/db/settings', () => ({
 jest.mock('../lib/db/shoppingList', () => ({
   addManualItem: jest.fn(() => true),
   purchaseItem: jest.fn(),
+  readdItem: jest.fn(),
   restoreItem: jest.fn(),
   parseSources: (json: string) => {
     try {
@@ -46,6 +47,7 @@ jest.mock('../lib/db/shoppingList', () => ({
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const addManualItemMock = addManualItem as jest.Mock;
 const purchaseItemMock = purchaseItem as jest.Mock;
+const readdItemMock = readdItem as jest.Mock;
 const restoreItemMock = restoreItem as jest.Mock;
 
 let activeRows: unknown[] = [];
@@ -60,6 +62,8 @@ function mockQueries() {
     return { data: purchasedRows, updatedAt: new Date() };
   });
 }
+
+const NOW = Date.now();
 
 const flour = {
   id: 's1',
@@ -81,7 +85,19 @@ const butter = {
   unit: null,
   sources: '[]',
   status: 'purchased',
-  purchasedAt: 2,
+  purchasedAt: NOW - 1000,
+  createdAt: 1,
+  updatedAt: 2,
+};
+const coffee = {
+  id: 's3',
+  name: 'Kaffe',
+  normalizedName: 'kaffe',
+  quantity: null,
+  unit: null,
+  sources: '[]',
+  status: 'purchased',
+  purchasedAt: NOW - 8 * 24 * 60 * 60 * 1000,
   createdAt: 1,
   updatedAt: 2,
 };
@@ -108,7 +124,7 @@ describe('ShopScreen', () => {
     expect(screen.getByText('Pannekaker · Vafler')).toBeOnTheScreen();
   });
 
-  it('purchases on card tap and restores on shelf tap', () => {
+  it('purchases on card tap and undoes a this-trip shelf tap via restore', () => {
     activeRows = [flour];
     purchasedRows = [butter];
     render(<ShopScreen />);
@@ -117,8 +133,40 @@ describe('ShopScreen', () => {
     expect(purchaseItemMock).toHaveBeenCalledWith(expect.anything(), 's1');
 
     expect(screen.getByText('Recently purchased')).toBeOnTheScreen();
+    expect(screen.getByText('This trip')).toBeOnTheScreen();
     fireEvent.press(screen.getByText('Smør'));
     expect(restoreItemMock).toHaveBeenCalledWith(expect.anything(), 's2');
+    expect(readdItemMock).not.toHaveBeenCalled();
+  });
+
+  it('re-adds an older shelf item as a copy', () => {
+    purchasedRows = [coffee];
+    render(<ShopScreen />);
+
+    expect(screen.getByText('Earlier')).toBeOnTheScreen();
+    expect(screen.queryByText('This trip')).toBeNull();
+    fireEvent.press(screen.getByText('Kaffe'));
+    expect(readdItemMock).toHaveBeenCalledWith(expect.anything(), 's3');
+    expect(restoreItemMock).not.toHaveBeenCalled();
+  });
+
+  it('hides shelf items that already have an active twin', () => {
+    activeRows = [flour];
+    purchasedRows = [
+      {
+        ...butter,
+        id: 's4',
+        name: 'Mel',
+        normalizedName: 'mel',
+        quantity: 500,
+        unit: 'g',
+        sources: '[]',
+      },
+    ];
+    render(<ShopScreen />);
+
+    expect(screen.queryByText('Recently purchased')).toBeNull();
+    expect(screen.getAllByText('Mel')).toHaveLength(1); // only the active card
   });
 
   it('quick-add submits the draft and clears the input', () => {
