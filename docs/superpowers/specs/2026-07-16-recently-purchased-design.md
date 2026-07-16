@@ -28,7 +28,7 @@
 4. **Tap semantics split by group.**
    - **This trip → undo (move):** the existing `restoreItem` — the row flips back to active, quantity intact, shelf entry gone. A mis-tap correction leaves no bogus history.
    - **Earlier this week / Earlier → quick re-add (copy):** new `readdItem` creates a fresh active item copying `name`/`normalizedName`/`quantity`/`unit`; `sources` is emptied (stale recipe attribution would mislead in the aisle); the purchased row is untouched, so history survives. Written through `addItems(..., 'merge')` so an unexpected active twin merges instead of duplicating.
-5. **Undo resurfacing quirk accepted:** undoing the newest purchase of an item lets its next-newest history row resurface on the shelf (in whatever group its age puts it). Coherent — the history genuinely exists — and self-explanatory in use.
+5. **Undo resurfacing is masked in practice:** after undoing the newest purchase the item has an active row, so decision 2 hides all its history rows from the shelf until the active row is purchased again — at which point that fresh purchase wins the dedupe anyway. The next-newest history row therefore never actually renders; it exists only as data (which Phase 6 will read).
 6. **Display order:** within each group, `purchased_at` desc. Group order: trip, week, older.
 
 ## Components
