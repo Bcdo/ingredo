@@ -8,7 +8,7 @@ import { Input } from './ui/Input';
 import { Stepper } from './ui/Stepper';
 import { draftKey, type IngredientDraft, type RecipeFormState } from '../lib/form';
 import { t } from '../lib/i18n';
-import { palette } from '../lib/theme';
+import { usePalette } from '../lib/usePalette';
 import { UNITS } from '../lib/units';
 
 type RecipeFormProps = {
@@ -102,6 +102,7 @@ function UnitChip({
 
 export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
   const insets = useSafeAreaInsets();
+  const palette = usePalette();
   const [state, setState] = useState<RecipeFormState>(initialState);
   const [initial] = useState<RecipeFormState>(initialState);
   const [saveFailed, setSaveFailed] = useState(false);

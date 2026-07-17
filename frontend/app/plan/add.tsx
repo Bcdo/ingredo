@@ -13,13 +13,14 @@ import { addPlanEntry } from '../../lib/db/mealPlan';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
-import { inkFaint } from '../../lib/theme';
+import { usePalette } from '../../lib/usePalette';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type PickerItem = { id: string; title: string; servings: number; ingredientNames: string[] };
 
 export default function AddPlanEntryScreen() {
+  const palette = usePalette();
   const { date } = useLocalSearchParams<{ date: string }>();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
@@ -106,7 +107,7 @@ export default function AddPlanEntryScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('recipes.searchPlaceholder')}
-              placeholderTextColor={inkFaint}
+              placeholderTextColor={palette.inkFaint}
               className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
             />
           </View>

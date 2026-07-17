@@ -13,7 +13,7 @@ import { db } from '../../../lib/db/client';
 import { addItems } from '../../../lib/db/shoppingList';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
-import { palette } from '../../../lib/theme';
+import { usePalette } from '../../../lib/usePalette';
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
 import { currentLocale, t } from '../../../lib/i18n';
 import { displayQuantity } from '../../../lib/measure';
@@ -21,6 +21,7 @@ import { aggregateRows } from '../../../lib/shopping';
 import { unitLabel } from '../../../lib/unitLabel';
 
 export default function RecipeDetailScreen() {
+  const palette = usePalette();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();

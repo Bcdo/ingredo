@@ -13,11 +13,12 @@ import { seedSampleData } from '../../lib/dev/sampleData';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
-import { inkFaint, palette } from '../../lib/theme';
+import { usePalette } from '../../lib/usePalette';
 
 type ListItem = { id: string; title: string; servings: number; ingredientNames: string[] };
 
 export default function RecipesScreen() {
+  const palette = usePalette();
   const router = useRouter();
   const [query, setQuery] = useState('');
 
@@ -57,7 +58,7 @@ export default function RecipesScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('recipes.searchPlaceholder')}
-              placeholderTextColor={inkFaint}
+              placeholderTextColor={palette.inkFaint}
               className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
             />
           </View>

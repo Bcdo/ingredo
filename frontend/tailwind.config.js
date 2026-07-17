@@ -1,4 +1,4 @@
-const { palette, fontFamilies } = require('./lib/theme');
+const { fontFamilies } = require('./lib/theme');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -8,13 +8,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        cream: palette.cream,
-        linen: palette.linen,
-        clay: palette.clay,
-        sage: palette.sage,
-        'sage-deep': palette.sageDeep,
-        butter: palette.butter,
-        ink: palette.ink,
+        cream: 'var(--color-cream)',
+        linen: 'var(--color-linen)',
+        clay: 'var(--color-clay)',
+        sage: 'var(--color-sage)',
+        'sage-deep': 'var(--color-sage-deep)',
+        butter: 'var(--color-butter)',
+        ink: 'var(--color-ink)',
       },
       borderRadius: {
         card: '20px',

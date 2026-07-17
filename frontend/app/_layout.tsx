@@ -5,6 +5,7 @@ import { Karla_400Regular, Karla_700Bold } from '@expo-google-fonts/karla';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
+import { vars } from 'nativewind';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,7 +14,8 @@ import migrations from '../drizzle/migrations';
 import { Button } from '../components/ui/Button';
 import { db } from '../lib/db/client';
 import { t } from '../lib/i18n';
-import { palette } from '../lib/theme';
+import { cssVars } from '../lib/theme';
+import { usePalette } from '../lib/usePalette';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -50,10 +52,12 @@ export default function RootLayout() {
     Karla_700Bold,
   });
   const { state, retry } = useDbMigrations();
+  const palette = usePalette();
+  const themeVars = vars(cssVars(palette));
 
   if (state === 'error') {
     return (
-      <View className="flex-1 items-center justify-center gap-4 bg-cream px-10">
+      <View style={themeVars} className="flex-1 items-center justify-center gap-4 bg-cream px-10">
         <Text className="text-center font-body text-lg text-ink">
           {t('startup.migrationFailed')}
         </Text>
@@ -64,7 +68,7 @@ export default function RootLayout() {
 
   if (state === 'pending' || !fontsLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-cream">
+      <View style={themeVars} className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator color={palette.clay} />
       </View>
     );
@@ -72,24 +76,26 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="recipe/new" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="recipe/[id]/index" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="recipe/[id]/edit"
-          options={{ presentation: 'modal', headerShown: false }}
-        />
-        <Stack.Screen name="plan/add" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen
-          name="plan/pick-day"
-          options={{ presentation: 'modal', headerShown: false }}
-        />
-        <Stack.Screen
-          name="plan/entry/[id]"
-          options={{ presentation: 'modal', headerShown: false }}
-        />
-      </Stack>
+      <View style={themeVars} className="flex-1">
+        <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="recipe/new" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="recipe/[id]/index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="recipe/[id]/edit"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen name="plan/add" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen
+            name="plan/pick-day"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="plan/entry/[id]"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+        </Stack>
+      </View>
     </SafeAreaProvider>
   );
 }

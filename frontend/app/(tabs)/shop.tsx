@@ -18,12 +18,13 @@ import {
 } from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
-import { inkFaint } from '../../lib/theme';
+import { usePalette } from '../../lib/usePalette';
 import { groupShelfItems } from '../../lib/shelf';
 import { itemKey } from '../../lib/shopping';
 import { unitLabel } from '../../lib/unitLabel';
 
 export default function ShopScreen() {
+  const palette = usePalette();
   const [draft, setDraft] = useState('');
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
   const [now, setNow] = useState(() => Date.now());
@@ -99,7 +100,7 @@ export default function ShopScreen() {
           returnKeyType="done"
           blurOnSubmit={false}
           placeholder={t('shop.quickAddPlaceholder')}
-          placeholderTextColor={inkFaint}
+          placeholderTextColor={palette.inkFaint}
           className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
         />
       </View>

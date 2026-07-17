@@ -3,14 +3,16 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { t } from '../../lib/i18n';
-import { fontFamilies, inkMuted, palette } from '../../lib/theme';
+import { fontFamilies } from '../../lib/theme';
+import { usePalette } from '../../lib/usePalette';
 
 export default function TabLayout() {
+  const palette = usePalette();
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: palette.clay,
-        tabBarInactiveTintColor: inkMuted,
+        tabBarInactiveTintColor: palette.inkMuted,
         tabBarStyle: { backgroundColor: palette.cream, borderTopColor: palette.linen },
         tabBarLabelStyle: { fontFamily: fontFamilies.bodyBold },
         headerStyle: { backgroundColor: palette.cream },
