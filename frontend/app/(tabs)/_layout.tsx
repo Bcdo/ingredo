@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React from 'react';
+import { Pressable } from 'react-native';
 
 import { t } from '../../lib/i18n';
 import { fontFamilies } from '../../lib/theme';
@@ -25,6 +26,15 @@ export default function TabLayout() {
         options={{
           title: t('tabs.today'),
           tabBarIcon: ({ color }) => <Ionicons name="sunny-outline" size={24} color={color} />,
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.open')}
+              onPress={() => router.push('/settings')}
+              className="min-h-14 justify-center px-4">
+              <Ionicons name="settings-outline" size={24} color={palette.ink} />
+            </Pressable>
+          ),
         }}
       />
       <Tabs.Screen

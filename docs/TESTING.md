@@ -124,3 +124,11 @@ Simple UI screens can be tested manually at first.
 - Empty groups show no heading; the shelf heading disappears entirely when every purchased item has an active twin.
 - Norwegian device language: "Denne turen / Tidligere denne uken / Tidligere" group headings.
 - Kill and relaunch — grouping persists (recomputed from purchase timestamps).
+
+## Colour mode setting (manual pass)
+
+- Gear icon on the Today header opens Settings; the close button returns.
+- Selecting Light / Dark / System restyles the app immediately behind the modal (visible on a design/* theme branch; on develop dark mirrors light, so Light and Dark look identical there).
+- The selection persists across kill & relaunch.
+- System follows the OS light/dark toggle live; Light and Dark ignore it.
+- Norwegian device language: Innstillinger / Utseende / Lys / Mørk / System.

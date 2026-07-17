@@ -12,7 +12,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import migrations from '../drizzle/migrations';
 import { Button } from '../components/ui/Button';
+import { applyColorMode } from '../lib/colorMode';
 import { db } from '../lib/db/client';
+import { getColorMode } from '../lib/db/settings';
 import { t } from '../lib/i18n';
 import { cssVars } from '../lib/theme';
 import { usePalette } from '../lib/usePalette';
@@ -52,6 +54,12 @@ export default function RootLayout() {
     Karla_700Bold,
   });
   const { state, retry } = useDbMigrations();
+
+  useEffect(() => {
+    if (state === 'ready') {
+      applyColorMode(getColorMode(db));
+    }
+  }, [state]);
   const palette = usePalette();
   const themeVars = vars(cssVars(palette));
 
@@ -94,6 +102,7 @@ export default function RootLayout() {
             name="plan/entry/[id]"
             options={{ presentation: 'modal', headerShown: false }}
           />
+          <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </View>
     </SafeAreaProvider>
