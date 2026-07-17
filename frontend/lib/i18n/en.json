@@ -85,6 +85,15 @@
     "migrationFailed": "Something went wrong preparing your data.",
     "retry": "Try again"
   },
+  "settings": {
+    "title": "Settings",
+    "open": "Open settings",
+    "close": "Close settings",
+    "appearance": "Appearance",
+    "modeLight": "Light",
+    "modeDark": "Dark",
+    "modeSystem": "System"
+  },
   "units": {
     "g": "g",
     "kg": "kg",

@@ -85,6 +85,15 @@
     "migrationFailed": "Noe gikk galt med å klargjøre dataene dine.",
     "retry": "Prøv igjen"
   },
+  "settings": {
+    "title": "Innstillinger",
+    "open": "Åpne innstillinger",
+    "close": "Lukk innstillinger",
+    "appearance": "Utseende",
+    "modeLight": "Lys",
+    "modeDark": "Mørk",
+    "modeSystem": "System"
+  },
   "units": {
     "g": "g",
     "kg": "kg",
