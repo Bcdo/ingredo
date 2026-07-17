@@ -18,3 +18,21 @@ export function setUnitSystem(db: DB, system: UnitSystem): void {
     .onConflictDoUpdate({ target: settings.key, set: { value: system } })
     .run();
 }
+
+export type ColorMode = 'light' | 'dark' | 'system';
+
+const COLOR_MODE_KEY = 'color_mode';
+
+// Device-local preference — must be excluded if settings ever sync.
+export function getColorMode(db: DB): ColorMode {
+  const row = db.select().from(settings).where(eq(settings.key, COLOR_MODE_KEY)).get();
+  const value = row?.value;
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
+export function setColorMode(db: DB, mode: ColorMode): void {
+  db.insert(settings)
+    .values({ key: COLOR_MODE_KEY, value: mode })
+    .onConflictDoUpdate({ target: settings.key, set: { value: mode } })
+    .run();
+}
