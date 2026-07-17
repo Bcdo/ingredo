@@ -1,7 +1,7 @@
 import '../global.css';
 
-import { Fraunces_600SemiBold, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
-import { Karla_400Regular, Karla_700Bold } from '@expo-google-fonts/karla';
+import { Alegreya_600SemiBold, Alegreya_700Bold } from '@expo-google-fonts/alegreya';
+import { AlegreyaSans_400Regular, AlegreyaSans_700Bold } from '@expo-google-fonts/alegreya-sans';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
@@ -48,10 +48,10 @@ function useDbMigrations() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
-    Karla_400Regular,
-    Karla_700Bold,
+    Alegreya_600SemiBold,
+    Alegreya_700Bold,
+    AlegreyaSans_400Regular,
+    AlegreyaSans_700Bold,
   });
   const { state, retry } = useDbMigrations();
 
