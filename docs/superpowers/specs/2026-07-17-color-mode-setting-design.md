@@ -60,6 +60,7 @@
 
 - `settings.title`: "Settings" / "Innstillinger"
 - `settings.open`: "Open settings" / "Åpne innstillinger"
+- `settings.close`: "Close settings" / "Lukk innstillinger"
 - `settings.appearance`: "Appearance" / "Utseende"
 - `settings.modeLight`: "Light" / "Lys"
 - `settings.modeDark`: "Dark" / "Mørk"
