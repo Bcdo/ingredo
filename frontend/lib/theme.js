@@ -23,10 +23,18 @@ const light = buildPalette({
   ink: '#3A322B', // text
 });
 
-// Dark mirrors light on this branch: the default theme has no dark look
-// yet, so dark-scheme devices keep today's appearance. Theme experiment
-// branches override this palette.
-const dark = light;
+// Experiment: Kveldsmat — the kitchen at 9pm. The warm palette inverted
+// onto roasted-coffee surfaces: clay shifts amber, sage/sageDeep lighten
+// for dark ground, butter darkens so light ink stays readable on it.
+const dark = buildPalette({
+  cream: '#262019',
+  linen: '#332B22',
+  clay: '#DE8B5F',
+  sage: '#93AE85',
+  sageDeep: '#AFC79E',
+  butter: '#8A6F3C',
+  ink: '#F1E7D8',
+});
 
 const palettes = { light, dark };
 
