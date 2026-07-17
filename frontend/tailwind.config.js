@@ -1,3 +1,5 @@
+const { palette, fontFamilies } = require('./lib/theme');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./app/**/*.{js,ts,tsx}', './components/**/*.{js,ts,tsx}'],
@@ -6,22 +8,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        cream: '#FBF7F1',
-        linen: '#F3ECE1',
-        clay: '#C96B45',
-        sage: '#7D9474',
-        'sage-deep': '#50664A',
-        butter: '#F3E2BE',
-        ink: '#3A322B',
+        cream: palette.cream,
+        linen: palette.linen,
+        clay: palette.clay,
+        sage: palette.sage,
+        'sage-deep': palette.sageDeep,
+        butter: palette.butter,
+        ink: palette.ink,
       },
       borderRadius: {
         card: '20px',
       },
       fontFamily: {
-        display: ['Fraunces_600SemiBold'],
-        'display-bold': ['Fraunces_700Bold'],
-        body: ['Karla_400Regular'],
-        'body-bold': ['Karla_700Bold'],
+        display: [fontFamilies.display],
+        'display-bold': [fontFamilies.displayBold],
+        body: [fontFamilies.body],
+        'body-bold': [fontFamilies.bodyBold],
       },
     },
   },

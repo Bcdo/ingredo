@@ -3,19 +3,20 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { t } from '../../lib/i18n';
+import { fontFamilies, inkMuted, palette } from '../../lib/theme';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#C96B45',
-        tabBarInactiveTintColor: '#3A322B99',
-        tabBarStyle: { backgroundColor: '#FBF7F1', borderTopColor: '#F3ECE1' },
-        tabBarLabelStyle: { fontFamily: 'Karla_700Bold' },
-        headerStyle: { backgroundColor: '#FBF7F1' },
-        headerTitleStyle: { fontFamily: 'Fraunces_600SemiBold', color: '#3A322B' },
+        tabBarActiveTintColor: palette.clay,
+        tabBarInactiveTintColor: inkMuted,
+        tabBarStyle: { backgroundColor: palette.cream, borderTopColor: palette.linen },
+        tabBarLabelStyle: { fontFamily: fontFamilies.bodyBold },
+        headerStyle: { backgroundColor: palette.cream },
+        headerTitleStyle: { fontFamily: fontFamilies.display, color: palette.ink },
         headerShadowVisible: false,
-        sceneStyle: { backgroundColor: '#FBF7F1' },
+        sceneStyle: { backgroundColor: palette.cream },
       }}>
       <Tabs.Screen
         name="index"

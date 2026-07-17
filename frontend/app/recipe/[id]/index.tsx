@@ -13,6 +13,7 @@ import { db } from '../../../lib/db/client';
 import { addItems } from '../../../lib/db/shoppingList';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
+import { palette } from '../../../lib/theme';
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
 import { currentLocale, t } from '../../../lib/i18n';
 import { displayQuantity } from '../../../lib/measure';
@@ -126,7 +127,7 @@ export default function RecipeDetailScreen() {
           accessibilityRole="button"
           onPress={() => router.back()}
           className="min-h-14 justify-center pr-4">
-          <Ionicons name="chevron-back" size={24} color="#3A322B" />
+          <Ionicons name="chevron-back" size={24} color={palette.ink} />
         </Pressable>
         <View className="flex-row gap-2">
           <Pressable

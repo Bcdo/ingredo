@@ -1,6 +1,8 @@
 import React from 'react';
 import { Text, TextInput, View } from 'react-native';
 
+import { inkFaint } from '../../lib/theme';
+
 type InputProps = {
   value: string;
   onChangeText: (text: string) => void;
@@ -27,7 +29,7 @@ export function Input({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#3A322B66"
+        placeholderTextColor={inkFaint}
         multiline={multiline}
         keyboardType={keyboardType}
         className={`min-h-14 rounded-card bg-linen px-4 py-3 font-body text-base text-ink ${

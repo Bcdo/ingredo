@@ -13,6 +13,7 @@ import migrations from '../drizzle/migrations';
 import { Button } from '../components/ui/Button';
 import { db } from '../lib/db/client';
 import { t } from '../lib/i18n';
+import { palette } from '../lib/theme';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -64,14 +65,14 @@ export default function RootLayout() {
   if (state === 'pending' || !fontsLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-cream">
-        <ActivityIndicator color="#C96B45" />
+        <ActivityIndicator color={palette.clay} />
       </View>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ contentStyle: { backgroundColor: '#FBF7F1' } }}>
+      <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="recipe/new" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="recipe/[id]/index" options={{ headerShown: false }} />

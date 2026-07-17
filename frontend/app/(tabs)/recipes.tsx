@@ -13,6 +13,7 @@ import { seedSampleData } from '../../lib/dev/sampleData';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
+import { inkFaint, palette } from '../../lib/theme';
 
 type ListItem = { id: string; title: string; servings: number; ingredientNames: string[] };
 
@@ -56,7 +57,7 @@ export default function RecipesScreen() {
               value={query}
               onChangeText={setQuery}
               placeholder={t('recipes.searchPlaceholder')}
-              placeholderTextColor="#3A322B66"
+              placeholderTextColor={inkFaint}
               className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
             />
           </View>
@@ -112,7 +113,7 @@ export default function RecipesScreen() {
           accessibilityLabel={t('recipes.addRecipe')}
           onPress={() => router.push('/recipe/new')}
           className="absolute bottom-6 right-6 h-16 w-16 items-center justify-center rounded-full bg-clay shadow-lg active:opacity-80">
-          <Ionicons name="add" size={32} color="#FBF7F1" />
+          <Ionicons name="add" size={32} color={palette.cream} />
         </Pressable>
       ) : null}
     </View>

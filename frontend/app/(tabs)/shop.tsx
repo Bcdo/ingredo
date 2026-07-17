@@ -18,6 +18,7 @@ import {
 } from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
+import { inkFaint } from '../../lib/theme';
 import { groupShelfItems } from '../../lib/shelf';
 import { itemKey } from '../../lib/shopping';
 import { unitLabel } from '../../lib/unitLabel';
@@ -98,7 +99,7 @@ export default function ShopScreen() {
           returnKeyType="done"
           blurOnSubmit={false}
           placeholder={t('shop.quickAddPlaceholder')}
-          placeholderTextColor="#3A322B66"
+          placeholderTextColor={inkFaint}
           className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
         />
       </View>

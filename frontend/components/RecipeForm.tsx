@@ -8,6 +8,7 @@ import { Input } from './ui/Input';
 import { Stepper } from './ui/Stepper';
 import { draftKey, type IngredientDraft, type RecipeFormState } from '../lib/form';
 import { t } from '../lib/i18n';
+import { palette } from '../lib/theme';
 import { UNITS } from '../lib/units';
 
 type RecipeFormProps = {
@@ -216,7 +217,7 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
                     patch({ ingredients: state.ingredients.filter((i) => i.key !== ing.key) })
                   }
                   className="h-14 w-10 items-center justify-center">
-                  <Ionicons name="close" size={20} color="#3A322B" />
+                  <Ionicons name="close" size={20} color={palette.ink} />
                 </Pressable>
               </View>
               <UnitPicker
@@ -277,7 +278,7 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
                   patch({ instructions: state.instructions.filter((s) => s.key !== step.key) })
                 }
                 className="h-14 w-10 items-center justify-center">
-                <Ionicons name="close" size={20} color="#3A322B" />
+                <Ionicons name="close" size={20} color={palette.ink} />
               </Pressable>
             </View>
           ))}
