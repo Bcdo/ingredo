@@ -94,6 +94,12 @@
     "modeDark": "Mørk",
     "modeSystem": "System"
   },
+  "import": {
+    "placeholder": "Lim inn en oppskriftslenke",
+    "button": "Importer",
+    "importing": "Importerer…",
+    "failed": "Fant ingen oppskrift på denne lenken."
+  },
   "units": {
     "g": "g",
     "kg": "kg",

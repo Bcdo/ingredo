@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n';
 export default function NewRecipeScreen() {
   return (
     <RecipeForm
+      allowImport
       heading={t('form.newTitle')}
       initialState={emptyFormState()}
       onSave={(state) => {

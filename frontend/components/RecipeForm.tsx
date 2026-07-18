@@ -6,8 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Input } from './ui/Input';
 import { Stepper } from './ui/Stepper';
-import { draftKey, type IngredientDraft, type RecipeFormState } from '../lib/form';
+import {
+  draftKey,
+  formStateFromImport,
+  type IngredientDraft,
+  type RecipeFormState,
+} from '../lib/form';
 import { t } from '../lib/i18n';
+import { fetchRecipeFromUrl } from '../lib/import/fetchRecipe';
 import { usePalette } from '../lib/usePalette';
 import { UNITS } from '../lib/units';
 
@@ -15,6 +21,7 @@ type RecipeFormProps = {
   heading: string;
   initialState: RecipeFormState;
   onSave: (state: RecipeFormState) => void;
+  allowImport?: boolean;
 };
 
 function UnitPicker({
@@ -100,12 +107,36 @@ function UnitChip({
   );
 }
 
-export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
+export function RecipeForm({
+  heading,
+  initialState,
+  onSave,
+  allowImport = false,
+}: RecipeFormProps) {
   const insets = useSafeAreaInsets();
   const palette = usePalette();
   const [state, setState] = useState<RecipeFormState>(initialState);
   const [initial] = useState<RecipeFormState>(initialState);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importFailed, setImportFailed] = useState(false);
+  const canImport = importUrl.trim() !== '' && !importing;
+
+  const runImport = async () => {
+    setImporting(true);
+    setImportFailed(false);
+    try {
+      const imported = await fetchRecipeFromUrl(importUrl);
+      if (imported) {
+        setState(formStateFromImport(imported));
+      } else {
+        setImportFailed(true);
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const dirty = useMemo(() => JSON.stringify(state) !== JSON.stringify(initial), [state, initial]);
   const canSave = state.title.trim() !== '';
@@ -167,6 +198,38 @@ export function RecipeForm({ heading, initialState, onSave }: RecipeFormProps) {
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: insets.bottom + 32, gap: 16 }}
         keyboardShouldPersistTaps="handled">
+        {allowImport ? (
+          <View className="gap-2">
+            <View className="flex-row gap-2">
+              <Input
+                value={importUrl}
+                onChangeText={(next) => {
+                  setImportUrl(next);
+                  setImportFailed(false);
+                }}
+                placeholder={t('import.placeholder')}
+                className="flex-1"
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canImport }}
+                disabled={!canImport}
+                onPress={runImport}
+                className={`min-h-14 items-center justify-center rounded-card bg-clay px-4 ${
+                  canImport ? '' : 'opacity-40'
+                } active:opacity-80`}>
+                <Text className="font-body-bold text-base text-cream">
+                  {importing ? t('import.importing') : t('import.button')}
+                </Text>
+              </Pressable>
+            </View>
+            {importFailed ? (
+              <View className="rounded-card bg-butter px-4 py-3">
+                <Text className="font-body text-sm text-ink">{t('import.failed')}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
         <View>
           <Input
             label={t('form.titleLabel')}

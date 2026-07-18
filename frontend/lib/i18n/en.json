@@ -94,6 +94,12 @@
     "modeDark": "Dark",
     "modeSystem": "System"
   },
+  "import": {
+    "placeholder": "Paste a recipe link",
+    "button": "Import",
+    "importing": "Importing…",
+    "failed": "Couldn't read a recipe from this link."
+  },
   "units": {
     "g": "g",
     "kg": "kg",
