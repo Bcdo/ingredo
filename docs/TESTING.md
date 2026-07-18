@@ -132,3 +132,13 @@ Simple UI screens can be tested manually at first.
 - The selection persists across kill & relaunch.
 - System follows the OS light/dark toggle live; Light and Dark ignore it.
 - Norwegian device language: Innstillinger / Utseende / Lys / Mørk / System.
+
+## Recipe URL import (manual pass)
+
+- New recipe → paste a real Norwegian recipe URL (e.g. from matprat.no or godt.no) → Import fills title, servings, ingredients (quantities/units split where unambiguous), and steps; review and save works.
+- An English-language recipe URL imports equally well (tbsp/tsp map to ss/ts).
+- A non-recipe URL (e.g. a news article) shows "Couldn't read a recipe from this link." and leaves the form untouched.
+- Airplane mode: import fails with the notice after the timeout, no crash, form untouched.
+- A scheme-less paste ("matprat.no/…") works; the button is disabled while the field is empty and shows "Importing…" while fetching.
+- The edit screen has no import strip.
+- Norwegian device language: "Lim inn en oppskriftslenke / Importer / Importerer… / Fant ingen oppskrift på denne lenken."
