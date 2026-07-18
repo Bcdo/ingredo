@@ -1,4 +1,9 @@
-import { emptyFormState, formStateFromRecipe, recipeInputFromForm } from '../lib/form';
+import {
+  emptyFormState,
+  formStateFromRecipe,
+  recipeInputFromForm,
+  formStateFromImport,
+} from '../lib/form';
 import type { RecipeWithDetails } from '../lib/db/recipes';
 
 describe('recipeInputFromForm', () => {
@@ -117,5 +122,42 @@ describe('formStateFromRecipe', () => {
 
     const input = recipeInputFromForm(state);
     expect(input.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
+  });
+});
+
+describe('formStateFromImport', () => {
+  const imported = {
+    title: 'Pannekaker',
+    description: 'Klassiske',
+    servings: 6,
+    ingredientLines: ['400 g hvetemel', 'Salt og pepper'],
+    steps: ['Visp.', 'Stek.'],
+  };
+
+  it('maps an imported recipe into review-ready form state', () => {
+    const state = formStateFromImport(imported);
+    expect(state.title).toBe('Pannekaker');
+    expect(state.description).toBe('Klassiske');
+    expect(state.servings).toBe(6);
+    expect(state.notes).toBe('');
+    expect(state.ingredients).toHaveLength(2);
+    expect(state.ingredients[0]).toMatchObject({
+      quantity: '400',
+      unit: 'g',
+      name: 'hvetemel',
+      scaling: 'linear',
+    });
+    expect(state.ingredients[1]).toMatchObject({
+      quantity: '',
+      unit: null,
+      name: 'Salt og pepper',
+    });
+    expect(state.instructions.map((step) => step.text)).toEqual(['Visp.', 'Stek.']);
+  });
+
+  it('assigns unique draft keys', () => {
+    const state = formStateFromImport(imported);
+    const keys = [...state.ingredients, ...state.instructions].map((item) => item.key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
