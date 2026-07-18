@@ -13,26 +13,30 @@ function buildPalette(colors) {
   return { ...colors, inkMuted: `${colors.ink}99`, inkFaint: `${colors.ink}66` };
 }
 
-// Experiment: Nord (nordtheme.com). Token names keep their semantic roles;
-// only the values change. sageDeep is a darkened nord14 — Nord ships no
-// deep green of its own.
+// Experiment: Nord Aurora — the Nord mapping with the primary shifted from
+// Frost blue to Aurora berry/orange, probing a warmer accent on the same
+// arctic surfaces. sageDeep is a darkened nord14 — Nord ships no deep
+// green of its own. Caveat consciously probed: the design system reserves
+// red for nothing (never-red rule is about errors); nord11 is berry, not
+// alarm red — judge on device.
 const light = buildPalette({
   cream: '#ECEFF4', // app background (nord6, Snow Storm)
   linen: '#E5E9F0', // secondary surfaces, ghost buttons, borders (nord5)
-  clay: '#5E81AC', // primary actions, active nav, quantities (nord10, Frost)
+  clay: '#BF616A', // primary actions, active nav, quantities (nord11, Aurora)
   sage: '#A3BE8C', // confirmation, presence, plan→shop bridge (nord14, Aurora)
   sageDeep: '#728562',
   butter: '#EBCB8B', // gentle status (offline, pending sync) (nord13, Aurora)
   ink: '#2E3440', // text (nord0, Polar Night)
 });
 
-// Dark: Polar Night ground, nord8 as the primary accent per Nord's own UI
-// guidance. sageDeep lightens and butter darkens (both derived — light ink
-// must stay readable on butter chips).
+// Dark: Polar Night ground with the Aurora orange as primary (nord12 —
+// lighter than nord11, keeps dark text readable on it). sageDeep lightens
+// and butter darkens (both derived — light ink must stay readable on
+// butter chips).
 const dark = buildPalette({
   cream: '#2E3440', // nord0
   linen: '#3B4252', // nord1
-  clay: '#88C0D0', // nord8, Frost
+  clay: '#D08770', // nord12, Aurora
   sage: '#A3BE8C', // nord14
   sageDeep: '#B5CBA1',
   butter: '#766537',
