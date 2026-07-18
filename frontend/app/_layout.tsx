@@ -14,9 +14,10 @@ import migrations from '../drizzle/migrations';
 import { Button } from '../components/ui/Button';
 import { applyColorMode } from '../lib/colorMode';
 import { db } from '../lib/db/client';
-import { getColorMode } from '../lib/db/settings';
+import { getColorMode, getLanguageMode } from '../lib/db/settings';
 import { t } from '../lib/i18n';
 import { cssVars } from '../lib/theme';
+import { applyLanguageMode, useLocaleVersion } from '../lib/locale';
 import { usePalette } from '../lib/usePalette';
 
 export const unstable_settings = {
@@ -58,9 +59,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (state === 'ready') {
       applyColorMode(getColorMode(db));
+      applyLanguageMode(getLanguageMode(db));
     }
   }, [state]);
   const palette = usePalette();
+  const localeVersion = useLocaleVersion();
   const themeVars = vars(cssVars(palette));
 
   if (state === 'error') {
@@ -84,7 +87,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <View style={themeVars} className="flex-1">
+      <View key={localeVersion} style={themeVars} className="flex-1">
         <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="recipe/new" options={{ presentation: 'modal', headerShown: false }} />

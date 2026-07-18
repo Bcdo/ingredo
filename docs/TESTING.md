@@ -142,3 +142,11 @@ Simple UI screens can be tested manually at first.
 - A scheme-less paste ("matprat.no/…") works; the button is disabled while the field is empty and shows "Importing…" while fetching.
 - The edit screen has no import strip.
 - Norwegian device language: "Lim inn en oppskriftslenke / Importer / Importerer… / Fant ingen oppskrift på denne lenken."
+
+## Language setting (manual pass)
+
+- Settings → Language/Språk: choosing Norsk switches the whole app instantly — the modal closes and Today renders in Norwegian. English likewise.
+- Quantity formatting follows: the same ingredient shows 0,5 under Norsk and 0.5 under English.
+- System: the app follows the device language; with System selected, changing the device language switches the app (relaunch OK).
+- The choice persists across kill & relaunch.
+- The colour-mode setting still works after a language switch, and its labels translate (Lys/Mørk under Norsk).
