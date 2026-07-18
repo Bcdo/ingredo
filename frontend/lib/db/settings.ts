@@ -36,3 +36,21 @@ export function setColorMode(db: DB, mode: ColorMode): void {
     .onConflictDoUpdate({ target: settings.key, set: { value: mode } })
     .run();
 }
+
+export type LanguageMode = 'nb' | 'en' | 'system';
+
+const LANGUAGE_KEY = 'language';
+
+// Device-local preference — must be excluded if settings ever sync.
+export function getLanguageMode(db: DB): LanguageMode {
+  const row = db.select().from(settings).where(eq(settings.key, LANGUAGE_KEY)).get();
+  const value = row?.value;
+  return value === 'nb' || value === 'en' ? value : 'system';
+}
+
+export function setLanguageMode(db: DB, mode: LanguageMode): void {
+  db.insert(settings)
+    .values({ key: LANGUAGE_KEY, value: mode })
+    .onConflictDoUpdate({ target: settings.key, set: { value: mode } })
+    .run();
+}
