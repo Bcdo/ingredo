@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import React from 'react';
 
 import SettingsScreen from '../app/settings';
 import { applyColorMode } from '../lib/colorMode';
-import { getColorMode, setColorMode } from '../lib/db/settings';
+import { getColorMode, getLanguageMode, setColorMode, setLanguageMode } from '../lib/db/settings';
+import { applyLanguageMode } from '../lib/locale';
 
 jest.mock('../lib/db/client', () => ({ db: {} }));
 
@@ -24,20 +25,30 @@ jest.mock('../lib/colorMode', () => ({
   applyColorMode: jest.fn(),
 }));
 
+jest.mock('../lib/locale', () => ({
+  applyLanguageMode: jest.fn(),
+}));
+
 jest.mock('../lib/db/settings', () => ({
   getColorMode: jest.fn(() => 'system'),
   setColorMode: jest.fn(),
+  getLanguageMode: jest.fn(() => 'system'),
+  setLanguageMode: jest.fn(),
 }));
 
 const getColorModeMock = getColorMode as jest.Mock;
 const setColorModeMock = setColorMode as jest.Mock;
 const applyColorModeMock = applyColorMode as jest.Mock;
+const getLanguageModeMock = getLanguageMode as jest.Mock;
+const setLanguageModeMock = setLanguageMode as jest.Mock;
+const applyLanguageModeMock = applyLanguageMode as jest.Mock;
 const backMock = router.back as jest.Mock;
 
 describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getColorModeMock.mockReturnValue('system');
+    getLanguageModeMock.mockReturnValue('system');
   });
 
   it('renders the three modes with the stored one selected', () => {
@@ -48,9 +59,10 @@ describe('SettingsScreen', () => {
     expect(screen.getByLabelText('Dark').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true })
     );
-    expect(screen.getByLabelText('System').props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: false })
-    );
+    expect(
+      within(screen.getByTestId('appearance-section')).getByLabelText('System').props
+        .accessibilityState
+    ).toEqual(expect.objectContaining({ selected: false }));
   });
 
   it('stores and applies a newly selected mode', () => {
@@ -71,5 +83,31 @@ describe('SettingsScreen', () => {
     fireEvent.press(screen.getByLabelText('Close settings'));
 
     expect(backMock).toHaveBeenCalled();
+  });
+
+  it('renders the language options with the stored one selected', () => {
+    getLanguageModeMock.mockReturnValue('nb');
+    render(<SettingsScreen />);
+
+    expect(screen.getByText('Language')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Norsk').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true })
+    );
+    expect(screen.getByLabelText('English').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: false })
+    );
+    expect(
+      within(screen.getByTestId('language-section')).getByLabelText('System').props
+        .accessibilityState
+    ).toEqual(expect.objectContaining({ selected: false }));
+  });
+
+  it('stores and applies a newly selected language', () => {
+    render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByText('Norsk'));
+
+    expect(setLanguageModeMock).toHaveBeenCalledWith(expect.anything(), 'nb');
+    expect(applyLanguageModeMock).toHaveBeenCalledWith('nb');
   });
 });

@@ -92,7 +92,11 @@
     "appearance": "Utseende",
     "modeLight": "Lys",
     "modeDark": "Mørk",
-    "modeSystem": "System"
+    "modeSystem": "System",
+    "language": "Språk",
+    "languageNorwegian": "Norsk",
+    "languageEnglish": "English",
+    "languageSystem": "System"
   },
   "import": {
     "placeholder": "Lim inn en oppskriftslenke",

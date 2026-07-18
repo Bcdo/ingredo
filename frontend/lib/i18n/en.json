@@ -92,7 +92,11 @@
     "appearance": "Appearance",
     "modeLight": "Light",
     "modeDark": "Dark",
-    "modeSystem": "System"
+    "modeSystem": "System",
+    "language": "Language",
+    "languageNorwegian": "Norsk",
+    "languageEnglish": "English",
+    "languageSystem": "System"
   },
   "import": {
     "placeholder": "Paste a recipe link",
