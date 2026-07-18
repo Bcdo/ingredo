@@ -12,7 +12,7 @@ const getLocalesMock = getLocales as jest.Mock;
 
 describe('applyLanguageMode', () => {
   afterEach(() => {
-    applyLanguageMode('en');
+    act(() => applyLanguageMode('en'));
   });
 
   it('forces nb and en, and currentLocale agrees', () => {
