@@ -18,6 +18,8 @@ export async function fetchRecipeFromUrl(url: string): Promise<ImportedRecipe | 
       headers: { Accept: 'text/html' },
     });
     if (!response.ok) return null;
+    const contentType = response.headers.get('content-type');
+    if (contentType !== null && !contentType.includes('text/')) return null;
     const html = await response.text();
     return extractRecipe(html);
   } catch {

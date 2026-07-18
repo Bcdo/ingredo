@@ -96,11 +96,11 @@ describe('extractRecipe', () => {
   it('decodes entities and strips tags in text fields', () => {
     const messy = {
       ...BASE,
-      name: 'Fish &amp; chips&nbsp;<b>deluxe</b>',
+      name: 'Fish &amp; chips&nbsp;<b>deluxe</b> &#128512;',
       recipeIngredient: ['1 ss salt &#39;flakes&#39;'],
     };
     const result = extractRecipe(page(messy));
-    expect(result?.title).toBe('Fish & chips deluxe');
+    expect(result?.title).toBe('Fish & chips deluxe 😀');
     expect(result?.ingredientLines).toEqual(["1 ss salt 'flakes'"]);
   });
 
