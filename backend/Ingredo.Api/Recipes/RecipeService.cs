@@ -82,7 +82,9 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         if (recipe is null) return ServiceResult<RecipeResponse>.NotFound();
         if (recipe.DeletedAt is not null) return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
 
-        recipe.DeletedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+        recipe.DeletedAt = now;
+        recipe.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }

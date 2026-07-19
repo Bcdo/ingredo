@@ -46,6 +46,26 @@ public class RecipeValidatorTests
     }
 
     [Fact]
+    public void Accepts_servings_of_exactly_one()
+    {
+        _validator.TestValidate(Valid() with { Servings = 1 }).ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void Rejects_title_over_500_characters()
+    {
+        var result = _validator.TestValidate(Valid() with { Title = new string('a', 501) });
+        result.ShouldHaveValidationErrorFor(r => r.Title);
+    }
+
+    [Fact]
+    public void Accepts_title_of_exactly_500_characters()
+    {
+        _validator.TestValidate(Valid() with { Title = new string('a', 500) })
+            .ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
     public void Rejects_blank_ingredient_name_and_non_positive_quantity()
     {
         var request = Valid() with

@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using Ingredo.Api.Recipes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ingredo.Api.Tests.Integration;
 
@@ -123,6 +125,22 @@ public class RecipesApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         var never = await _client.DeleteAsync($"/api/v1/recipes/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, never.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_bumps_updated_at_on_the_soft_deleted_row()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Slettes")))
+            .Content.ReadFromJsonAsync<RecipeResponse>();
+
+        await Task.Delay(10);
+        await _client.DeleteAsync($"/api/v1/recipes/{created!.Id}");
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Ingredo.Api.Data.AppDbContext>();
+        var row = await db.Recipes.IgnoreQueryFilters().SingleAsync(r => r.Id == created.Id);
+        Assert.NotNull(row.DeletedAt);
+        Assert.True(row.UpdatedAt > created.UpdatedAt);
     }
 
     [Fact]

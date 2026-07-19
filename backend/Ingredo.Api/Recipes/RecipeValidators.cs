@@ -10,7 +10,8 @@ public sealed class RecipeRequestValidator : AbstractValidator<RecipeRequest>
     public RecipeRequestValidator()
     {
         RuleFor(r => r.Title).Must(title => !string.IsNullOrWhiteSpace(title))
-            .WithMessage("Title must not be empty.");
+            .WithMessage("Title must not be empty.")
+            .MaximumLength(500);
         RuleFor(r => r.Servings).GreaterThanOrEqualTo(1);
         RuleForEach(r => r.Ingredients).SetValidator(new IngredientRequestValidator());
         RuleForEach(r => r.Instructions).SetValidator(new InstructionRequestValidator());
@@ -22,7 +23,8 @@ public sealed class IngredientRequestValidator : AbstractValidator<IngredientReq
     public IngredientRequestValidator()
     {
         RuleFor(i => i.Name).Must(name => !string.IsNullOrWhiteSpace(name))
-            .WithMessage("Ingredient name must not be empty.");
+            .WithMessage("Ingredient name must not be empty.")
+            .MaximumLength(500);
         RuleFor(i => i.Quantity).GreaterThan(0).When(i => i.Quantity.HasValue);
         RuleFor(i => i.Scaling)
             .Must(scaling =>

@@ -6,7 +6,9 @@ SDK's current solution format; `dotnet build`/`dotnet test` work as usual).
 ## Run locally
 
 ```bash
-cp .env.example .env          # set a real local password first
+cp .env.example .env          # defaults work for local dev; if you change the
+                              # password, change it in appsettings.Development.json
+                              # too (and wipe the pgdata volume)
 docker compose up -d postgres # database only…
 dotnet run --project Ingredo.Api
 ```
@@ -23,6 +25,9 @@ docker compose up --build     # api on http://localhost:8080
 
 ## Migrations
 
+- `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run
+  `dotnet tool restore` once after cloning (or whenever the pinned version
+  changes) before using any `dotnet ef` command below.
 - Development applies pending migrations automatically on startup
   (`Database.Migrate()` — never `EnsureCreated`).
 - Any other environment applies them explicitly:
