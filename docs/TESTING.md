@@ -150,3 +150,11 @@ Simple UI screens can be tested manually at first.
 - System: the app follows the device language; with System selected, changing the device language switches the app (relaunch OK).
 - The choice persists across kill & relaunch.
 - The colour-mode setting still works after a language switch, and its labels translate (Lys/Mørk under Norsk).
+
+## Backend foundation (manual pass)
+
+- `cd backend && cp -n .env.example .env && docker compose up --build` → api healthy at http://localhost:8080/health.
+- Scalar UI at http://localhost:8080/scalar lists the five recipe endpoints.
+- Create → list → get → update → delete a recipe through Scalar; deleted recipe vanishes from the list but re-creating its id returns 409 (soft-deleted rows keep their id).
+- `docker compose down && docker compose up` → data survives (named volume).
+- `dotnet test` from backend/ passes with Docker running (Testcontainers pulls postgres:17-alpine on first run).
