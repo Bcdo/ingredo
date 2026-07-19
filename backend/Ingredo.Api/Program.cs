@@ -2,7 +2,9 @@ using FluentValidation;
 using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
+using Ingredo.Api.Domain;
 using Ingredo.Api.Recipes;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -28,6 +30,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
 builder.Services.AddIngredoAuth(builder.Configuration);
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
