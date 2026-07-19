@@ -41,3 +41,7 @@ out/
 
 # --- Archives accidentally dropped at the root ---
 *.zip
+
+# --- Backend-specific ---
+backend/.env
+backend/Ingredo.Api/logs/
