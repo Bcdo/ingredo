@@ -1,5 +1,6 @@
 namespace Ingredo.Api.Tests.Integration;
 
+[Collection("Api")]
 public class HealthTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     [Fact]

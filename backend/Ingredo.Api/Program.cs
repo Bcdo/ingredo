@@ -1,5 +1,7 @@
+using FluentValidation;
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
+using Ingredo.Api.Recipes;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -22,6 +24,8 @@ builder.Host.UseSerilog((context, configuration) =>
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
