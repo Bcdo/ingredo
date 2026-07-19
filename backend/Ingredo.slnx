@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Ingredo.Api.Tests/Ingredo.Api.Tests.csproj" />
+  <Project Path="Ingredo.Api/Ingredo.Api.csproj" />
+</Solution>
