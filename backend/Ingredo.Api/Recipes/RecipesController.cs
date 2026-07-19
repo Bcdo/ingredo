@@ -1,23 +1,29 @@
+using System.Security.Claims;
 using FluentValidation;
+using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ingredo.Api.Recipes;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/recipes")]
 public sealed class RecipesController(
     IRecipeService service,
     IValidator<RecipeRequest> validator) : ControllerBase
 {
+    private Guid HouseholdId => Guid.Parse(User.FindFirstValue(TokenService.HouseholdClaim)!);
+
     [HttpGet]
     public Task<List<RecipeSummaryResponse>> List(CancellationToken cancellationToken) =>
-        service.ListAsync(cancellationToken);
+        service.ListAsync(HouseholdId, cancellationToken);
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
-        var result = await service.GetAsync(id, cancellationToken);
+        var result = await service.GetAsync(HouseholdId, id, cancellationToken);
         return result.Status == ServiceStatus.NotFound ? NotFound() : Ok(result.Value);
     }
 
@@ -31,7 +37,7 @@ public sealed class RecipesController(
             return ValidationProblem(ModelState);
         }
 
-        var result = await service.CreateAsync(request, cancellationToken);
+        var result = await service.CreateAsync(HouseholdId, request, cancellationToken);
         return result.Status switch
         {
             ServiceStatus.Conflict => Conflict(),
@@ -49,14 +55,14 @@ public sealed class RecipesController(
             return ValidationProblem(ModelState);
         }
 
-        var result = await service.UpdateAsync(id, request, cancellationToken);
+        var result = await service.UpdateAsync(HouseholdId, id, request, cancellationToken);
         return result.Status == ServiceStatus.NotFound ? NotFound() : Ok(result.Value);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteAsync(id, cancellationToken);
+        var result = await service.DeleteAsync(HouseholdId, id, cancellationToken);
         return result.Status == ServiceStatus.NotFound ? NotFound() : NoContent();
     }
 }

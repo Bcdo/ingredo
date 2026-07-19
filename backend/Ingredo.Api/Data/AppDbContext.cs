@@ -21,6 +21,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             recipe.Property(r => r.Title).IsRequired().HasMaxLength(500);
             recipe.HasQueryFilter(r => r.DeletedAt == null);
             recipe
+                .HasOne<Household>()
+                .WithMany()
+                .HasForeignKey(r => r.HouseholdId)
+                .OnDelete(DeleteBehavior.Cascade);
+            recipe
                 .HasMany(r => r.Ingredients)
                 .WithOne()
                 .HasForeignKey(i => i.RecipeId)

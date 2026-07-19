@@ -7,9 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Ingredo.Api.Tests.Integration;
 
 [Collection("Api")]
-public class RecipesApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
+public class RecipesApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() => _client = await factory.CreateAuthenticatedClientAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     private static RecipeRequest NewRecipe(string title = "Pannekaker", Guid? id = null) =>
         new(
@@ -155,10 +159,44 @@ public class RecipesApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var list = await _client.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes");
 
         Assert.NotNull(list);
-        Assert.DoesNotContain(list, r => r.Id == a.Id);
-        var bSummary = Assert.Single(list, r => r.Id == b!.Id);
-        Assert.Equal("List-B", bSummary.Title);
-        var ourTitles = list.Where(r => r.Title.StartsWith("List-")).Select(r => r.Title).ToList();
-        Assert.Equal(["List-B"], ourTitles);
+        var only = Assert.Single(list);
+        Assert.Equal(b!.Id, only.Id);
+        Assert.Equal("List-B", only.Title);
+    }
+
+    [Fact]
+    public async Task Anonymous_requests_are_401()
+    {
+        var anonymous = factory.CreateClient();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/v1/recipes")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await anonymous.PostAsJsonAsync("/api/v1/recipes", NewRecipe())).StatusCode);
+    }
+
+    [Fact]
+    public async Task Users_cannot_reach_each_others_recipes()
+    {
+        var created = await (await _client.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Privat")))
+            .Content.ReadFromJsonAsync<RecipeResponse>();
+
+        var other = await factory.CreateAuthenticatedClientAsync();
+
+        var list = await other.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes");
+        Assert.DoesNotContain(list!, r => r.Id == created!.Id);
+
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await other.GetAsync($"/api/v1/recipes/{created!.Id}")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await other.PutAsJsonAsync($"/api/v1/recipes/{created.Id}", NewRecipe("Kapret"))).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await other.DeleteAsync($"/api/v1/recipes/{created.Id}")).StatusCode);
+
+        var mine = await _client.GetAsync($"/api/v1/recipes/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, mine.StatusCode);
     }
 }

@@ -6,24 +6,25 @@ namespace Ingredo.Api.Recipes;
 
 public sealed class RecipeService(AppDbContext db) : IRecipeService
 {
-    public async Task<List<RecipeSummaryResponse>> ListAsync(CancellationToken cancellationToken)
+    public async Task<List<RecipeSummaryResponse>> ListAsync(Guid householdId, CancellationToken cancellationToken)
     {
         return await db.Recipes
+            .Where(r => r.HouseholdId == householdId)
             .OrderByDescending(r => r.UpdatedAt)
             .Select(r => new RecipeSummaryResponse(r.Id, r.Title, r.Servings, r.UpdatedAt))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<ServiceResult<RecipeResponse>> GetAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ServiceResult<RecipeResponse>> GetAsync(Guid householdId, Guid id, CancellationToken cancellationToken)
     {
-        var recipe = await LoadAggregate(id, cancellationToken);
+        var recipe = await LoadAggregate(householdId, id, cancellationToken);
         return recipe is null
             ? ServiceResult<RecipeResponse>.NotFound()
             : ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
     public async Task<ServiceResult<RecipeResponse>> CreateAsync(
-        RecipeRequest request, CancellationToken cancellationToken)
+        Guid householdId, RecipeRequest request, CancellationToken cancellationToken)
     {
         if (request.Id is { } requestedId)
         {
@@ -34,15 +35,16 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         }
 
         var recipe = request.ToEntity(DateTimeOffset.UtcNow);
+        recipe.HouseholdId = householdId;
         db.Recipes.Add(recipe);
         await db.SaveChangesAsync(cancellationToken);
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
     public async Task<ServiceResult<RecipeResponse>> UpdateAsync(
-        Guid id, RecipeRequest request, CancellationToken cancellationToken)
+        Guid householdId, Guid id, RecipeRequest request, CancellationToken cancellationToken)
     {
-        var recipe = await LoadAggregate(id, cancellationToken);
+        var recipe = await LoadAggregate(householdId, id, cancellationToken);
         if (recipe is null) return ServiceResult<RecipeResponse>.NotFound();
 
         recipe.Title = request.Title.Trim();
@@ -74,11 +76,11 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
-    public async Task<ServiceResult<RecipeResponse>> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ServiceResult<RecipeResponse>> DeleteAsync(Guid householdId, Guid id, CancellationToken cancellationToken)
     {
         var recipe = await db.Recipes
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id && r.HouseholdId == householdId, cancellationToken);
         if (recipe is null) return ServiceResult<RecipeResponse>.NotFound();
         if (recipe.DeletedAt is not null) return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
 
@@ -89,9 +91,9 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
-    private Task<Domain.Recipe?> LoadAggregate(Guid id, CancellationToken cancellationToken) =>
+    private Task<Domain.Recipe?> LoadAggregate(Guid householdId, Guid id, CancellationToken cancellationToken) =>
         db.Recipes
             .Include(r => r.Ingredients)
             .Include(r => r.Instructions)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id && r.HouseholdId == householdId, cancellationToken);
 }

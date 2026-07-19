@@ -3,6 +3,7 @@ namespace Ingredo.Api.Domain;
 public class Recipe
 {
     public Guid Id { get; set; }
+    public Guid HouseholdId { get; set; }
     public required string Title { get; set; }
     public string? Description { get; set; }
     public int Servings { get; set; } = 4;
