@@ -1,4 +1,5 @@
 using FluentValidation;
+using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Recipes;
@@ -26,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
+builder.Services.AddIngredoAuth(builder.Configuration);
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
@@ -39,6 +41,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseSerilogRequestLogging();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

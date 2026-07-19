@@ -18,6 +18,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:Default", _postgres.GetConnectionString());
+        builder.UseSetting("Jwt:Key", "integration-test-signing-key-0123456789abcdef");
     }
 
     async Task IAsyncLifetime.DisposeAsync()
