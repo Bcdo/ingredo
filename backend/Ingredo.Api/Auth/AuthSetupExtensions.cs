@@ -34,6 +34,7 @@ public static class AuthSetupExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1),
+                    ValidAlgorithms = ["HS256"],
                 };
             });
         services.AddAuthorization();

@@ -60,13 +60,28 @@ public sealed class AuthService(
         return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user, household, refreshValue));
     }
 
+    // A fixed hash to verify against when the account doesn't exist, so an
+    // unknown email costs the same PBKDF2 work as a wrong password — no
+    // timing oracle for account existence.
+    private static readonly string DummyHash =
+        new PasswordHasher<User>().HashPassword(new User
+        {
+            Email = "-", NormalizedEmail = "-", DisplayName = "-", PasswordHash = "-",
+        }, "timing-equalizer-password");
+
     public async Task<ServiceResult<AuthResponse>> LoginAsync(
         LoginRequest request, CancellationToken cancellationToken)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var user = await db.Users.FirstOrDefaultAsync(
             u => u.NormalizedEmail == normalizedEmail, cancellationToken);
-        if (user is null) return ServiceResult<AuthResponse>.Unauthorized();
+        if (user is null)
+        {
+            passwordHasher.VerifyHashedPassword(
+                new User { Email = "-", NormalizedEmail = "-", DisplayName = "-", PasswordHash = "-" },
+                DummyHash, request.Password);
+            return ServiceResult<AuthResponse>.Unauthorized();
+        }
 
         var verdict = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
         if (verdict == PasswordVerificationResult.Failed)
