@@ -23,6 +23,19 @@ Or run the whole stack in Docker:
 docker compose up --build     # api on http://localhost:8080
 ```
 
+## Auth
+
+- `POST /api/v1/auth/register` `{ email, password, displayName }` → tokens + user (auto-login)
+- `POST /api/v1/auth/login` / `refresh` / `logout`, `GET /api/v1/auth/me`
+- Access token: JWT, 15 min. Refresh token: 30 days, rotated on every refresh;
+  reusing a rotated token revokes its whole family.
+- All `/api/v1/recipes` endpoints require `Authorization: Bearer <accessToken>`;
+  recipes belong to the caller's (personal, for now) household.
+- Local config: `Jwt:Key` comes from `appsettings.Development.json` for
+  `dotnet run` and from `JWT_KEY` in `.env` for docker compose. If you add
+  `HouseholdId` (or any schema change) to a running compose db that already
+  holds recipes, `docker compose down -v` once to reset — dev data is disposable.
+
 ## Migrations
 
 - `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run

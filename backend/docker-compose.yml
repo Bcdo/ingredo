@@ -19,6 +19,9 @@ services:
     build: ./Ingredo.Api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Key: ${JWT_KEY:?set in backend/.env}
+      Jwt__Issuer: ingredo-api
+      Jwt__Audience: ingredo-app
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ingredo};Username=${POSTGRES_USER:-ingredo};Password=${POSTGRES_PASSWORD}
     ports:
       - '8080:8080'

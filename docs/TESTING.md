@@ -158,3 +158,12 @@ Simple UI screens can be tested manually at first.
 - Create → list → get → update → delete a recipe through Scalar; deleted recipe vanishes from the list but re-creating its id returns 409 (soft-deleted rows keep their id).
 - `docker compose down && docker compose up` → data survives (named volume).
 - `dotnet test` from backend/ passes with Docker running (Testcontainers pulls postgres:17-alpine on first run).
+
+## Authentication (manual pass)
+
+- `docker compose up --build` (with `JWT_KEY` set in `.env`) → register via Scalar → response carries access + refresh tokens.
+- Anonymous `GET /api/v1/recipes` is 401; with the Bearer token it lists; recipes created by a second registered user are invisible to the first (list, get, update, delete all behave as not-found).
+- Duplicate registration with the same email (any casing) → 409; wrong password and unknown email on login → identical 401s.
+- Refresh with the current refresh token → new pair; refresh with the OLD token afterwards → 401 AND the new pair stops refreshing too (family revoked). Logout → refresh 401, repeat logout still 204.
+- Restart the api container: tokens issued before the restart still work (key from env, state in postgres).
+- If startup fails on an existing compose volume after this slice (recipes now require a household), `docker compose down -v` once — dev data is disposable.
