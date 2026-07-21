@@ -14,6 +14,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<HouseholdMember> HouseholdMembers => Set<HouseholdMember>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
+    public DbSet<ShoppingItem> ShoppingItems => Set<ShoppingItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Recipe>(recipe =>
@@ -101,6 +104,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasOne<User>()
                 .WithMany()
                 .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MealPlanEntry>(entry =>
+        {
+            entry.HasQueryFilter(e => e.DeletedAt == null);
+            entry.HasIndex(e => new { e.HouseholdId, e.Date });
+            entry
+                .HasOne<Household>()
+                .WithMany()
+                .HasForeignKey(e => e.HouseholdId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entry
+                .HasOne<Recipe>()
+                .WithMany()
+                .HasForeignKey(e => e.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ShoppingItem>(item =>
+        {
+            item.Property(i => i.Name).IsRequired().HasMaxLength(500);
+            item.Property(i => i.NormalizedName).IsRequired().HasMaxLength(500);
+            item.Property(i => i.Unit).HasMaxLength(50);
+            item.Property(i => i.Sources).IsRequired().HasMaxLength(4000);
+            item
+                .Property(i => i.Status)
+                .HasConversion(
+                    status => status.ToString().ToLowerInvariant(),
+                    value => Enum.Parse<ShoppingItemStatus>(value, true))
+                .HasMaxLength(16);
+            item.HasQueryFilter(i => i.DeletedAt == null);
+            item.HasIndex(i => new { i.HouseholdId, i.Status });
+            item
+                .HasOne<Household>()
+                .WithMany()
+                .HasForeignKey(i => i.HouseholdId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
