@@ -176,3 +176,12 @@ Simple UI screens can be tested manually at first.
 - Leave as A → A gets a fresh personal household (empty recipe list); B keeps the shared recipes; B shows as owner.
 - Sole-member leave and joining your own code both return 409; a garbage code 404s.
 - Stale volume after upgrading: `docker compose down -v` once (JoinCode column).
+
+## Meal plan & shopping endpoints (manual pass)
+
+- Via Scalar with a Bearer token: create a recipe → create a meal-plan entry for it → list with `from`/`to` covering the date → present; outside the range → absent.
+- A meal-plan entry pointing at a made-up recipe id → 400 mentioning RecipeId.
+- Create a shopping item; update it to `"status":"purchased"` with a `purchasedAt` → round-trips verbatim; DELETE → gone from list, second DELETE still 204.
+- Second household sees none of it (list empty, direct GET 404).
+- After a sole-member join-away, requests with the OLD access token → 401 (was 500/empty); `POST /auth/refresh` with the old refresh token recovers.
+- Stale compose volume: `docker compose down -v` once (new tables + constraint).

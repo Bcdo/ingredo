@@ -48,6 +48,16 @@ docker compose up --build     # api on http://localhost:8080
 - Departing a shared household you own (by join or leave) promotes the
   longest-standing remaining member to owner.
 
+## Meal plan & shopping
+
+- `/api/v1/meal-plan-entries` and `/api/v1/shopping-items` — household-scoped CRUD
+  with the same contract as recipes (client-mintable ids, full-replace PUT,
+  soft DELETE). Meal-plan list accepts `?from=`/`?to=` (ISO dates).
+- The server is a row store: shopping/meal-plan behavior (merging, shelf,
+  purchase flows) is client logic. `sources` is opaque client JSON.
+- Tokens whose household no longer exists get 401 everywhere — refresh to
+  recover (the refresh endpoint resolves your current membership).
+
 ## Migrations
 
 - `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run
