@@ -6,6 +6,7 @@ using Ingredo.Api.Domain;
 using Ingredo.Api.Households;
 using Ingredo.Api.MealPlan;
 using Ingredo.Api.Recipes;
+using Ingredo.Api.Shopping;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -31,6 +32,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IMealPlanService, MealPlanService>();
+builder.Services.AddScoped<IShoppingService, ShoppingService>();
 builder.Services.AddScoped<IJoinCodeService, JoinCodeService>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
