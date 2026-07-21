@@ -1,6 +1,7 @@
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.Households;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -11,7 +12,8 @@ public sealed class AuthService(
     AppDbContext db,
     ITokenService tokens,
     IPasswordHasher<User> passwordHasher,
-    IOptions<JwtOptions> jwtOptions) : IAuthService
+    IOptions<JwtOptions> jwtOptions,
+    IJoinCodeService joinCodes) : IAuthService
 {
     public async Task<ServiceResult<AuthResponse>> RegisterAsync(
         RegisterRequest request, CancellationToken cancellationToken)
@@ -39,6 +41,7 @@ public sealed class AuthService(
         {
             Id = Guid.NewGuid(),
             Name = user.DisplayName,
+            JoinCode = await joinCodes.NewUniqueCodeAsync(cancellationToken),
             CreatedAt = now,
             UpdatedAt = now,
         };

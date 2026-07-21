@@ -3,6 +3,7 @@ using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.Households;
 using Ingredo.Api.Recipes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IJoinCodeService, JoinCodeService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
 builder.Services.AddIngredoAuth(builder.Configuration);
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

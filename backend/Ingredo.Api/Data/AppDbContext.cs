@@ -67,6 +67,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Household>(household =>
         {
             household.Property(h => h.Name).IsRequired().HasMaxLength(200);
+            household.Property(h => h.JoinCode).IsRequired().HasMaxLength(6);
+            household.HasIndex(h => h.JoinCode).IsUnique();
         });
 
         modelBuilder.Entity<HouseholdMember>(member =>
