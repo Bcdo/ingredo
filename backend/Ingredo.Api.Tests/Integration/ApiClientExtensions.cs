@@ -20,4 +20,24 @@ public static class ApiClientExtensions
             new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
         return client;
     }
+
+    // Like CreateAuthenticatedClientAsync, but also returns the auth payload
+    // (tokens + user) for tests that need ids or re-authentication.
+    public static async Task<(HttpClient Client, AuthResponse Auth)> RegisterUserAsync(
+        this ApiFactory factory, string displayName = "Test Bruker")
+    {
+        var client = factory.CreateClient();
+        var register = new RegisterRequest(
+            $"user-{Guid.NewGuid():N}@test.local", "passord123", displayName);
+        var response = await client.PostAsJsonAsync("/api/v1/auth/register", register);
+        response.EnsureSuccessStatusCode();
+        var auth = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        return (client, auth);
+    }
+
+    public static void UseTokens(this HttpClient client, AuthResponse auth) =>
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 }

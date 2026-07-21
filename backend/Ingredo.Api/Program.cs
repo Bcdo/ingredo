@@ -30,6 +30,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IJoinCodeService, JoinCodeService>();
+builder.Services.AddScoped<IHouseholdService, HouseholdService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
 builder.Services.AddIngredoAuth(builder.Configuration);
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
