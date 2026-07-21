@@ -167,3 +167,12 @@ Simple UI screens can be tested manually at first.
 - Refresh with the current refresh token → new pair; refresh with the OLD token afterwards → 401 AND the new pair stops refreshing too (family revoked). Logout → refresh 401, repeat logout still 204.
 - Restart the api container: tokens issued before the restart still work (key from env, state in postgres).
 - If startup fails on an existing compose volume after this slice (recipes now require a household), `docker compose down -v` once — dev data is disposable.
+
+## Household mechanics (manual pass)
+
+- Register two users via Scalar; read user B's join code from `GET /household`; join as A → response carries new tokens; with them, both users list BOTH users' pre-join recipes.
+- A's old join code now 404s for a third user (empty personal household deleted).
+- Rename and regenerate-code as the NON-owner member → visible to the other; the old code stops working, the new one joins.
+- Leave as A → A gets a fresh personal household (empty recipe list); B keeps the shared recipes; B shows as owner.
+- Sole-member leave and joining your own code both return 409; a garbage code 404s.
+- Stale volume after upgrading: `docker compose down -v` once (JoinCode column).

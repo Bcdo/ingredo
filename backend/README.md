@@ -36,6 +36,18 @@ docker compose up --build     # api on http://localhost:8080
   `HouseholdId` (or any schema change) to a running compose db that already
   holds recipes, `docker compose down -v` once to reset — dev data is disposable.
 
+## Household
+
+- `GET /api/v1/household` — name, join code (`XXX-XXX`), members.
+- `PUT /api/v1/household` `{ name }`, `POST /api/v1/household/regenerate-code` — any member.
+- `POST /api/v1/household/join` `{ code }` — moves you to that household; if you
+  were alone, your recipes move with you and your empty household is deleted.
+  Returns a fresh token pair (the old access token's household claim is stale).
+- `POST /api/v1/household/leave` — back to a fresh personal household; content
+  stays with the household you left. Also returns a fresh token pair.
+- Departing a shared household you own (by join or leave) promotes the
+  longest-standing remaining member to owner.
+
 ## Migrations
 
 - `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run
