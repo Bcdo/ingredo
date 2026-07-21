@@ -150,6 +150,18 @@ public sealed class AuthService(
         return ServiceResult<UserResponse>.Ok(ToUserResponse(user, household));
     }
 
+    // Used by household membership moves: mints a fresh token pair whose
+    // household claim reflects the user's CURRENT membership. Call only
+    // after the membership change has committed.
+    public async Task<AuthResponse> IssueTokensAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
+        var household = await HouseholdOf(userId, cancellationToken);
+        var refreshValue = IssueRefreshToken(userId, familyId: Guid.NewGuid(), DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync(cancellationToken);
+        return BuildAuthResponse(user, household, refreshValue);
+    }
+
     private string IssueRefreshToken(Guid userId, Guid familyId, DateTimeOffset now)
     {
         var value = tokens.CreateRefreshTokenValue();

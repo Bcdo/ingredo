@@ -9,4 +9,5 @@ public interface IAuthService
     Task<ServiceResult<AuthResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
     Task LogoutAsync(string refreshToken, CancellationToken cancellationToken);
     Task<ServiceResult<UserResponse>> MeAsync(Guid userId, CancellationToken cancellationToken);
+    Task<AuthResponse> IssueTokensAsync(Guid userId, CancellationToken cancellationToken);
 }
