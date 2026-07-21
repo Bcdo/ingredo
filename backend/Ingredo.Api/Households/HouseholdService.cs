@@ -75,6 +75,21 @@ public sealed class HouseholdService(
         var now = DateTimeOffset.UtcNow;
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
+        // Serialize concurrent membership changes touching these households:
+        // lock both rows in a stable order (deadlock avoidance) so the
+        // sole-membership snapshot below stays authoritative until commit.
+        var lockIds = new[] { currentHouseholdId, target.Id }.Order().ToArray();
+        await db.Database.ExecuteSqlAsync(
+            $"""SELECT 1 FROM "Households" WHERE "Id" = ANY({lockIds}) FOR UPDATE""",
+            cancellationToken);
+
+        var targetStillExists = await db.Households
+            .AnyAsync(h => h.Id == target.Id, cancellationToken);
+        if (!targetStillExists)
+        {
+            return ServiceResult<AuthResponse>.NotFound();
+        }
+
         var membership = await db.HouseholdMembers.SingleAsync(
             m => m.UserId == userId && m.HouseholdId == currentHouseholdId, cancellationToken);
         var remaining = await db.HouseholdMembers
@@ -116,9 +131,20 @@ public sealed class HouseholdService(
                         .SetProperty(r => r.HouseholdId, target.Id)
                         .SetProperty(r => r.UpdatedAt, now),
                     cancellationToken);
-            await db.Households
-                .Where(h => h.Id == currentHouseholdId)
-                .ExecuteDeleteAsync(cancellationToken);
+            // Delete the shell only if nothing snuck in behind the lock —
+            // a racing recipe insert leaves a benign orphan household
+            // instead of being cascade-destroyed.
+            var membersLeft = await db.HouseholdMembers
+                .AnyAsync(m => m.HouseholdId == currentHouseholdId, cancellationToken);
+            var recipesLeft = await db.Recipes
+                .IgnoreQueryFilters()
+                .AnyAsync(r => r.HouseholdId == currentHouseholdId, cancellationToken);
+            if (!membersLeft && !recipesLeft)
+            {
+                await db.Households
+                    .Where(h => h.Id == currentHouseholdId)
+                    .ExecuteDeleteAsync(cancellationToken);
+            }
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -128,6 +154,11 @@ public sealed class HouseholdService(
     public async Task<ServiceResult<AuthResponse>> LeaveAsync(
         Guid userId, Guid currentHouseholdId, CancellationToken cancellationToken)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.Database.ExecuteSqlAsync(
+            $"""SELECT 1 FROM "Households" WHERE "Id" = {currentHouseholdId} FOR UPDATE""",
+            cancellationToken);
+
         var others = await db.HouseholdMembers
             .Where(m => m.HouseholdId == currentHouseholdId && m.UserId != userId)
             .OrderBy(m => m.CreatedAt)
@@ -163,7 +194,9 @@ public sealed class HouseholdService(
             Role = HouseholdRole.Owner,
             CreatedAt = now,
         });
+
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, cancellationToken));
     }
 }

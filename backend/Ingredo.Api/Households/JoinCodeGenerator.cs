@@ -4,7 +4,7 @@ namespace Ingredo.Api.Households;
 
 // Join codes get read aloud across a kitchen — I/L/O/0/1 are excluded so a
 // code survives handwriting and shouting. Codes gate joining only, never
-// authentication; the 30^6 space behind an authenticated endpoint is not
+// authentication; the 31^6 space behind an authenticated endpoint is not
 // practically enumerable.
 public static class JoinCodeGenerator
 {

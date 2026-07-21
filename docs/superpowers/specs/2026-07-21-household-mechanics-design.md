@@ -56,7 +56,7 @@
 
 ### `backend/Ingredo.Api.Tests/`
 
-- `Integration/HouseholdApiTests.cs` (the scenario suite from decision 8 / goals), `Households/JoinCodeGeneratorTests.cs`, small additions where existing auth tests assert household shape.
+- `Integration/HouseholdApiTests.cs` (the scenario suite from decision 8 / goals), `Households/JoinCodeGeneratorTests.cs`; no changes to existing auth tests were needed.
 
 ### Infra / docs
 

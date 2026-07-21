@@ -15,7 +15,7 @@ public class JoinCodeGeneratorTests
             Assert.All(code, c => Assert.Contains(c, JoinCodeGenerator.Alphabet));
             seen.Add(code);
         }
-        Assert.True(seen.Count > 490); // collisions in 500 draws from 30^6 are ~impossible
+        Assert.True(seen.Count > 490); // collisions in 500 draws from 31^6 are ~impossible
     }
 
     [Theory]
