@@ -26,6 +26,7 @@ public sealed class HouseholdGuardMiddleware(RequestDelegate next)
             if (!Guid.TryParse(claim, out var householdId)
                 || !await db.Households.AnyAsync(h => h.Id == householdId, context.RequestAborted))
             {
+                context.Response.Headers.WWWAuthenticate = "Bearer";
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return;
             }

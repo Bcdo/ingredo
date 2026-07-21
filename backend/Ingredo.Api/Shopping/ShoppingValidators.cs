@@ -1,5 +1,4 @@
 using FluentValidation;
-using Ingredo.Api.Domain;
 
 namespace Ingredo.Api.Shopping;
 
@@ -20,8 +19,8 @@ public sealed class ShoppingItemRequestValidator : AbstractValidator<ShoppingIte
         RuleFor(r => r.Sources).NotEmpty().MaximumLength(4000);
         RuleFor(r => r.Status)
             .Must(status =>
-                Enum.TryParse<ShoppingItemStatus>(status, true, out var parsed)
-                && Enum.IsDefined(parsed))
+                string.Equals(status, "active", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(status, "purchased", StringComparison.OrdinalIgnoreCase))
             .WithMessage("Status must be 'active' or 'purchased'.");
     }
 }

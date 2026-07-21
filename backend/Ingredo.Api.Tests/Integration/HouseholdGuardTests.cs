@@ -25,6 +25,8 @@ public class HouseholdGuardTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/recipes")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/household")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/meal-plan-entries")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/shopping-items")).StatusCode);
 
         // The anonymous refresh endpoint is the escape hatch: Kari's original
         // refresh token resolves her CURRENT membership.

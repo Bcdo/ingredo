@@ -45,6 +45,8 @@ public class ShoppingValidatorTests
     [InlineData("bought")]
     [InlineData("")]
     [InlineData("2")]
+    [InlineData("1")]
+    [InlineData("0")]
     public void Rejects_unknown_status(string status)
     {
         _validator.TestValidate(Valid() with { Status = status })
