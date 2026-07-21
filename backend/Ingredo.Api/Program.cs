@@ -50,6 +50,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<HouseholdGuardMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
