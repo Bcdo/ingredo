@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Sync;
 
-public sealed partial class SyncService(
+public sealed class SyncService(
     AppDbContext db,
     IValidator<RecipeRequest> recipeValidator,
     IValidator<MealPlanEntryRequest> mealPlanValidator,

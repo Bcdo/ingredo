@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using Ingredo.Api.Auth;
+using Ingredo.Api.Households;
 using Ingredo.Api.MealPlan;
 using Ingredo.Api.Recipes;
 using Ingredo.Api.Shopping;
@@ -96,6 +98,11 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
         new(id, title, null, 4, null, updatedAt - 10, updatedAt, deletedAt,
             [new SyncIngredientRow(Guid.NewGuid(), "Mel", 400, "g", "linear", 0)],
             [new SyncInstructionRow(Guid.NewGuid(), "Bland.", 0)]);
+
+    private static SyncShoppingRow ClientShopping(
+        Guid id, string name, string status, long updatedAt, long? purchasedAt = null) =>
+        new(id, name, name.ToLowerInvariant(), 1000, "ml", "[]", status, purchasedAt,
+            updatedAt - 10, updatedAt, null);
 
     [Fact]
     public async Task Push_inserts_new_rows_with_client_timestamps_verbatim()
@@ -228,6 +235,103 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
         var ingredient = Assert.Single(pulled.Ingredients);
         Assert.Equal(ingredientId, ingredient.Id);
         Assert.Equal("Hvetemel", ingredient.Name);
+        Assert.Equal(instructionId, Assert.Single(pulled.Instructions).Id);
+    }
+
+    [Fact]
+    public async Task Join_rehome_rows_surface_in_the_target_households_next_incremental_pull()
+    {
+        // A already has content of its own, so its pre-join cursor is well
+        // past zero — this proves an *incremental* pull picks up the
+        // re-homed row, not merely that a from-zero pull would.
+        await CreateRecipe("A sin egen oppskrift");
+        var preJoinCursor = (await Pull()).Cursor;
+
+        var (bClient, _) = await factory.RegisterUserAsync("B");
+        var bRecipeResponse = await bClient.PostAsJsonAsync(
+            "/api/v1/recipes",
+            new RecipeRequest(null, "B sin oppskrift", null, 4, null,
+                [new IngredientRequest(null, "Mel", 400, "g", "linear", 0)],
+                [new InstructionRequest(null, "Bland.", 0)]));
+        var bRecipe = (await bRecipeResponse.Content.ReadFromJsonAsync<RecipeResponse>())!;
+
+        // B is the sole member of its own (personal) household, so joining
+        // A's household re-homes B's content into A's household via
+        // ExecuteUpdateAsync — the one write path that bypasses EF value
+        // generation, relying on the DB trigger to assign a fresh SyncSeq.
+        var aHousehold = await _client.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        var joinResponse = await bClient.PostAsJsonAsync(
+            "/api/v1/household/join", new JoinRequest(aHousehold!.JoinCode));
+        Assert.Equal(HttpStatusCode.OK, joinResponse.StatusCode);
+        var joinAuth = (await joinResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
+        bClient.UseTokens(joinAuth); // B now carries a token scoped to A's household
+
+        var pull = await Pull(preJoinCursor);
+        var rehomed = Assert.Single(pull.Recipes, r => r.Id == bRecipe.Id);
+        Assert.Equal("B sin oppskrift", rehomed.Title);
+    }
+
+    [Fact]
+    public async Task Shopping_push_applies_lww_and_round_trips_purchased_state()
+    {
+        var id = Guid.NewGuid();
+        var updatedAt = Now() - 60_000;
+
+        var insert = await Push(new SyncPushRequest(
+            null, null, [ClientShopping(id, "Melk", "active", updatedAt)]));
+        Assert.Equal("applied", insert.Results[id]);
+
+        var pulled = Assert.Single((await Pull()).ShoppingItems, i => i.Id == id);
+        Assert.Equal("Melk", pulled.Name);
+        Assert.Equal("active", pulled.Status);
+        Assert.Equal(1000m, pulled.Quantity);
+
+        var stale = await Push(new SyncPushRequest(
+            null, null, [ClientShopping(id, "Gammel melk", "active", updatedAt - 1000)]));
+        Assert.Equal("superseded", stale.Results[id]);
+        Assert.Equal("Melk", Assert.Single((await Pull()).ShoppingItems, i => i.Id == id).Name);
+
+        var purchasedAt = updatedAt + 2000;
+        var purchase = await Push(new SyncPushRequest(
+            null, null, [ClientShopping(id, "Melk", "purchased", updatedAt + 1000, purchasedAt)]));
+        Assert.Equal("applied", purchase.Results[id]);
+
+        var final = Assert.Single((await Pull()).ShoppingItems, i => i.Id == id);
+        Assert.Equal("purchased", final.Status);
+        Assert.Equal(purchasedAt, final.PurchasedAt);
+    }
+
+    [Fact]
+    public async Task Tombstoned_recipe_resurrects_cleanly_on_a_newer_non_deleted_push()
+    {
+        var recipe = await CreateRecipe("Kanskje tilbake");
+        var serverUpdatedAt = Assert.Single((await Pull()).Recipes, r => r.Id == recipe.Id).UpdatedAt;
+
+        var tombstone = await Push(new SyncPushRequest(
+            [ClientRecipe(recipe.Id, "Kanskje tilbake", serverUpdatedAt + 1000, serverUpdatedAt + 1000)],
+            null, null));
+        Assert.Equal("applied", tombstone.Results[recipe.Id]);
+        Assert.NotNull(Assert.Single((await Pull()).Recipes, r => r.Id == recipe.Id).DeletedAt);
+
+        // Children were dropped when the tombstone applied; the resurrection
+        // resends fresh child ids and must re-add them cleanly rather than
+        // conflict with anything left dangling.
+        var ingredientId = Guid.NewGuid();
+        var instructionId = Guid.NewGuid();
+        var resurrected = new SyncRecipeRow(
+            recipe.Id, "Tilbake igjen", null, 4, null,
+            serverUpdatedAt - 10, serverUpdatedAt + 2000, null,
+            [new SyncIngredientRow(ingredientId, "Mel", 400, "g", "linear", 0)],
+            [new SyncInstructionRow(instructionId, "Bland.", 0)]);
+
+        var revive = await Push(new SyncPushRequest([resurrected], null, null));
+        Assert.Equal("applied", revive.Results[recipe.Id]);
+
+        var pulled = Assert.Single((await Pull()).Recipes, r => r.Id == recipe.Id);
+        Assert.Null(pulled.DeletedAt);
+        Assert.Equal("Tilbake igjen", pulled.Title);
+        var ingredient = Assert.Single(pulled.Ingredients);
+        Assert.Equal(ingredientId, ingredient.Id);
         Assert.Equal(instructionId, Assert.Single(pulled.Instructions).Id);
     }
 }

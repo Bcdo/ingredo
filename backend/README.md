@@ -67,6 +67,10 @@ docker compose up --build     # api on http://localhost:8080
   `conflict`). The only endpoint that accepts client timestamps.
 - Every server write gets a `SyncSeq` from a DB trigger — CRUD edits and
   sync edits are indistinguishable to pullers.
+- Engine contract: store the cursor returned by PULLS. A push's cursor covers
+  household rows you may never have pulled — only adopt it after a pull with
+  your pre-push cursor has completed, or you will silently skip other
+  devices' rows.
 
 ## Migrations
 
