@@ -15,6 +15,7 @@ public sealed class AuthController(
     IValidator<RefreshRequest> refreshValidator) : ControllerBase
 {
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var validation = await registerValidator.ValidateAsync(request, cancellationToken);
@@ -31,6 +32,7 @@ public sealed class AuthController(
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var validation = await loginValidator.ValidateAsync(request, cancellationToken);
@@ -45,6 +47,7 @@ public sealed class AuthController(
     }
 
     [HttpPost("refresh")]
+    [AllowAnonymous]
     public async Task<IActionResult> Refresh(RefreshRequest request, CancellationToken cancellationToken)
     {
         var validation = await refreshValidator.ValidateAsync(request, cancellationToken);
@@ -59,6 +62,7 @@ public sealed class AuthController(
     }
 
     [HttpPost("logout")]
+    [AllowAnonymous]
     public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken cancellationToken)
     {
         // Idempotent by design: unknown or already-revoked tokens still 204.

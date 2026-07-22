@@ -16,11 +16,14 @@ public sealed class HouseholdGuardMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, AppDbContext db)
     {
-        // Skip guard for endpoints that don't require authorization
+        // Fail closed: only endpoints that explicitly allow anonymous access
+        // are exempt. A future endpoint that forgets [Authorize] is still
+        // guarded; the anonymous refresh escape hatch is explicit.
         var endpoint = context.GetEndpoint();
-        var requiresAuth = endpoint?.Metadata.GetOrderedMetadata<IAuthorizeData>().Any() ?? false;
+        var allowsAnonymous =
+            endpoint?.Metadata.GetMetadata<IAllowAnonymous>() is not null;
 
-        if (context.User.Identity?.IsAuthenticated == true && requiresAuth)
+        if (!allowsAnonymous && context.User.Identity?.IsAuthenticated == true)
         {
             var claim = context.User.FindFirst(TokenService.HouseholdClaim)?.Value;
             if (!Guid.TryParse(claim, out var householdId)

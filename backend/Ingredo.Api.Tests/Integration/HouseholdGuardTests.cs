@@ -49,4 +49,23 @@ public class HouseholdGuardTests(ApiFactory factory) : IClassFixture<ApiFactory>
             "/api/v1/auth/login", new LoginRequest("nobody@test.local", "passord123"));
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode); // from auth logic, not the guard
     }
+
+    [Fact]
+    public void Guard_fails_closed_only_anonymous_marked_endpoints_are_exempt()
+    {
+        // Structural assertion: every AuthController action that must stay
+        // reachable with stale tokens carries [AllowAnonymous]; me does not.
+        var anonymous = new[] { "Register", "Login", "Refresh", "Logout" };
+        foreach (var name in anonymous)
+        {
+            var method = typeof(Ingredo.Api.Auth.AuthController).GetMethod(name)!;
+            Assert.NotNull(
+                method.GetCustomAttributes(
+                    typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), true)
+                    .FirstOrDefault());
+        }
+        var me = typeof(Ingredo.Api.Auth.AuthController).GetMethod("Me")!;
+        Assert.Empty(me.GetCustomAttributes(
+            typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), true));
+    }
 }
