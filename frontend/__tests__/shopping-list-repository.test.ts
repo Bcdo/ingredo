@@ -266,4 +266,19 @@ describe('sync prep', () => {
     const live = rows.find((r) => r.deletedAt === null)!;
     expect(live.quantity).toBe(200);
   });
+
+  it('readd is a no-op for a tombstoned source row', () => {
+    const db = makeTestDb();
+    addItems(db, [item()], 'merge');
+    const source = allRows(db)[0];
+    purchaseItem(db, source.id);
+    db.update(shoppingItems)
+      .set({ deletedAt: Date.now() })
+      .where(eq(shoppingItems.id, source.id))
+      .run();
+
+    readdItem(db, source.id);
+
+    expect(allRows(db)).toHaveLength(1); // no copy was made from the tombstone
+  });
 });

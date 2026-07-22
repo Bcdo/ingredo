@@ -123,7 +123,11 @@ export function restoreItem(db: DB, id: string): void {
 // item. The purchased row is history and stays untouched; recipe sources
 // are dropped because last month's attribution would mislead in the aisle.
 export function readdItem(db: DB, id: string): void {
-  const row = db.select().from(shoppingItems).where(eq(shoppingItems.id, id)).get();
+  const row = db
+    .select()
+    .from(shoppingItems)
+    .where(and(eq(shoppingItems.id, id), isNull(shoppingItems.deletedAt)))
+    .get();
   if (!row) return;
   addItems(
     db,
