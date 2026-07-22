@@ -16,4 +16,18 @@ public sealed class SyncController(ISyncService service) : ControllerBase
     public Task<SyncPullResponse> Changes(
         [FromQuery] long since, CancellationToken cancellationToken) =>
         service.PullAsync(HouseholdId, since, cancellationToken);
+
+    [HttpPost("push")]
+    public async Task<IActionResult> Push(SyncPushRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await service.PushAsync(HouseholdId, request, cancellationToken));
+        }
+        catch (SyncValidationException invalid)
+        {
+            ModelState.AddModelError($"{invalid.RowId}.{invalid.Field}", invalid.ErrorMessage);
+            return ValidationProblem(ModelState);
+        }
+    }
 }

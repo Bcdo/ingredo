@@ -1,10 +1,18 @@
+using FluentValidation;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.MealPlan;
+using Ingredo.Api.Recipes;
+using Ingredo.Api.Shopping;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Sync;
 
-public sealed partial class SyncService(AppDbContext db) : ISyncService
+public sealed partial class SyncService(
+    AppDbContext db,
+    IValidator<RecipeRequest> recipeValidator,
+    IValidator<MealPlanEntryRequest> mealPlanValidator,
+    IValidator<ShoppingItemRequest> shoppingValidator) : ISyncService
 {
     public async Task<SyncPullResponse> PullAsync(
         Guid householdId, long since, CancellationToken cancellationToken)
@@ -73,7 +81,236 @@ public sealed partial class SyncService(AppDbContext db) : ISyncService
             item.Sources, item.Status.ToString().ToLowerInvariant(), Ms(item.PurchasedAt),
             Ms(item.CreatedAt), Ms(item.UpdatedAt), Ms(item.DeletedAt));
 
-    public Task<SyncPushResponse> PushAsync(
-        Guid householdId, SyncPushRequest request, CancellationToken cancellationToken) =>
-        throw new NotImplementedException("Task 4 of the sync-endpoints slice.");
+    public async Task<SyncPushResponse> PushAsync(
+        Guid householdId, SyncPushRequest request, CancellationToken cancellationToken)
+    {
+        await ValidateBatchAsync(request, cancellationToken);
+
+        var results = new Dictionary<Guid, string>();
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        foreach (var row in request.Recipes ?? [])
+        {
+            results[row.Id] = await ApplyRecipeAsync(householdId, row, cancellationToken);
+        }
+        foreach (var row in request.MealPlanEntries ?? [])
+        {
+            results[row.Id] = await ApplyMealPlanAsync(householdId, row, cancellationToken);
+        }
+        foreach (var row in request.ShoppingItems ?? [])
+        {
+            results[row.Id] = await ApplyShoppingAsync(householdId, row, cancellationToken);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        var cursor = await CurrentCursorAsync(householdId, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return new SyncPushResponse(results, cursor);
+    }
+
+    private const string Applied = "applied";
+    private const string Superseded = "superseded";
+    private const string Conflict = "conflict";
+
+    private static DateTimeOffset FromMs(long value) => DateTimeOffset.FromUnixTimeMilliseconds(value);
+
+    private static DateTimeOffset? FromMs(long? value) =>
+        value is { } ms ? DateTimeOffset.FromUnixTimeMilliseconds(ms) : null;
+
+    private async Task ValidateBatchAsync(SyncPushRequest request, CancellationToken cancellationToken)
+    {
+        foreach (var row in request.Recipes ?? [])
+        {
+            var mapped = new RecipeRequest(row.Id, row.Title, row.Description, row.Servings, row.Notes,
+                row.Ingredients.Select(i => new IngredientRequest(
+                    i.Id, i.Name, i.Quantity, i.Unit, i.Scaling, i.SortOrder)).ToList(),
+                row.Instructions.Select(i => new InstructionRequest(i.Id, i.Text, i.SortOrder)).ToList());
+            (await recipeValidator.ValidateAsync(mapped, cancellationToken))
+                .ThrowIfInvalid(row.Id);
+        }
+        foreach (var row in request.MealPlanEntries ?? [])
+        {
+            if (!DateOnly.TryParseExact(row.Date, "yyyy-MM-dd", out var date))
+            {
+                throw new SyncValidationException(row.Id, "Date", "Date must be yyyy-MM-dd.");
+            }
+            var mapped = new MealPlanEntryRequest(row.Id, date, row.RecipeId, row.Servings, row.SortOrder);
+            (await mealPlanValidator.ValidateAsync(mapped, cancellationToken))
+                .ThrowIfInvalid(row.Id);
+        }
+        foreach (var row in request.ShoppingItems ?? [])
+        {
+            var mapped = new ShoppingItemRequest(row.Id, row.Name, row.NormalizedName, row.Quantity,
+                row.Unit, row.Sources, row.Status, FromMs(row.PurchasedAt));
+            (await shoppingValidator.ValidateAsync(mapped, cancellationToken))
+                .ThrowIfInvalid(row.Id);
+        }
+    }
+
+    private async Task<string> ApplyRecipeAsync(
+        Guid householdId, SyncRecipeRow row, CancellationToken cancellationToken)
+    {
+        var existing = await db.Recipes
+            .IgnoreQueryFilters()
+            .Include(r => r.Ingredients)
+            .Include(r => r.Instructions)
+            .FirstOrDefaultAsync(r => r.Id == row.Id, cancellationToken);
+        if (existing is not null && existing.HouseholdId != householdId) return Conflict;
+
+        var ingredients = row.DeletedAt is null
+            ? row.Ingredients.Select(i => new RecipeIngredient
+            {
+                Id = i.Id, Name = i.Name.Trim(), Quantity = i.Quantity, Unit = i.Unit,
+                Scaling = Enum.Parse<ScalingMode>(i.Scaling, true), SortOrder = i.SortOrder,
+            }).ToList()
+            : [];
+        var instructions = row.DeletedAt is null
+            ? row.Instructions.Select(i => new RecipeInstruction
+            {
+                Id = i.Id, Text = i.Text.Trim(), SortOrder = i.SortOrder,
+            }).ToList()
+            : [];
+
+        if (existing is null)
+        {
+            db.Recipes.Add(new Recipe
+            {
+                Id = row.Id, HouseholdId = householdId, Title = row.Title.Trim(),
+                Description = row.Description, Servings = row.Servings, Notes = row.Notes,
+                CreatedAt = FromMs(row.CreatedAt), UpdatedAt = FromMs(row.UpdatedAt),
+                DeletedAt = FromMs(row.DeletedAt),
+                Ingredients = ingredients, Instructions = instructions,
+            });
+            return Applied;
+        }
+
+        if (row.UpdatedAt <= existing.UpdatedAt.ToUnixTimeMilliseconds()) return Superseded;
+
+        existing.Title = row.Title.Trim();
+        existing.Description = row.Description;
+        existing.Servings = row.Servings;
+        existing.Notes = row.Notes;
+        existing.UpdatedAt = FromMs(row.UpdatedAt);
+        existing.DeletedAt = FromMs(row.DeletedAt);
+        existing.Ingredients.Clear();
+        existing.Ingredients.AddRange(ingredients);
+        existing.Instructions.Clear();
+        existing.Instructions.AddRange(instructions);
+        // Established EF pattern: children reached via navigation on a
+        // tracked root need explicit Added state.
+        db.RecipeIngredients.AddRange(ingredients);
+        db.RecipeInstructions.AddRange(instructions);
+        return Applied;
+    }
+
+    private async Task<string> ApplyMealPlanAsync(
+        Guid householdId, SyncMealPlanRow row, CancellationToken cancellationToken)
+    {
+        var existing = await db.MealPlanEntries
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => e.Id == row.Id, cancellationToken);
+        if (existing is not null && existing.HouseholdId != householdId) return Conflict;
+
+        // FK safety, not the CRUD live-recipe rule: a tombstoned recipe is a
+        // legal replicated target. Local-pending recipes from the same batch
+        // are visible here (tracked inserts flush on SaveChanges — use Local).
+        var recipeExists =
+            db.Recipes.Local.Any(r => r.Id == row.RecipeId && r.HouseholdId == householdId)
+            || await db.Recipes.IgnoreQueryFilters()
+                .AnyAsync(r => r.Id == row.RecipeId && r.HouseholdId == householdId, cancellationToken);
+        if (!recipeExists) return Conflict;
+
+        var date = DateOnly.ParseExact(row.Date, "yyyy-MM-dd");
+        if (existing is null)
+        {
+            db.MealPlanEntries.Add(new MealPlanEntry
+            {
+                Id = row.Id, HouseholdId = householdId, Date = date, RecipeId = row.RecipeId,
+                Servings = row.Servings, SortOrder = row.SortOrder,
+                CreatedAt = FromMs(row.CreatedAt), UpdatedAt = FromMs(row.UpdatedAt),
+                DeletedAt = FromMs(row.DeletedAt),
+            });
+            return Applied;
+        }
+
+        if (row.UpdatedAt <= existing.UpdatedAt.ToUnixTimeMilliseconds()) return Superseded;
+
+        existing.Date = date;
+        existing.RecipeId = row.RecipeId;
+        existing.Servings = row.Servings;
+        existing.SortOrder = row.SortOrder;
+        existing.UpdatedAt = FromMs(row.UpdatedAt);
+        existing.DeletedAt = FromMs(row.DeletedAt);
+        return Applied;
+    }
+
+    private async Task<string> ApplyShoppingAsync(
+        Guid householdId, SyncShoppingRow row, CancellationToken cancellationToken)
+    {
+        var existing = await db.ShoppingItems
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => i.Id == row.Id, cancellationToken);
+        if (existing is not null && existing.HouseholdId != householdId) return Conflict;
+
+        var status = Enum.Parse<ShoppingItemStatus>(row.Status, true);
+        if (existing is null)
+        {
+            db.ShoppingItems.Add(new ShoppingItem
+            {
+                Id = row.Id, HouseholdId = householdId, Name = row.Name.Trim(),
+                NormalizedName = row.NormalizedName.Trim(), Quantity = row.Quantity,
+                Unit = row.Unit, Sources = row.Sources, Status = status,
+                PurchasedAt = FromMs(row.PurchasedAt),
+                CreatedAt = FromMs(row.CreatedAt), UpdatedAt = FromMs(row.UpdatedAt),
+                DeletedAt = FromMs(row.DeletedAt),
+            });
+            return Applied;
+        }
+
+        if (row.UpdatedAt <= existing.UpdatedAt.ToUnixTimeMilliseconds()) return Superseded;
+
+        existing.Name = row.Name.Trim();
+        existing.NormalizedName = row.NormalizedName.Trim();
+        existing.Quantity = row.Quantity;
+        existing.Unit = row.Unit;
+        existing.Sources = row.Sources;
+        existing.Status = status;
+        existing.PurchasedAt = FromMs(row.PurchasedAt);
+        existing.UpdatedAt = FromMs(row.UpdatedAt);
+        existing.DeletedAt = FromMs(row.DeletedAt);
+        return Applied;
+    }
+
+    private async Task<long> CurrentCursorAsync(Guid householdId, CancellationToken cancellationToken)
+    {
+        var recipeMax = await db.Recipes.IgnoreQueryFilters()
+            .Where(r => r.HouseholdId == householdId)
+            .MaxAsync(r => (long?)r.SyncSeq, cancellationToken) ?? 0;
+        var entryMax = await db.MealPlanEntries.IgnoreQueryFilters()
+            .Where(e => e.HouseholdId == householdId)
+            .MaxAsync(e => (long?)e.SyncSeq, cancellationToken) ?? 0;
+        var itemMax = await db.ShoppingItems.IgnoreQueryFilters()
+            .Where(i => i.HouseholdId == householdId)
+            .MaxAsync(i => (long?)i.SyncSeq, cancellationToken) ?? 0;
+        return Math.Max(recipeMax, Math.Max(entryMax, itemMax));
+    }
+}
+
+public sealed class SyncValidationException(Guid rowId, string field, string message)
+    : Exception($"{field}: {message}")
+{
+    public Guid RowId { get; } = rowId;
+    public string Field { get; } = field;
+    public string ErrorMessage { get; } = message;
+}
+
+file static class ValidationResultExtensions
+{
+    public static void ThrowIfInvalid(this FluentValidation.Results.ValidationResult result, Guid rowId)
+    {
+        if (result.IsValid) return;
+        var first = result.Errors[0];
+        throw new SyncValidationException(rowId, first.PropertyName, first.ErrorMessage);
+    }
 }
