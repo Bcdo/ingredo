@@ -158,22 +158,21 @@ public sealed partial class SyncService(
             .FirstOrDefaultAsync(r => r.Id == row.Id, cancellationToken);
         if (existing is not null && existing.HouseholdId != householdId) return Conflict;
 
-        var ingredients = row.DeletedAt is null
-            ? row.Ingredients.Select(i => new RecipeIngredient
-            {
-                Id = i.Id, Name = i.Name.Trim(), Quantity = i.Quantity, Unit = i.Unit,
-                Scaling = Enum.Parse<ScalingMode>(i.Scaling, true), SortOrder = i.SortOrder,
-            }).ToList()
-            : [];
-        var instructions = row.DeletedAt is null
-            ? row.Instructions.Select(i => new RecipeInstruction
-            {
-                Id = i.Id, Text = i.Text.Trim(), SortOrder = i.SortOrder,
-            }).ToList()
-            : [];
-
         if (existing is null)
         {
+            var ingredients = row.DeletedAt is null
+                ? row.Ingredients.Select(i => new RecipeIngredient
+                {
+                    Id = i.Id, Name = i.Name.Trim(), Quantity = i.Quantity, Unit = i.Unit,
+                    Scaling = Enum.Parse<ScalingMode>(i.Scaling, true), SortOrder = i.SortOrder,
+                }).ToList()
+                : [];
+            var instructions = row.DeletedAt is null
+                ? row.Instructions.Select(i => new RecipeInstruction
+                {
+                    Id = i.Id, Text = i.Text.Trim(), SortOrder = i.SortOrder,
+                }).ToList()
+                : [];
             db.Recipes.Add(new Recipe
             {
                 Id = row.Id, HouseholdId = householdId, Title = row.Title.Trim(),
@@ -193,14 +192,73 @@ public sealed partial class SyncService(
         existing.Notes = row.Notes;
         existing.UpdatedAt = FromMs(row.UpdatedAt);
         existing.DeletedAt = FromMs(row.DeletedAt);
-        existing.Ingredients.Clear();
-        existing.Ingredients.AddRange(ingredients);
-        existing.Instructions.Clear();
-        existing.Instructions.AddRange(instructions);
-        // Established EF pattern: children reached via navigation on a
-        // tracked root need explicit Added state.
-        db.RecipeIngredients.AddRange(ingredients);
-        db.RecipeInstructions.AddRange(instructions);
+
+        // Merge children in place rather than clear+replace: a sync client
+        // keeps stable child ids across edits, so resending an existing id
+        // would double-track that key if we materialized fresh entities and
+        // AddRange'd them. Instead we reconcile against the tracked
+        // collection: drop children absent from the incoming set (this also
+        // implements the tombstone rule, since a deleted recipe sends an
+        // empty child list), update ones that still match by id, and only
+        // explicitly Add brand-new ids (children reached via navigation on
+        // an already-tracked root still need explicit Added state).
+        var incomingIngredients = row.DeletedAt is null ? row.Ingredients : [];
+        foreach (var stale in existing.Ingredients
+            .Where(current => incomingIngredients.All(i => i.Id != current.Id)).ToList())
+        {
+            existing.Ingredients.Remove(stale);
+            db.RecipeIngredients.Remove(stale);
+        }
+        foreach (var incoming in incomingIngredients)
+        {
+            var current = existing.Ingredients.FirstOrDefault(c => c.Id == incoming.Id);
+            if (current is null)
+            {
+                var added = new RecipeIngredient
+                {
+                    Id = incoming.Id, Name = incoming.Name.Trim(), Quantity = incoming.Quantity,
+                    Unit = incoming.Unit, Scaling = Enum.Parse<ScalingMode>(incoming.Scaling, true),
+                    SortOrder = incoming.SortOrder,
+                };
+                existing.Ingredients.Add(added);
+                db.RecipeIngredients.Add(added);
+            }
+            else
+            {
+                current.Name = incoming.Name.Trim();
+                current.Quantity = incoming.Quantity;
+                current.Unit = incoming.Unit;
+                current.Scaling = Enum.Parse<ScalingMode>(incoming.Scaling, true);
+                current.SortOrder = incoming.SortOrder;
+            }
+        }
+
+        var incomingInstructions = row.DeletedAt is null ? row.Instructions : [];
+        foreach (var stale in existing.Instructions
+            .Where(current => incomingInstructions.All(i => i.Id != current.Id)).ToList())
+        {
+            existing.Instructions.Remove(stale);
+            db.RecipeInstructions.Remove(stale);
+        }
+        foreach (var incoming in incomingInstructions)
+        {
+            var current = existing.Instructions.FirstOrDefault(c => c.Id == incoming.Id);
+            if (current is null)
+            {
+                var added = new RecipeInstruction
+                {
+                    Id = incoming.Id, Text = incoming.Text.Trim(), SortOrder = incoming.SortOrder,
+                };
+                existing.Instructions.Add(added);
+                db.RecipeInstructions.Add(added);
+            }
+            else
+            {
+                current.Text = incoming.Text.Trim();
+                current.SortOrder = incoming.SortOrder;
+            }
+        }
+
         return Applied;
     }
 

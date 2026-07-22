@@ -204,4 +204,30 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
         var incremental = await Pull(push.Cursor);
         Assert.DoesNotContain(incremental.Recipes, r => r.Id == id);
     }
+
+    [Fact]
+    public async Task Recipe_update_pushes_reusing_child_ids_apply_cleanly()
+    {
+        var recipeId = Guid.NewGuid();
+        var ingredientId = Guid.NewGuid();
+        var instructionId = Guid.NewGuid();
+        var now = Now();
+        SyncRecipeRow Version(string title, long updatedAt, string ingredientName) =>
+            new(recipeId, title, null, 4, null, now - 10, updatedAt, null,
+                [new SyncIngredientRow(ingredientId, ingredientName, 400, "g", "linear", 0)],
+                [new SyncInstructionRow(instructionId, "Bland.", 0)]);
+
+        var first = await Push(new SyncPushRequest([Version("V1", now, "Mel")], null, null));
+        Assert.Equal("applied", first.Results[recipeId]);
+
+        var second = await Push(new SyncPushRequest([Version("V2", now + 1000, "Hvetemel")], null, null));
+        Assert.Equal("applied", second.Results[recipeId]);
+
+        var pulled = Assert.Single((await Pull()).Recipes, r => r.Id == recipeId);
+        Assert.Equal("V2", pulled.Title);
+        var ingredient = Assert.Single(pulled.Ingredients);
+        Assert.Equal(ingredientId, ingredient.Id);
+        Assert.Equal("Hvetemel", ingredient.Name);
+        Assert.Equal(instructionId, Assert.Single(pulled.Instructions).Id);
+    }
 }
