@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -31,7 +31,11 @@ export default function PickDayScreen() {
   const entryRow = useMemo(
     () =>
       typeof entryId === 'string'
-        ? db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()
+        ? db
+            .select()
+            .from(mealPlanEntries)
+            .where(and(eq(mealPlanEntries.id, entryId), isNull(mealPlanEntries.deletedAt)))
+            .get()
         : undefined,
     [entryId]
   );

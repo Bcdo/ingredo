@@ -185,3 +185,9 @@ Simple UI screens can be tested manually at first.
 - Second household sees none of it (list empty, direct GET 404).
 - After a sole-member join-away, requests with the OLD access token → 401 (was 500/empty); `POST /auth/refresh` with the old refresh token recovers.
 - Stale compose volume: `docker compose down -v` once (new tables + constraint).
+
+## Frontend sync-prep (manual pass)
+
+- Everything behaves exactly as before: plan a meal, remove it (it disappears from every screen), shop, purchase, re-add, edit and delete a recipe.
+- The one observable-by-tooling difference: removed plan entries survive in the database as tombstones (`deleted_at` set) — verifiable with a SQLite browser, invisible in the app.
+- Kill and relaunch after the update: the migration applies silently, existing data intact.

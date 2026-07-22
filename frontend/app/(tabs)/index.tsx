@@ -33,7 +33,8 @@ export default function TodayScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, tomorrow),
-          isNull(recipes.deletedAt)
+          isNull(recipes.deletedAt),
+          isNull(mealPlanEntries.deletedAt)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),

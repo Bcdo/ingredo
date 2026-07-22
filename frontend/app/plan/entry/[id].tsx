@@ -26,7 +26,13 @@ export default function PlanEntryScreen() {
       })
       .from(mealPlanEntries)
       .innerJoin(recipes, eq(mealPlanEntries.recipeId, recipes.id))
-      .where(and(eq(mealPlanEntries.id, id), isNull(recipes.deletedAt))),
+      .where(
+        and(
+          eq(mealPlanEntries.id, id),
+          isNull(recipes.deletedAt),
+          isNull(mealPlanEntries.deletedAt)
+        )
+      ),
     [id]
   );
 

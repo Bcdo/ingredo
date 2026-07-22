@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -41,14 +41,14 @@ export default function ShopScreen() {
     db
       .select()
       .from(shoppingItems)
-      .where(eq(shoppingItems.status, 'active'))
+      .where(and(eq(shoppingItems.status, 'active'), isNull(shoppingItems.deletedAt)))
       .orderBy(asc(shoppingItems.createdAt))
   );
   const { data: purchasedItems } = useLiveQuery(
     db
       .select()
       .from(shoppingItems)
-      .where(eq(shoppingItems.status, 'purchased'))
+      .where(and(eq(shoppingItems.status, 'purchased'), isNull(shoppingItems.deletedAt)))
       .orderBy(desc(shoppingItems.purchasedAt))
   );
 

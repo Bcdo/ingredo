@@ -34,7 +34,8 @@ export default function PlanScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
-          isNull(recipes.deletedAt)
+          isNull(recipes.deletedAt),
+          isNull(mealPlanEntries.deletedAt)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),
@@ -59,7 +60,8 @@ export default function PlanScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
-          isNull(recipes.deletedAt)
+          isNull(recipes.deletedAt),
+          isNull(mealPlanEntries.deletedAt)
         )
       ),
     [today]
@@ -69,7 +71,7 @@ export default function PlanScreen() {
     db
       .select({ normalizedName: shoppingItems.normalizedName, unit: shoppingItems.unit })
       .from(shoppingItems)
-      .where(eq(shoppingItems.status, 'active'))
+      .where(and(eq(shoppingItems.status, 'active'), isNull(shoppingItems.deletedAt)))
   );
 
   const pending = useMemo(() => {
