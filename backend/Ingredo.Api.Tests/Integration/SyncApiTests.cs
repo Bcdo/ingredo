@@ -241,12 +241,16 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
     [Fact]
     public async Task Join_rehome_rows_surface_in_the_target_households_next_incremental_pull()
     {
-        // A already has content of its own, so its pre-join cursor is well
-        // past zero — this proves an *incremental* pull picks up the
-        // re-homed row, not merely that a from-zero pull would.
-        await CreateRecipe("A sin egen oppskrift");
-        var preJoinCursor = (await Pull()).Cursor;
-
+        // B's recipe is created first, so its insert-time SyncSeq is the
+        // smallest relevant value — well below the cursor A is about to
+        // capture. A's pre-join cursor is then strictly greater than that
+        // insert-time SyncSeq (the sequence is global, shared across
+        // households). That means the only way B's recipe can still show up
+        // in A's incremental pull afterwards is if joining re-homed it with
+        // a *fresh*, trigger-assigned SyncSeq — if the DB trigger never
+        // fired, B's row would keep its original (too-old) SyncSeq and stay
+        // invisible to a pull since preJoinCursor. So this ordering makes
+        // the trigger firing the only way the assertion below can pass.
         var (bClient, _) = await factory.RegisterUserAsync("B");
         var bRecipeResponse = await bClient.PostAsJsonAsync(
             "/api/v1/recipes",
@@ -254,6 +258,9 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
                 [new IngredientRequest(null, "Mel", 400, "g", "linear", 0)],
                 [new InstructionRequest(null, "Bland.", 0)]));
         var bRecipe = (await bRecipeResponse.Content.ReadFromJsonAsync<RecipeResponse>())!;
+
+        await CreateRecipe("A sin egen oppskrift");
+        var preJoinCursor = (await Pull()).Cursor;
 
         // B is the sole member of its own (personal) household, so joining
         // A's household re-homes B's content into A's household via
