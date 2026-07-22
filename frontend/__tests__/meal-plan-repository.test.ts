@@ -68,14 +68,56 @@ describe('meal plan repository', () => {
     expect(row?.servings).toBe(7);
   });
 
-  it('hard-deletes an entry', () => {
+  it('tombstones an entry (not hard-delete)', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
     const id = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 4 });
 
     removePlanEntry(db, id);
 
-    expect(db.select().from(mealPlanEntries).all()).toHaveLength(0);
+    const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
+    expect(row).toBeDefined();
+    expect(row!.deletedAt).not.toBeNull();
+  });
+});
+
+describe('sync prep', () => {
+  it('remove tombstones the entry instead of deleting it', () => {
+    const db = makeTestDb();
+    const recipeId = seedRecipe(db, 'Soup');
+    const id = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+
+    removePlanEntry(db, id);
+
+    const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
+    expect(row).toBeDefined();
+    expect(row!.deletedAt).not.toBeNull();
+    expect(row!.updatedAt).toBe(row!.deletedAt);
+    expect(row!.dirty).toBe(1);
+  });
+
+  it('tombstoned entries do not consume sort orders', () => {
+    const db = makeTestDb();
+    const recipeId = seedRecipe(db, 'Soup');
+    const first = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+    removePlanEntry(db, first);
+
+    const second = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+
+    const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, second)).get();
+    expect(row!.sortOrder).toBe(0);
+  });
+
+  it('writes stamp the dirty flag', () => {
+    const db = makeTestDb();
+    const recipeId = seedRecipe(db, 'Soup');
+    const id = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+    db.update(mealPlanEntries).set({ dirty: 0 }).where(eq(mealPlanEntries.id, id)).run();
+
+    setPlanEntryServings(db, id, 6);
+
+    const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
+    expect(row!.dirty).toBe(1);
   });
 
   it('window join excludes entries whose recipe is soft-deleted', () => {
