@@ -191,3 +191,12 @@ Simple UI screens can be tested manually at first.
 - Everything behaves exactly as before: plan a meal, remove it (it disappears from every screen), shop, purchase, re-add, edit and delete a recipe.
 - The one observable-by-tooling difference: removed plan entries survive in the database as tombstones (`deleted_at` set) — verifiable with a SQLite browser, invisible in the app.
 - Kill and relaunch after the update: the migration applies silently, existing data intact.
+
+## Sync endpoints (manual pass)
+
+- Via Scalar: pull with `since=0` → all your content incl. anything you've deleted (tombstones with `deletedAt`); pull again with the returned cursor → empty.
+- Create a recipe via the normal API → it appears in the next incremental pull.
+- Push a recipe row with an old `updatedAt` (before the server's) → `superseded`, content unchanged; with a newer one → `applied`.
+- Push a tombstone (`deletedAt` = `updatedAt`, newer than server) → recipe vanishes from the app-facing API but travels in pulls.
+- A second user's pull never contains your household's rows.
+- Stale compose volume: `docker compose down -v` once (SyncSeq column + triggers).

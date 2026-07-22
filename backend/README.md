@@ -58,6 +58,16 @@ docker compose up --build     # api on http://localhost:8080
 - Tokens whose household no longer exists get 401 everywhere — refresh to
   recover (the refresh endpoint resolves your current membership).
 
+## Sync
+
+- `GET /api/v1/sync/changes?since=<cursor>` — everything in your household
+  changed after the cursor, tombstones included; returns the next cursor.
+- `POST /api/v1/sync/push` — batch of full row states with CLIENT-authored
+  epoch-ms timestamps; per-row last-writer-wins (`applied` / `superseded` /
+  `conflict`). The only endpoint that accepts client timestamps.
+- Every server write gets a `SyncSeq` from a DB trigger — CRUD edits and
+  sync edits are indistinguishable to pullers.
+
 ## Migrations
 
 - `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run
