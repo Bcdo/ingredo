@@ -38,6 +38,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithOne()
                 .HasForeignKey(i => i.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
+            recipe.Property(r => r.SyncSeq)
+                .HasDefaultValueSql("nextval('sync_seq')")
+                .ValueGeneratedOnAddOrUpdate();
+            recipe.HasIndex(r => new { r.HouseholdId, r.SyncSeq });
         });
 
         modelBuilder.Entity<RecipeIngredient>(ingredient =>
@@ -121,6 +125,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(e => e.RecipeId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entry.Property(e => e.SyncSeq)
+                .HasDefaultValueSql("nextval('sync_seq')")
+                .ValueGeneratedOnAddOrUpdate();
+            entry.HasIndex(e => new { e.HouseholdId, e.SyncSeq });
         });
 
         modelBuilder.Entity<ShoppingItem>(item =>
@@ -142,6 +150,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(i => i.HouseholdId)
                 .OnDelete(DeleteBehavior.Cascade);
+            item.Property(i => i.SyncSeq)
+                .HasDefaultValueSql("nextval('sync_seq')")
+                .ValueGeneratedOnAddOrUpdate();
+            item.HasIndex(i => new { i.HouseholdId, i.SyncSeq });
         });
     }
 }
