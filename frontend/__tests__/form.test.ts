@@ -58,6 +58,7 @@ describe('formStateFromRecipe', () => {
         createdAt: 1,
         updatedAt: 1,
         deletedAt: null,
+        dirty: 1,
       },
       ingredients: [
         {
@@ -94,6 +95,7 @@ describe('formStateFromRecipe', () => {
         createdAt: 1,
         updatedAt: 1,
         deletedAt: null,
+        dirty: 1,
       },
       ingredients: [
         {

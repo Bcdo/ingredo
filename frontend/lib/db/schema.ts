@@ -9,6 +9,7 @@ export const recipes = sqliteTable('recipes', {
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
   deletedAt: integer('deleted_at'),
+  dirty: integer('dirty').notNull().default(1),
 });
 
 export const recipeIngredients = sqliteTable('recipe_ingredients', {
@@ -46,6 +47,8 @@ export const mealPlanEntries = sqliteTable(
     sortOrder: integer('sort_order').notNull(),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
+    deletedAt: integer('deleted_at'),
+    dirty: integer('dirty').notNull().default(1),
   },
   (table) => [index('meal_plan_entries_date_idx').on(table.date)]
 );
@@ -70,6 +73,8 @@ export const shoppingItems = sqliteTable(
     purchasedAt: integer('purchased_at'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
+    deletedAt: integer('deleted_at'),
+    dirty: integer('dirty').notNull().default(1),
   },
   (table) => [index('shopping_items_status_idx').on(table.status, table.normalizedName)]
 );
