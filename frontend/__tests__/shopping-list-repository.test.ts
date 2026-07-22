@@ -233,3 +233,37 @@ describe('readdItem', () => {
     expect(allRows(db)).toHaveLength(0);
   });
 });
+
+describe('sync prep', () => {
+  it('writes stamp the dirty flag on insert, merge, purchase, and restore', () => {
+    const db = makeTestDb();
+    addItems(db, [item()], 'merge');
+    const row = allRows(db)[0];
+    expect(row.dirty).toBe(1);
+
+    db.update(shoppingItems).set({ dirty: 0 }).where(eq(shoppingItems.id, row.id)).run();
+    purchaseItem(db, row.id);
+    expect(allRows(db)[0].dirty).toBe(1);
+
+    db.update(shoppingItems).set({ dirty: 0 }).where(eq(shoppingItems.id, row.id)).run();
+    restoreItem(db, row.id);
+    expect(allRows(db)[0].dirty).toBe(1);
+  });
+
+  it('tombstoned active rows are invisible to merge', () => {
+    const db = makeTestDb();
+    addItems(db, [item()], 'merge');
+    const buried = allRows(db)[0];
+    db.update(shoppingItems)
+      .set({ deletedAt: Date.now() })
+      .where(eq(shoppingItems.id, buried.id))
+      .run();
+
+    addItems(db, [item({ quantity: 200 })], 'merge');
+
+    const rows = allRows(db);
+    expect(rows).toHaveLength(2); // fresh row inserted; tombstone NOT merged into
+    const live = rows.find((r) => r.deletedAt === null)!;
+    expect(live.quantity).toBe(200);
+  });
+});

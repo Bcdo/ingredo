@@ -7,7 +7,7 @@ import {
   type RecipeInput,
 } from '../lib/db/recipes';
 import { recipes, recipeIngredients } from '../lib/db/schema';
-import { isNull } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 
 const input = (overrides: Partial<RecipeInput> = {}): RecipeInput => ({
   title: 'Tomato Soup',
@@ -99,5 +99,23 @@ describe('recipes repository', () => {
     });
     const details = getRecipe(db, id);
     expect(details?.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
+  });
+});
+
+describe('sync prep', () => {
+  it('create, update, and soft delete stamp the dirty flag', () => {
+    const db = makeTestDb();
+    const id = createRecipe(db, input());
+    expect(db.select().from(recipes).where(eq(recipes.id, id)).get()!.dirty).toBe(1);
+
+    db.update(recipes).set({ dirty: 0 }).where(eq(recipes.id, id)).run();
+    updateRecipe(db, id, input());
+    expect(db.select().from(recipes).where(eq(recipes.id, id)).get()!.dirty).toBe(1);
+
+    db.update(recipes).set({ dirty: 0 }).where(eq(recipes.id, id)).run();
+    softDeleteRecipe(db, id);
+    const row = db.select().from(recipes).where(eq(recipes.id, id)).get()!;
+    expect(row.dirty).toBe(1);
+    expect(row.deletedAt).not.toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
 import { newId } from './id';
 import { shoppingItems } from './schema';
@@ -51,7 +51,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
     const activeRows = txDb
       .select()
       .from(shoppingItems)
-      .where(eq(shoppingItems.status, 'active'))
+      .where(and(eq(shoppingItems.status, 'active'), isNull(shoppingItems.deletedAt)))
       .all();
     const byKey = new Map(activeRows.map((row) => [itemKey(row), row]));
     for (const item of batch) {
@@ -70,6 +70,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
             purchasedAt: null,
             createdAt: now,
             updatedAt: now,
+            dirty: 1,
           })
           .run();
         written += 1;
@@ -82,6 +83,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
           quantity: sumQuantities(existing.quantity, item.quantity),
           sources: JSON.stringify(mergeSources(parseSources(existing.sources), item.sources)),
           updatedAt: now,
+          dirty: 1,
         })
         .where(eq(shoppingItems.id, existing.id))
         .run();
@@ -105,14 +107,14 @@ export function addManualItem(db: DB, rawName: string): boolean {
 export function purchaseItem(db: DB, id: string): void {
   const now = Date.now();
   db.update(shoppingItems)
-    .set({ status: 'purchased', purchasedAt: now, updatedAt: now })
+    .set({ status: 'purchased', purchasedAt: now, updatedAt: now, dirty: 1 })
     .where(eq(shoppingItems.id, id))
     .run();
 }
 
 export function restoreItem(db: DB, id: string): void {
   db.update(shoppingItems)
-    .set({ status: 'active', purchasedAt: null, updatedAt: Date.now() })
+    .set({ status: 'active', purchasedAt: null, updatedAt: Date.now(), dirty: 1 })
     .where(eq(shoppingItems.id, id))
     .run();
 }

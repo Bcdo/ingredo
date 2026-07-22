@@ -69,6 +69,7 @@ export function createRecipe(db: DB, input: RecipeInput): string {
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
+        dirty: 1,
       })
       .run();
     insertChildren(tx as unknown as DB, id, input);
@@ -86,6 +87,7 @@ export function updateRecipe(db: DB, id: string, input: RecipeInput): void {
         servings: input.servings,
         notes: input.notes,
         updatedAt: now,
+        dirty: 1,
       })
       .where(eq(recipes.id, id))
       .run();
@@ -97,7 +99,10 @@ export function updateRecipe(db: DB, id: string, input: RecipeInput): void {
 
 export function softDeleteRecipe(db: DB, id: string): void {
   const now = Date.now();
-  db.update(recipes).set({ deletedAt: now, updatedAt: now }).where(eq(recipes.id, id)).run();
+  db.update(recipes)
+    .set({ deletedAt: now, updatedAt: now, dirty: 1 })
+    .where(eq(recipes.id, id))
+    .run();
 }
 
 export function getRecipe(db: DB, id: string): RecipeWithDetails | null {
