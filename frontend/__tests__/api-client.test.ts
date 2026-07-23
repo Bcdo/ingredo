@@ -151,6 +151,17 @@ describe('refreshSession', () => {
     await expect(refreshSession()).resolves.toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('malformed refresh response body: resolves false, stored token kept', async () => {
+    await setStoredRefreshToken('refresh-1');
+    fetchMock.mockResolvedValueOnce(
+      new Response('not json', { status: 200, headers: { 'Content-Type': 'text/plain' } })
+    );
+
+    await expect(refreshSession()).resolves.toBe(false);
+    expect(getSession().status).toBe('signedOut');
+    await expect(getStoredRefreshToken()).resolves.toBe('refresh-1');
+  });
 });
 
 describe('restoreSession', () => {

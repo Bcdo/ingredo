@@ -112,7 +112,15 @@ async function doRefresh(): Promise<boolean> {
     return false;
   }
 
-  await applyAuthResponse((await response.json()) as AuthResponseDto);
+  let auth: AuthResponseDto;
+  try {
+    auth = (await response.json()) as AuthResponseDto;
+  } catch {
+    // A 200 we cannot parse is a transient server fault, not a dead token.
+    setSessionSignedOut();
+    return false;
+  }
+  await applyAuthResponse(auth);
   return true;
 }
 
