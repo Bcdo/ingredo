@@ -99,3 +99,9 @@ export type SyncPushResponseDto = {
   results: Record<string, string>;
   cursor: number;
 };
+
+export type DirtyStamps = {
+  recipes: Map<string, number>;
+  mealPlanEntries: Map<string, number>;
+  shoppingItems: Map<string, number>;
+};
