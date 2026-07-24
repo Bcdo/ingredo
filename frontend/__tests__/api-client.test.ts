@@ -5,6 +5,7 @@ import {
   getSession,
   getStoredRefreshToken,
   resetSessionForTests,
+  setSessionSignedOut,
   setStoredRefreshToken,
 } from '../lib/api/session';
 import type { AuthResponseDto } from '../lib/api/types';
@@ -161,6 +162,26 @@ describe('refreshSession', () => {
     await expect(refreshSession()).resolves.toBe(false);
     expect(getSession().status).toBe('signedOut');
     await expect(getStoredRefreshToken()).resolves.toBe('refresh-1');
+  });
+
+  it('sign-out during an in-flight refresh is not resurrected by its completion', async () => {
+    await setStoredRefreshToken('refresh-1');
+    let release: (response: Response) => void = () => {};
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        release = resolve;
+      })
+    );
+
+    const pending = refreshSession();
+    // What signOut does locally, mid-flight:
+    await setStoredRefreshToken(null);
+    setSessionSignedOut();
+    release(jsonResponse(200, auth));
+
+    await expect(pending).resolves.toBe(false);
+    expect(getSession().status).toBe('signedOut');
+    await expect(getStoredRefreshToken()).resolves.toBeNull();
   });
 });
 

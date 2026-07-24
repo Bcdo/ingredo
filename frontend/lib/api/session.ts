@@ -28,6 +28,7 @@ const SIGNED_OUT: Session = {
 
 let session: Session = SIGNED_OUT;
 let accessToken: string | null = null;
+let sessionEpoch = 0;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -59,7 +60,14 @@ export function setSessionRestoring(): void {
 export function setSessionSignedOut(): void {
   session = SIGNED_OUT;
   accessToken = null;
+  sessionEpoch += 1;
   emit();
+}
+
+// Bumped on every sign-out; lets in-flight refreshes detect that their
+// result belongs to a session the user has already abandoned.
+export function getSessionEpoch(): number {
+  return sessionEpoch;
 }
 
 export async function applyAuthResponse(auth: AuthResponseDto): Promise<void> {

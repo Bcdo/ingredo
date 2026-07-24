@@ -3,6 +3,7 @@ import { getApiBaseUrl } from './config';
 import {
   applyAuthResponse,
   getAccessToken,
+  getSessionEpoch,
   getStoredRefreshToken,
   setSessionRestoring,
   setSessionSignedOut,
@@ -84,6 +85,7 @@ export function refreshSession(): Promise<boolean> {
 }
 
 async function doRefresh(): Promise<boolean> {
+  const epoch = getSessionEpoch();
   const refreshToken = await getStoredRefreshToken();
   if (!refreshToken) {
     setSessionSignedOut();
@@ -118,6 +120,11 @@ async function doRefresh(): Promise<boolean> {
   } catch {
     // A 200 we cannot parse is a transient server fault, not a dead token.
     setSessionSignedOut();
+    return false;
+  }
+  if (getSessionEpoch() !== epoch) {
+    // Signed out while this refresh was in flight — do not resurrect the
+    // session or re-persist the rotated token.
     return false;
   }
   await applyAuthResponse(auth);

@@ -37,7 +37,10 @@ export function AccountSection() {
     let cancelled = false;
     getHousehold()
       .then((result) => {
-        if (!cancelled) setHousehold(result);
+        if (!cancelled) {
+          setHousehold(result);
+          setError(null);
+        }
       })
       .catch((caught) => {
         if (!cancelled) setError(joinErrorMessage(caught));
@@ -65,6 +68,7 @@ export function AccountSection() {
         text: t('account.leave'),
         style: 'destructive',
         onPress: () => {
+          setError(null);
           leaveHousehold().catch((caught) => setError(joinErrorMessage(caught)));
         },
       },
