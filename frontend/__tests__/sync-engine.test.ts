@@ -160,18 +160,24 @@ describe('syncNow cycle', () => {
     expect(getSyncHouseholdId(db)).toBe('household-1');
   });
 
-  it('coalesces concurrent callers into the running cycle plus one follow-up', async () => {
+  it('coalesces concurrent callers into the running cycle plus exactly one successful follow-up', async () => {
     const db = freshDb();
-    createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, sampleRecipe());
     let releasePush: (value: unknown) => void = () => {};
     apiFetchMock
+      // Cycle 1 push: held open while the other callers pile up.
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
             releasePush = resolve;
           })
       )
-      .mockResolvedValue(emptyPull);
+      // Cycle 1 pull.
+      .mockResolvedValueOnce({ ...emptyPull, cursor: 1 })
+      // Follow-up cycle push: a real, well-formed response that clears the row.
+      .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 998 })
+      // Follow-up cycle pull.
+      .mockResolvedValueOnce({ ...emptyPull, cursor: 2 });
 
     const first = syncNow();
     const second = syncNow();
@@ -179,14 +185,46 @@ describe('syncNow cycle', () => {
     expect(second).toBe(first);
     expect(third).toBe(first);
 
-    releasePush({ results: {}, cursor: 1 });
+    // Cycle 1's push response deliberately clears nothing (empty results),
+    // so the follow-up has a dirty row to push — proving it genuinely runs.
+    releasePush({ results: {}, cursor: 997 });
     await first;
-    // Allow the queued follow-up cycle to run.
+    // Let the queued follow-up cycle run to completion.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // First cycle: push + pull. Follow-up: pull only (nothing dirty after...
-    // the push cleared nothing here, rows stay dirty -> push + pull again).
-    expect(apiFetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+    // Exactly 4 calls: (push, pull) for cycle 1 + (push, pull) for ONE
+    // follow-up. A leaked re-queue would make a 5th call; a never-run
+    // follow-up would stop at 2.
+    expect(apiFetchMock).toHaveBeenCalledTimes(4);
+    expect(apiFetchMock.mock.calls.map((call) => call[0])).toEqual([
+      '/api/v1/sync/push',
+      '/api/v1/sync/changes?since=0',
+      '/api/v1/sync/push',
+      '/api/v1/sync/changes?since=1',
+    ]);
+    // The follow-up completed successfully: row cleared, cursor from ITS pull.
+    expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(0);
+    expect(getSyncCursor(db)).toBe(2);
+    expect(getSyncStatus().state).toBe('idle');
+  });
+
+  it('a failed pull after a successful push never advances the cursor or household id', async () => {
+    const db = freshDb();
+    const recipeId = createRecipe(db, sampleRecipe());
+    storePullResult(db, 7, 'household-1');
+    apiFetchMock
+      .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 999 })
+      .mockRejectedValueOnce(new Error('pull down'));
+
+    await expect(syncNow()).resolves.toBe('failed');
+
+    // The pushed row's dirty flag cleared (outcomes already processed) —
+    // acceptable; what must NOT move is the pull bookkeeping.
+    expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(0);
+    expect(getSyncCursor(db)).toBe(7);
+    expect(getSyncHouseholdId(db)).toBe('household-1');
+    expect(getSyncStatus().state).toBe('error');
   });
 
   it('applies pulled rows through the merge', async () => {
