@@ -4,6 +4,7 @@ import { newId } from './id';
 import { notDeleted } from './predicates';
 import { mealPlanEntries } from './schema';
 import type { DB } from './types';
+import { scheduleSync } from '../sync/trigger';
 
 export type PlanEntryInput = { date: string; recipeId: string; servings: number };
 
@@ -35,6 +36,7 @@ export function addPlanEntry(db: DB, input: PlanEntryInput): string {
       })
       .run();
   });
+  scheduleSync();
   return id;
 }
 
@@ -48,6 +50,7 @@ export function movePlanEntry(db: DB, id: string, toDate: string): void {
       .where(and(eq(mealPlanEntries.id, id), notDeleted(mealPlanEntries)))
       .run();
   });
+  scheduleSync();
 }
 
 export function setPlanEntryServings(db: DB, id: string, servings: number): void {
@@ -55,6 +58,7 @@ export function setPlanEntryServings(db: DB, id: string, servings: number): void
     .set({ servings, updatedAt: Date.now(), dirty: 1 })
     .where(and(eq(mealPlanEntries.id, id), notDeleted(mealPlanEntries)))
     .run();
+  scheduleSync();
 }
 
 // Tombstone, not delete: the row must survive locally so sync can tell the
@@ -65,4 +69,5 @@ export function removePlanEntry(db: DB, id: string): void {
     .set({ deletedAt: now, updatedAt: now, dirty: 1 })
     .where(eq(mealPlanEntries.id, id))
     .run();
+  scheduleSync();
 }

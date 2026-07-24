@@ -11,6 +11,7 @@ import {
   type InstructionRow,
 } from './schema';
 import type { DB } from './types';
+import { scheduleSync } from '../sync/trigger';
 
 export type IngredientInput = {
   name: string;
@@ -75,6 +76,7 @@ export function createRecipe(db: DB, input: RecipeInput): string {
       .run();
     insertChildren(tx as unknown as DB, id, input);
   });
+  scheduleSync();
   return id;
 }
 
@@ -96,6 +98,7 @@ export function updateRecipe(db: DB, id: string, input: RecipeInput): void {
     tx.delete(recipeInstructions).where(eq(recipeInstructions.recipeId, id)).run();
     insertChildren(tx as unknown as DB, id, input);
   });
+  scheduleSync();
 }
 
 export function softDeleteRecipe(db: DB, id: string): void {
@@ -104,6 +107,7 @@ export function softDeleteRecipe(db: DB, id: string): void {
     .set({ deletedAt: now, updatedAt: now, dirty: 1 })
     .where(eq(recipes.id, id))
     .run();
+  scheduleSync();
 }
 
 export function getRecipe(db: DB, id: string): RecipeWithDetails | null {

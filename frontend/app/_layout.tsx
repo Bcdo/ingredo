@@ -19,6 +19,10 @@ import { getColorMode, getLanguageMode } from '../lib/db/settings';
 import { t } from '../lib/i18n';
 import { cssVars } from '../lib/theme';
 import { applyLanguageMode, useLocaleVersion } from '../lib/locale';
+import { getLastSyncedAt } from '../lib/sync/cursor';
+import { syncNow } from '../lib/sync/engine';
+import { initLastSyncedAt } from '../lib/sync/status';
+import { initSyncTriggers } from '../lib/sync/trigger';
 import { usePalette } from '../lib/usePalette';
 
 export const unstable_settings = {
@@ -58,7 +62,9 @@ export default function RootLayout() {
   const { state, retry } = useDbMigrations();
 
   useEffect(() => {
-    void restoreSession();
+    initLastSyncedAt(getLastSyncedAt(db));
+    void restoreSession().then(() => syncNow());
+    return initSyncTriggers();
   }, []);
 
   useEffect(() => {

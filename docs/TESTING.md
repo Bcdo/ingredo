@@ -213,3 +213,16 @@ Backend running via `docker compose up` in `backend/` first. On a physical devic
 - Sign out: Account section returns to signed-out state; local recipes/plans untouched.
 - Wrong password shows the inline error; joining with a bogus code shows "no household with that code".
 - NOTE until slice ④: signing in does NOT upload local content yet — the server-side household looks empty. That is expected.
+
+## Sync engine (manual pass)
+
+Backend running (`docker compose up -d` in `backend/`). Two devices (or emulator + phone) signed into the SAME household give the full picture.
+
+- First sign-in on a device with local recipes: within a couple of seconds the Account section shows "Last synced …"; the other device gets the recipes on its next sync (foreground it, or Sync now).
+- Edit a recipe on device A → appears on device B after foregrounding B.
+- Delete a recipe on A → disappears from B. Re-add-style flows (shelf re-add) sync as new items.
+- Edit the SAME recipe on both devices while B is backgrounded → the later edit wins everywhere, silently.
+- Airplane mode on A, make edits → "Sync failed — will retry" after a trigger; disable airplane mode, foreground → edits flow, status recovers.
+- Join a household with local content → your content appears in the joined household on both devices; leave → your device re-populates your fresh personal household.
+- Sign out → status line gone, app fully local; sign back in → converges again without duplicates.
+- Purchased-shelf history, plan entries and shopping items all travel, including their tombstones (deleted things stay deleted on both sides).

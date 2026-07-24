@@ -9,6 +9,8 @@ import { useSession } from '../../lib/api/session';
 import { db } from '../../lib/db/client';
 import { t } from '../../lib/i18n';
 import type { HouseholdDto } from '../../lib/api/types';
+import { syncNow } from '../../lib/sync/engine';
+import { useSyncStatus } from '../../lib/sync/status';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -19,8 +21,20 @@ function joinErrorMessage(caught: unknown): string {
   return t('account.errors.generic');
 }
 
+function syncStatusLine(status: ReturnType<typeof useSyncStatus>): string {
+  if (status.state === 'syncing') return t('sync.syncing');
+  if (status.state === 'error') return t('sync.failed');
+  if (status.lastSyncedAt === null) return t('sync.never');
+  const time = new Date(status.lastSyncedAt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return t('sync.lastSynced', { time });
+}
+
 export function AccountSection() {
   const session = useSession();
+  const syncStatus = useSyncStatus();
   const [household, setHousehold] = useState<HouseholdDto | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +119,15 @@ export function AccountSection() {
       <Text className="mb-2 font-body-bold text-sm text-ink">{t('account.title')}</Text>
       <Text className="font-body text-sm text-ink">{t('account.signedInAs')}</Text>
       <Text className="mb-3 font-body-bold text-base text-ink">{session.user?.email}</Text>
+
+      <View className="mb-3 flex-row items-center gap-3">
+        <Text testID="sync-status-line" className="font-body text-sm text-ink">
+          {syncStatusLine(syncStatus)}
+        </Text>
+        <Pressable accessibilityRole="button" onPress={() => void syncNow()}>
+          <Text className="font-body text-sm text-ink underline">{t('sync.now')}</Text>
+        </Pressable>
+      </View>
 
       <Text className="font-body text-sm text-ink">{t('account.household')}</Text>
       <Text className="font-body-bold text-base text-ink">

@@ -5,6 +5,7 @@ import { notDeleted } from './predicates';
 import { shoppingItems } from './schema';
 import type { DB } from './types';
 import { itemKey, normalizeName, sumQuantities, type AggregatedItem } from '../shopping';
+import { scheduleSync } from '../sync/trigger';
 
 export type AddMode = 'skip-existing' | 'merge';
 
@@ -91,6 +92,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
       written += 1;
     }
   });
+  scheduleSync();
   return written;
 }
 
@@ -111,6 +113,7 @@ export function purchaseItem(db: DB, id: string): void {
     .set({ status: 'purchased', purchasedAt: now, updatedAt: now, dirty: 1 })
     .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
     .run();
+  scheduleSync();
 }
 
 export function restoreItem(db: DB, id: string): void {
@@ -118,6 +121,7 @@ export function restoreItem(db: DB, id: string): void {
     .set({ status: 'active', purchasedAt: null, updatedAt: Date.now(), dirty: 1 })
     .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
     .run();
+  scheduleSync();
 }
 
 // Quick re-add from the shelf: copy a purchased row into a fresh active

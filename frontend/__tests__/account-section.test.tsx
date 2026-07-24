@@ -5,6 +5,8 @@ import { Alert } from 'react-native';
 import { AccountSection } from '../components/settings/AccountSection';
 import { getHousehold, joinHousehold, signOut } from '../lib/api/auth';
 import { useSession } from '../lib/api/session';
+import { syncNow } from '../lib/sync/engine';
+import { useSyncStatus } from '../lib/sync/status';
 
 jest.mock('../lib/db/client', () => ({ db: {} }));
 jest.mock('../lib/api/auth', () => ({
@@ -19,6 +21,12 @@ jest.mock('../lib/api/session', () => ({
 jest.mock('../lib/api/config', () => ({
   getApiUrlOverride: jest.fn(() => null),
   setApiUrlOverride: jest.fn(),
+}));
+jest.mock('../lib/sync/engine', () => ({
+  syncNow: jest.fn(async () => 'synced'),
+}));
+jest.mock('../lib/sync/status', () => ({
+  useSyncStatus: jest.fn(() => ({ state: 'idle', lastSyncedAt: null, pendingConflicts: 0 })),
 }));
 
 const mockPush = jest.fn();
@@ -113,5 +121,33 @@ describe('AccountSection signed in', () => {
     });
 
     expect(signOutMock).toHaveBeenCalled();
+  });
+
+  it('shows the sync status line and triggers a manual sync', async () => {
+    (useSyncStatus as jest.Mock).mockReturnValue({
+      state: 'idle',
+      lastSyncedAt: null,
+      pendingConflicts: 0,
+    });
+    render(<AccountSection />);
+    await act(async () => {});
+
+    expect(screen.getByText('Not synced yet')).toBeOnTheScreen();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Sync now'));
+    });
+    expect(syncNow).toHaveBeenCalled();
+  });
+
+  it('shows the error state', async () => {
+    (useSyncStatus as jest.Mock).mockReturnValue({
+      state: 'error',
+      lastSyncedAt: 1753350000000,
+      pendingConflicts: 0,
+    });
+    render(<AccountSection />);
+    await act(async () => {});
+
+    expect(screen.getByText('Sync failed — will retry')).toBeOnTheScreen();
   });
 });

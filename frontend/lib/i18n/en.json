@@ -174,5 +174,12 @@
       "network": "Cannot reach the server.",
       "generic": "Something went wrong. Try again."
     }
+  },
+  "sync": {
+    "lastSynced": "Last synced %{time}",
+    "never": "Not synced yet",
+    "syncing": "Syncing…",
+    "failed": "Sync failed — will retry",
+    "now": "Sync now"
   }
 }

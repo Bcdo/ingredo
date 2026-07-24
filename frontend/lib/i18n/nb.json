@@ -174,5 +174,12 @@
       "network": "Får ikke kontakt med serveren.",
       "generic": "Noe gikk galt. Prøv igjen."
     }
+  },
+  "sync": {
+    "lastSynced": "Sist synkronisert %{time}",
+    "never": "Ikke synkronisert ennå",
+    "syncing": "Synkroniserer…",
+    "failed": "Synkronisering feilet — prøver igjen",
+    "now": "Synkroniser nå"
   }
 }

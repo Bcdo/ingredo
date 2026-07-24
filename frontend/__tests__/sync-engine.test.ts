@@ -17,6 +17,16 @@ jest.mock('../lib/api/session', () => ({
   getSession: jest.fn(),
 }));
 
+// This file mocks getSession as signedIn to exercise the engine directly.
+// createRecipe/updateRecipe below are the real repo functions (only db/client
+// is mocked), and they now call scheduleSync() as a side effect — without
+// this mock that starts a real 2s debounce timer that outlives the test and
+// fires after Jest tears the module registry down. The trigger module itself
+// is covered by __tests__/sync-trigger.test.ts.
+jest.mock('../lib/sync/trigger', () => ({
+  scheduleSync: jest.fn(),
+}));
+
 const mockDbHolder: { db: unknown } = { db: null };
 jest.mock('../lib/db/client', () => ({
   get db() {
