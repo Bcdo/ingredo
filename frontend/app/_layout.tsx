@@ -62,15 +62,12 @@ export default function RootLayout() {
   const { state, retry } = useDbMigrations();
 
   useEffect(() => {
-    initLastSyncedAt(getLastSyncedAt(db));
-    void restoreSession().then(() => syncNow());
-    return initSyncTriggers();
-  }, []);
-
-  useEffect(() => {
     if (state === 'ready') {
       applyColorMode(getColorMode(db));
       applyLanguageMode(getLanguageMode(db));
+      initLastSyncedAt(getLastSyncedAt(db));
+      void restoreSession().then(() => syncNow());
+      return initSyncTriggers();
     }
   }, [state]);
   const palette = usePalette();
