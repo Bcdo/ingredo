@@ -36,6 +36,22 @@ public static class AuthSetupExtensions
                     ClockSkew = TimeSpan.FromMinutes(1),
                     ValidAlgorithms = ["HS256"],
                 };
+                // WebSocket clients cannot send an Authorization header; the
+                // standard SignalR pattern is the access token in the query
+                // string — accepted ONLY for hub paths.
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    },
+                };
             });
         services.AddAuthorization();
         return services;

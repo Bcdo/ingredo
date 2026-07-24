@@ -5,6 +5,7 @@ using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
 using Ingredo.Api.Households;
 using Ingredo.Api.MealPlan;
+using Ingredo.Api.Realtime;
 using Ingredo.Api.Recipes;
 using Ingredo.Api.Shopping;
 using Ingredo.Api.Sync;
@@ -29,6 +30,7 @@ builder.Host.UseSerilog((context, configuration) =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IRecipeService, RecipeService>();
@@ -66,6 +68,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<SyncHub>("/hubs/sync");
 
 app.Run();
 
