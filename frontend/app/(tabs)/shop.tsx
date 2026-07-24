@@ -7,6 +7,7 @@ import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'r
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
+import { FIELD_LIMITS } from '../../lib/fieldLimits';
 import { notDeleted } from '../../lib/db/predicates';
 import { shoppingItems } from '../../lib/db/schema';
 import { getUnitSystem, type UnitSystem } from '../../lib/db/settings';
@@ -100,6 +101,7 @@ export default function ShopScreen() {
           onSubmitEditing={submitDraft}
           returnKeyType="done"
           blurOnSubmit={false}
+          maxLength={FIELD_LIMITS.shoppingItemName}
           placeholder={t('shop.quickAddPlaceholder')}
           placeholderTextColor={palette.inkFaint}
           className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"

@@ -1,4 +1,5 @@
 import { currentLocale } from './i18n';
+import { FIELD_LIMITS } from './fieldLimits';
 import type { ScalingMode } from './units';
 import type { RecipeInput, RecipeWithDetails } from './db/recipes';
 import { parseQuantity, formatQuantity } from './quantity';
@@ -50,9 +51,14 @@ export function formStateFromRecipe(details: RecipeWithDetails): RecipeFormState
   };
 }
 
+// The URL-import path bypasses the form's Input `maxLength` props — those
+// only clip further typing, not values dropped in programmatically — so an
+// over-cap imported field would otherwise sail through untouched until the
+// next push, 400ing the whole sync batch. Clamp here at the same caps the
+// server actually enforces (frontend/lib/fieldLimits.ts).
 export function formStateFromImport(imported: ImportedRecipe): RecipeFormState {
   return {
-    title: imported.title,
+    title: imported.title.slice(0, FIELD_LIMITS.recipeTitle),
     description: imported.description,
     servings: imported.servings,
     notes: '',
@@ -62,7 +68,7 @@ export function formStateFromImport(imported: ImportedRecipe): RecipeFormState {
         key: draftKey(),
         quantity: formatQuantity(parsed.quantity, currentLocale()),
         unit: parsed.unit,
-        name: parsed.name,
+        name: parsed.name.slice(0, FIELD_LIMITS.ingredientName),
         scaling: 'linear' as const,
       };
     }),

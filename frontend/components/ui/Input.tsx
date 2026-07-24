@@ -14,6 +14,7 @@ type InputProps = {
   secureTextEntry?: boolean;
   testID?: string;
   className?: string;
+  maxLength?: number;
 };
 
 export function Input({
@@ -27,6 +28,7 @@ export function Input({
   secureTextEntry = false,
   testID,
   className = '',
+  maxLength,
 }: InputProps) {
   const palette = usePalette();
   return (
@@ -42,6 +44,7 @@ export function Input({
         autoCapitalize={autoCapitalize}
         secureTextEntry={secureTextEntry}
         testID={testID}
+        maxLength={maxLength}
         className={`min-h-14 rounded-card bg-linen px-4 py-3 font-body text-base text-ink ${
           multiline ? 'min-h-24' : ''
         }`}

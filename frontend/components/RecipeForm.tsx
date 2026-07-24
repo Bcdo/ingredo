@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Input } from './ui/Input';
 import { Stepper } from './ui/Stepper';
+import { FIELD_LIMITS } from '../lib/fieldLimits';
 import {
   draftKey,
   formStateFromImport,
@@ -236,6 +237,7 @@ export function RecipeForm({
             value={state.title}
             onChangeText={(title) => patch({ title })}
             placeholder={t('form.titlePlaceholder')}
+            maxLength={FIELD_LIMITS.recipeTitle}
           />
           {!canSave ? (
             <Text className="mt-1 font-body text-xs text-ink opacity-60">
@@ -273,6 +275,7 @@ export function RecipeForm({
                   onChangeText={(name) => patchIngredient(ing.key, { name })}
                   placeholder={t('form.namePlaceholder')}
                   className="flex-1"
+                  maxLength={FIELD_LIMITS.ingredientName}
                 />
                 <Pressable
                   accessibilityRole="button"
