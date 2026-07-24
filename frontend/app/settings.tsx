@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AccountSection } from '../components/settings/AccountSection';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { applyColorMode } from '../lib/colorMode';
 import { db } from '../lib/db/client';
@@ -50,6 +51,7 @@ export default function SettingsScreen() {
           <Ionicons name="close" size={24} color={palette.ink} />
         </Pressable>
       </View>
+      <AccountSection />
       <View testID="appearance-section" className="px-4 pt-2">
         <Text className="mb-2 font-body-bold text-sm text-ink">{t('settings.appearance')}</Text>
         <SegmentedControl<ColorMode>

@@ -13,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import migrations from '../drizzle/migrations';
 import { Button } from '../components/ui/Button';
 import { applyColorMode } from '../lib/colorMode';
+import { restoreSession } from '../lib/api/client';
 import { db } from '../lib/db/client';
 import { getColorMode, getLanguageMode } from '../lib/db/settings';
 import { t } from '../lib/i18n';
@@ -55,6 +56,10 @@ export default function RootLayout() {
     Karla_700Bold,
   });
   const { state, retry } = useDbMigrations();
+
+  useEffect(() => {
+    void restoreSession();
+  }, []);
 
   useEffect(() => {
     if (state === 'ready') {

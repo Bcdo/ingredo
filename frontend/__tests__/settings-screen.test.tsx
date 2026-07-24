@@ -9,6 +9,11 @@ import { applyLanguageMode } from '../lib/locale';
 
 jest.mock('../lib/db/client', () => ({ db: {} }));
 
+jest.mock('../lib/api/config', () => ({
+  getApiUrlOverride: jest.fn(() => null),
+  setApiUrlOverride: jest.fn(),
+}));
+
 jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
 }));

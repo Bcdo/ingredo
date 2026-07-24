@@ -200,3 +200,16 @@ Simple UI screens can be tested manually at first.
 - Push a tombstone (`deletedAt` = `updatedAt`, newer than server) → recipe vanishes from the app-facing API but travels in pulls.
 - A second user's pull never contains your household's rows.
 - Stale compose volume: `docker compose down -v` once (SyncSeq column + triggers).
+
+## Frontend auth (manual pass)
+
+Backend running via `docker compose up` in `backend/` first. On a physical device, set the Server field (dev builds) to `http://<your-LAN-ip>:8080`.
+
+- Signed out: app behaves exactly as before; airplane mode changes nothing.
+- Settings → Account → Sign in → create account: lands back in Settings showing your email and a personal household with a join code.
+- Kill + relaunch the app: still signed in (silent restore), no visible flicker signed out.
+- Second device (or emulator + device): register another user, join with the first user's code → both see the same member list.
+- Leave household: confirm dialog, then you get a fresh personal household; the old household still shows its content to remaining members (server-side).
+- Sign out: Account section returns to signed-out state; local recipes/plans untouched.
+- Wrong password shows the inline error; joining with a bogus code shows "no household with that code".
+- NOTE until slice ④: signing in does NOT upload local content yet — the server-side household looks empty. That is expected.
