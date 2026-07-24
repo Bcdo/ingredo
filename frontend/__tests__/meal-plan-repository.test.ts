@@ -145,3 +145,31 @@ describe('sync prep', () => {
     expect(rows).toEqual([{ title: 'Keeper' }]);
   });
 });
+
+describe('tombstone write-guards', () => {
+  it('movePlanEntry no-ops on a tombstoned entry', () => {
+    const db = makeTestDb();
+    const recipeId = seedRecipe(db, 'Soup');
+    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
+    removePlanEntry(db, entryId);
+    const before = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
+
+    movePlanEntry(db, entryId, '2026-07-21');
+
+    const after = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
+    expect(after.date).toBe('2026-07-20');
+    expect(after.updatedAt).toBe(before.updatedAt);
+  });
+
+  it('setPlanEntryServings no-ops on a tombstoned entry', () => {
+    const db = makeTestDb();
+    const recipeId = seedRecipe(db, 'Soup');
+    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
+    removePlanEntry(db, entryId);
+
+    setPlanEntryServings(db, entryId, 6);
+
+    const after = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
+    expect(after.servings).toBe(2);
+  });
+});

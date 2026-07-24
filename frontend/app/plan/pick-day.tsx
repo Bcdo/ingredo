@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { rollingWeek, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
 import { addPlanEntry, movePlanEntry } from '../../lib/db/mealPlan';
+import { notDeleted } from '../../lib/db/predicates';
 import { getRecipe } from '../../lib/db/recipes';
 import { mealPlanEntries } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
@@ -34,7 +35,7 @@ export default function PickDayScreen() {
         ? db
             .select()
             .from(mealPlanEntries)
-            .where(and(eq(mealPlanEntries.id, entryId), isNull(mealPlanEntries.deletedAt)))
+            .where(and(eq(mealPlanEntries.id, entryId), notDeleted(mealPlanEntries)))
             .get()
         : undefined,
     [entryId]

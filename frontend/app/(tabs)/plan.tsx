@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card } from '../../components/ui/Card';
 import { addDays, rollingWeek, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
+import { notDeleted } from '../../lib/db/predicates';
 import { mealPlanEntries, recipeIngredients, recipes, shoppingItems } from '../../lib/db/schema';
 import { addItems } from '../../lib/db/shoppingList';
 import { t } from '../../lib/i18n';
@@ -34,8 +35,8 @@ export default function PlanScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
-          isNull(recipes.deletedAt),
-          isNull(mealPlanEntries.deletedAt)
+          notDeleted(recipes),
+          notDeleted(mealPlanEntries)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),
@@ -60,8 +61,8 @@ export default function PlanScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
-          isNull(recipes.deletedAt),
-          isNull(mealPlanEntries.deletedAt)
+          notDeleted(recipes),
+          notDeleted(mealPlanEntries)
         )
       ),
     [today]
@@ -71,7 +72,7 @@ export default function PlanScreen() {
     db
       .select({ normalizedName: shoppingItems.normalizedName, unit: shoppingItems.unit })
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'active'), isNull(shoppingItems.deletedAt)))
+      .where(and(eq(shoppingItems.status, 'active'), notDeleted(shoppingItems)))
   );
 
   const pending = useMemo(() => {

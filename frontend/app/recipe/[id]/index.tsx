@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
+import { notDeleted } from '../../../lib/db/predicates';
 import { addItems } from '../../../lib/db/shoppingList';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
@@ -35,7 +36,7 @@ export default function RecipeDetailScreen() {
     db
       .select()
       .from(recipes)
-      .where(and(eq(recipes.id, id), isNull(recipes.deletedAt))),
+      .where(and(eq(recipes.id, id), notDeleted(recipes))),
     [id]
   );
   const { data: ingredients } = useLiveQuery(

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -7,6 +7,7 @@ import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'r
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
+import { notDeleted } from '../../lib/db/predicates';
 import { shoppingItems } from '../../lib/db/schema';
 import { getUnitSystem, type UnitSystem } from '../../lib/db/settings';
 import {
@@ -41,14 +42,14 @@ export default function ShopScreen() {
     db
       .select()
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'active'), isNull(shoppingItems.deletedAt)))
+      .where(and(eq(shoppingItems.status, 'active'), notDeleted(shoppingItems)))
       .orderBy(asc(shoppingItems.createdAt))
   );
   const { data: purchasedItems } = useLiveQuery(
     db
       .select()
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'purchased'), isNull(shoppingItems.deletedAt)))
+      .where(and(eq(shoppingItems.status, 'purchased'), notDeleted(shoppingItems)))
       .orderBy(desc(shoppingItems.purchasedAt))
   );
 

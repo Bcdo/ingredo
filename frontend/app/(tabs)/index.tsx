@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { addDays, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
+import { notDeleted } from '../../lib/db/predicates';
 import { mealPlanEntries, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 
@@ -33,8 +34,8 @@ export default function TodayScreen() {
         and(
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, tomorrow),
-          isNull(recipes.deletedAt),
-          isNull(mealPlanEntries.deletedAt)
+          notDeleted(recipes),
+          notDeleted(mealPlanEntries)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),

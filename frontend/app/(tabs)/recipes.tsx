@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { desc, isNull } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
+import { notDeleted } from '../../lib/db/predicates';
 import { seedSampleData } from '../../lib/dev/sampleData';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
@@ -23,7 +24,7 @@ export default function RecipesScreen() {
   const [query, setQuery] = useState('');
 
   const { data: recipeRows } = useLiveQuery(
-    db.select().from(recipes).where(isNull(recipes.deletedAt)).orderBy(desc(recipes.updatedAt))
+    db.select().from(recipes).where(notDeleted(recipes)).orderBy(desc(recipes.updatedAt))
   );
   const { data: ingredientRows } = useLiveQuery(
     db

@@ -1,6 +1,7 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { newId } from './id';
+import { notDeleted } from './predicates';
 import { mealPlanEntries } from './schema';
 import type { DB } from './types';
 
@@ -10,7 +11,7 @@ function nextSortOrder(db: DB, date: string): number {
   const row = db
     .select({ max: sql<number | null>`max(${mealPlanEntries.sortOrder})` })
     .from(mealPlanEntries)
-    .where(and(eq(mealPlanEntries.date, date), isNull(mealPlanEntries.deletedAt)))
+    .where(and(eq(mealPlanEntries.date, date), notDeleted(mealPlanEntries)))
     .get();
   return (row?.max ?? -1) + 1;
 }
@@ -44,7 +45,7 @@ export function movePlanEntry(db: DB, id: string, toDate: string): void {
     txDb
       .update(mealPlanEntries)
       .set({ date: toDate, sortOrder: nextSortOrder(txDb, toDate), updatedAt: now, dirty: 1 })
-      .where(eq(mealPlanEntries.id, id))
+      .where(and(eq(mealPlanEntries.id, id), notDeleted(mealPlanEntries)))
       .run();
   });
 }
@@ -52,7 +53,7 @@ export function movePlanEntry(db: DB, id: string, toDate: string): void {
 export function setPlanEntryServings(db: DB, id: string, servings: number): void {
   db.update(mealPlanEntries)
     .set({ servings, updatedAt: Date.now(), dirty: 1 })
-    .where(eq(mealPlanEntries.id, id))
+    .where(and(eq(mealPlanEntries.id, id), notDeleted(mealPlanEntries)))
     .run();
 }
 

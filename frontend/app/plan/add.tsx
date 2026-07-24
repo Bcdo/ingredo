@@ -1,4 +1,4 @@
-import { desc, isNull } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Stepper } from '../../components/ui/Stepper';
 import { db } from '../../lib/db/client';
 import { addPlanEntry } from '../../lib/db/mealPlan';
+import { notDeleted } from '../../lib/db/predicates';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
@@ -29,7 +30,7 @@ export default function AddPlanEntryScreen() {
   const [saveFailed, setSaveFailed] = useState(false);
 
   const { data: recipeRows } = useLiveQuery(
-    db.select().from(recipes).where(isNull(recipes.deletedAt)).orderBy(desc(recipes.updatedAt))
+    db.select().from(recipes).where(notDeleted(recipes)).orderBy(desc(recipes.updatedAt))
   );
   const { data: ingredientRows } = useLiveQuery(
     db

@@ -1,6 +1,7 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { newId } from './id';
+import { notDeleted } from './predicates';
 import {
   recipes,
   recipeIngredients,
@@ -109,7 +110,7 @@ export function getRecipe(db: DB, id: string): RecipeWithDetails | null {
   const recipe = db
     .select()
     .from(recipes)
-    .where(and(eq(recipes.id, id), isNull(recipes.deletedAt)))
+    .where(and(eq(recipes.id, id), notDeleted(recipes)))
     .get();
   if (!recipe) return null;
 

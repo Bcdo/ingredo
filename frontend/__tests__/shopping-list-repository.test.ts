@@ -282,3 +282,40 @@ describe('sync prep', () => {
     expect(allRows(db)).toHaveLength(1); // no copy was made from the tombstone
   });
 });
+
+describe('tombstone write-guards', () => {
+  function tombstone(db: DB, id: string) {
+    db.update(shoppingItems)
+      .set({ deletedAt: Date.now(), updatedAt: Date.now(), dirty: 1 })
+      .where(eq(shoppingItems.id, id))
+      .run();
+  }
+
+  it('purchaseItem no-ops on a tombstoned item', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'Melk');
+    const row = db.select().from(shoppingItems).all()[0];
+    tombstone(db, row.id);
+
+    purchaseItem(db, row.id);
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+    expect(after.status).toBe('active');
+    expect(after.purchasedAt).toBeNull();
+  });
+
+  it('restoreItem no-ops on a tombstoned item', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'Melk');
+    const row = db.select().from(shoppingItems).all()[0];
+    purchaseItem(db, row.id);
+    tombstone(db, row.id);
+    const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+
+    restoreItem(db, row.id);
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+    expect(after.status).toBe('purchased');
+    expect(after.updatedAt).toBe(before.updatedAt);
+  });
+});

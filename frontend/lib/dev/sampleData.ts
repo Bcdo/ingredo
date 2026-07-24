@@ -1,8 +1,9 @@
 // Dev-only sample content for manual testing. Everything flows through
 // createRecipe so seeded rows are indistinguishable from user input.
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { createRecipe, type RecipeInput } from '../db/recipes';
+import { notDeleted } from '../db/predicates';
 import { recipes } from '../db/schema';
 import type { DB } from '../db/types';
 
@@ -163,7 +164,7 @@ export function seedSampleData(db: DB): number {
     const existing = db
       .select({ id: recipes.id })
       .from(recipes)
-      .where(and(eq(recipes.title, sample.title), isNull(recipes.deletedAt)))
+      .where(and(eq(recipes.title, sample.title), notDeleted(recipes)))
       .all();
     if (existing.length === 0) {
       createRecipe(db, sample);

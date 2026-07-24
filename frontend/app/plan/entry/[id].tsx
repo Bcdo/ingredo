@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
 import { removePlanEntry, setPlanEntryServings } from '../../../lib/db/mealPlan';
+import { notDeleted } from '../../../lib/db/predicates';
 import { mealPlanEntries, recipes } from '../../../lib/db/schema';
 import { t } from '../../../lib/i18n';
 
@@ -29,8 +30,8 @@ export default function PlanEntryScreen() {
       .where(
         and(
           eq(mealPlanEntries.id, id),
-          isNull(recipes.deletedAt),
-          isNull(mealPlanEntries.deletedAt)
+          notDeleted(recipes),
+          notDeleted(mealPlanEntries)
         )
       ),
     [id]
