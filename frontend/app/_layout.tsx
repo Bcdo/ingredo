@@ -106,6 +106,14 @@ export default function RootLayout() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen
+            name="account/sign-in"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="account/register"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
         </Stack>
       </View>
     </SafeAreaProvider>

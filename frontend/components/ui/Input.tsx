@@ -9,7 +9,10 @@ type InputProps = {
   placeholder?: string;
   label?: string;
   multiline?: boolean;
-  keyboardType?: 'default' | 'numeric';
+  keyboardType?: 'default' | 'numeric' | 'email-address';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  secureTextEntry?: boolean;
+  testID?: string;
   className?: string;
 };
 
@@ -20,6 +23,9 @@ export function Input({
   label,
   multiline = false,
   keyboardType = 'default',
+  autoCapitalize = 'sentences',
+  secureTextEntry = false,
+  testID,
   className = '',
 }: InputProps) {
   const palette = usePalette();
@@ -33,6 +39,9 @@ export function Input({
         placeholderTextColor={palette.inkFaint}
         multiline={multiline}
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        secureTextEntry={secureTextEntry}
+        testID={testID}
         className={`min-h-14 rounded-card bg-linen px-4 py-3 font-body text-base text-ink ${
           multiline ? 'min-h-24' : ''
         }`}
