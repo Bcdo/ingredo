@@ -80,6 +80,12 @@ describe('applyPull', () => {
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.title).toBe('Lokal');
     expect(row.dirty).toBe(1);
+    const children = db
+      .select()
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, localId))
+      .all();
+    expect(children.map((c) => c.name)).toEqual(['Sukker']);
   });
 
   it('replaces a dirty local row on server tie or newer, clearing dirty', () => {
