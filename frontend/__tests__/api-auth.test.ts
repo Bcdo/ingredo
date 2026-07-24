@@ -7,7 +7,7 @@ import {
   signIn,
   signOut,
 } from '../lib/api/auth';
-import { apiFetch } from '../lib/api/client';
+import { apiFetch, pendingRefresh } from '../lib/api/client';
 import {
   getSession,
   getStoredRefreshToken,
@@ -18,6 +18,7 @@ import type { AuthResponseDto } from '../lib/api/types';
 
 jest.mock('../lib/api/client', () => ({
   apiFetch: jest.fn(),
+  pendingRefresh: jest.fn(async () => {}),
   ApiError: class ApiError extends Error {},
   NetworkError: class NetworkError extends Error {},
 }));
@@ -104,6 +105,15 @@ describe('auth wrappers', () => {
 
     expect(getSession().status).toBe('signedOut');
     await expect(getStoredRefreshToken()).resolves.toBeNull();
+  });
+
+  it('signOut quiesces any in-flight refresh before clearing', async () => {
+    await setStoredRefreshToken('refresh-1');
+    apiFetchMock.mockResolvedValueOnce(undefined);
+
+    await signOut();
+
+    expect(pendingRefresh).toHaveBeenCalled();
   });
 
   it('getHousehold fetches the household', async () => {

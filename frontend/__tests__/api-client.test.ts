@@ -1,4 +1,11 @@
-import { ApiError, apiFetch, NetworkError, refreshSession, restoreSession } from '../lib/api/client';
+import {
+  ApiError,
+  apiFetch,
+  NetworkError,
+  pendingRefresh,
+  refreshSession,
+  restoreSession,
+} from '../lib/api/client';
 import {
   applyAuthResponse,
   getAccessToken,
@@ -182,6 +189,35 @@ describe('refreshSession', () => {
     await expect(pending).resolves.toBe(false);
     expect(getSession().status).toBe('signedOut');
     await expect(getStoredRefreshToken()).resolves.toBeNull();
+  });
+});
+
+describe('pendingRefresh', () => {
+  it('resolves immediately when no refresh is in flight', async () => {
+    await expect(pendingRefresh()).resolves.toBeUndefined();
+  });
+
+  it('settles together with an in-flight refresh', async () => {
+    await setStoredRefreshToken('refresh-1');
+    let release: (response: Response) => void = () => {};
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        release = resolve;
+      })
+    );
+
+    const refreshing = refreshSession();
+    let settled = false;
+    const waiter = pendingRefresh().then(() => {
+      settled = true;
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+
+    release(jsonResponse(200, auth));
+    await refreshing;
+    await waiter;
+    expect(settled).toBe(true);
   });
 });
 

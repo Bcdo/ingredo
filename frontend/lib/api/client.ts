@@ -84,6 +84,13 @@ export function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
+// Settles when any in-flight refresh does (resolved immediately otherwise).
+// signOut awaits this so a refresh completion can never interleave its
+// token persist with sign-out's clear.
+export function pendingRefresh(): Promise<unknown> {
+  return refreshInFlight ?? Promise.resolve();
+}
+
 async function doRefresh(): Promise<boolean> {
   const epoch = getSessionEpoch();
   const refreshToken = await getStoredRefreshToken();

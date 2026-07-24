@@ -1,4 +1,4 @@
-import { apiFetch } from './client';
+import { apiFetch, pendingRefresh } from './client';
 import {
   applyAuthResponse,
   getStoredRefreshToken,
@@ -30,6 +30,7 @@ export async function signIn(email: string, password: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  await pendingRefresh();
   const refreshToken = await getStoredRefreshToken();
   if (refreshToken) {
     try {
