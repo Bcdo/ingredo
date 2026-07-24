@@ -9,6 +9,7 @@ import type { DB } from '../db/types';
 import { applyPull } from './apply';
 import { collectDirty, type DirtyBatch } from './collect';
 import { ensureHousehold, getSyncCursor, storePullResult } from './cursor';
+import { type ConflictIds, remintConflicted } from './remint';
 import { markError, markIdle, markSyncing } from './status';
 
 export type SyncResult = 'synced' | 'failed' | 'skipped';
@@ -42,13 +43,20 @@ async function runCycle(): Promise<SyncResult> {
     ensureHousehold(db, session.householdId);
 
     const batch = collectDirty(db);
-    let conflicts = 0;
+    let pendingConflicts = 0;
     if (!batch.isEmpty) {
       const response = await apiFetch<SyncPushResponseDto>('/api/v1/sync/push', {
         method: 'POST',
         body: batch.request,
       });
-      conflicts = clearPushed(db, batch, response.results);
+      const { conflicts, conflictIds } = clearPushed(db, batch, response.results);
+      const reminted = remintConflicted(db, conflictIds);
+      if (reminted > 0) {
+        // Re-minted rows are fresh inserts for the current household —
+        // deliver them in an immediate follow-up cycle.
+        queued = true;
+      }
+      pendingConflicts = conflicts - reminted;
     }
 
     const since = getSyncCursor(db);
@@ -56,7 +64,7 @@ async function runCycle(): Promise<SyncResult> {
     applyPull(db, pull);
     storePullResult(db, pull.cursor, session.householdId);
 
-    markIdle(Date.now(), conflicts);
+    markIdle(Date.now(), pendingConflicts);
     return 'synced';
   } catch {
     markError();
@@ -66,15 +74,22 @@ async function runCycle(): Promise<SyncResult> {
 
 // Compare-and-clear: dirty drops to 0 only if updatedAt still equals the
 // value we pushed — an edit landing mid-flight keeps its dirty flag and
-// wins the next cycle. Conflicts stay dirty and are surfaced in status.
-function clearPushed(database: DB, batch: DirtyBatch, results: Record<string, string>): number {
+// wins the next cycle. Conflicted ids are collected per-table so the caller
+// can re-mint their identity (see ./remint) instead of leaving them dirty
+// forever.
+function clearPushed(
+  database: DB,
+  batch: DirtyBatch,
+  results: Record<string, string>
+): { conflicts: number; conflictIds: ConflictIds } {
   let conflicts = 0;
+  const conflictIds: ConflictIds = { recipes: [], mealPlanEntries: [], shoppingItems: [] };
   const tables = [
-    { table: recipes, stamps: batch.stamps.recipes },
-    { table: mealPlanEntries, stamps: batch.stamps.mealPlanEntries },
-    { table: shoppingItems, stamps: batch.stamps.shoppingItems },
+    { table: recipes, stamps: batch.stamps.recipes, key: 'recipes' as const },
+    { table: mealPlanEntries, stamps: batch.stamps.mealPlanEntries, key: 'mealPlanEntries' as const },
+    { table: shoppingItems, stamps: batch.stamps.shoppingItems, key: 'shoppingItems' as const },
   ] as const;
-  for (const { table, stamps } of tables) {
+  for (const { table, stamps, key } of tables) {
     for (const [id, readUpdatedAt] of stamps) {
       const outcome = results[id];
       if (outcome === 'applied' || outcome === 'superseded') {
@@ -85,10 +100,11 @@ function clearPushed(database: DB, batch: DirtyBatch, results: Record<string, st
           .run();
       } else if (outcome === 'conflict') {
         conflicts += 1;
+        conflictIds[key].push(id);
       }
     }
   }
-  return conflicts;
+  return { conflicts, conflictIds };
 }
 
 export function resetEngineForTests(): void {

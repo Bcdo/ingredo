@@ -126,17 +126,56 @@ describe('syncNow cycle', () => {
     expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(1);
   });
 
-  it('conflict outcomes stay dirty and are counted', async () => {
+  // Conflicts are now resolved automatically by re-minting (see ./sync-remint.test.ts
+  // and the "automatic follow-up" test below) rather than staying dirty forever, so
+  // this asserts the row is re-minted immediately and the conflict count already
+  // reflects that resolution — it queues a follow-up cycle it does not wait for here.
+  it('conflict outcomes are re-minted rather than left dirty and counted', async () => {
     const db = freshDb();
     const recipeId = createRecipe(db, sampleRecipe());
     apiFetchMock
       .mockResolvedValueOnce({ results: { [recipeId]: 'conflict' }, cursor: 999 })
-      .mockResolvedValueOnce(emptyPull);
+      .mockResolvedValueOnce(emptyPull)
+      // Automatic follow-up cycle queued by the re-mint; give it a well-formed
+      // response so it doesn't leak an unhandled failure into later tests.
+      .mockResolvedValueOnce({ results: {}, cursor: 1000 })
+      .mockResolvedValueOnce({ ...emptyPull, cursor: 1 });
 
     await syncNow();
 
-    expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(1);
-    expect(getSyncStatus().pendingConflicts).toBe(1);
+    expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()).toBeUndefined();
+    expect(db.select().from(recipes).all()[0].dirty).toBe(1);
+    expect(getSyncStatus().pendingConflicts).toBe(0);
+
+    // Drain the follow-up cycle's microtasks so it doesn't spill into the next test.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  it('conflicted rows are re-minted and delivered by an automatic follow-up', async () => {
+    const db = freshDb();
+    const oldId = createRecipe(db, sampleRecipe());
+    apiFetchMock
+      // Cycle 1: everything conflicts (post-leave adoption against the old household).
+      .mockResolvedValueOnce({ results: { [oldId]: 'conflict' }, cursor: 999 })
+      .mockResolvedValueOnce({ ...emptyPull, cursor: 1 })
+      // Follow-up: the re-minted row inserts cleanly.
+      .mockImplementationOnce(async (path: string, init?: { body?: { recipes?: { id: string }[] } }) => {
+        const pushed = init!.body!.recipes![0];
+        expect(pushed.id).not.toBe(oldId);
+        return { results: { [pushed.id]: 'applied' }, cursor: 1000 };
+      })
+      .mockResolvedValueOnce({ ...emptyPull, cursor: 2 });
+
+    await syncNow();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(apiFetchMock).toHaveBeenCalledTimes(4);
+    expect(db.select().from(recipes).where(eq(recipes.id, oldId)).get()).toBeUndefined();
+    expect(db.select().from(recipes).all()[0].dirty).toBe(0);
+    expect(getSyncStatus().pendingConflicts).toBe(0);
+    expect(getSyncCursor(db)).toBe(2);
   });
 
   it('a failed push fails the cycle without clearing or moving the cursor', async () => {
