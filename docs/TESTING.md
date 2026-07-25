@@ -236,3 +236,14 @@ Backend running, two devices signed into the same household, BOTH apps foregroun
 - Background B, make changes on A, foreground B → changes arrive via the ordinary foreground sync (realtime reconnects too).
 - Stop the backend mid-session: nothing breaks or alerts; edits queue as dirty. Start it again → next trigger (foreground/edit/Sync now) delivers, and the next reconcile after the reconnect window brings realtime back (backgrounding and foregrounding the app forces it immediately).
 - Sign out on one device: its socket closes (no reconnect spam in the backend logs); the other device is unaffected.
+
+## Staples suggestions (manual pass)
+
+Needs purchase history: buy the same item 3+ times with day-plus gaps. For quick testing, back-date `purchased_at` on three rows of one item via a SQLite browser (epoch ms), e.g. 20, 13 and 6 days ago for a weekly habit.
+
+- With a due staple: the Shop tab shows "Do you need…?" with the item as a dashed chip under the active list.
+- Tap the chip → it joins the active list (and syncs to the other device); the suggestion disappears (it's now on the list).
+- Tap × → the chip disappears and stays gone across app restarts.
+- Buy the item again (add + purchase) → after the next due window, the suggestion returns (dismissal expired).
+- With no qualifying history, the section is completely absent — no header, no empty box.
+- Language switch (Settings): title and accessibility labels follow nb/en.

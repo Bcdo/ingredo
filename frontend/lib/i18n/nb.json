@@ -181,5 +181,10 @@
     "syncing": "Synkroniserer…",
     "failed": "Synkronisering feilet — prøver igjen",
     "now": "Synkroniser nå"
+  },
+  "suggestions": {
+    "staplesTitle": "Trenger dere…?",
+    "add": "Legg til %{name}",
+    "dismiss": "Avvis %{name}"
   }
 }

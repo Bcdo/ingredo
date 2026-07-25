@@ -181,5 +181,10 @@
     "syncing": "Syncing…",
     "failed": "Sync failed — will retry",
     "now": "Sync now"
+  },
+  "suggestions": {
+    "staplesTitle": "Do you need…?",
+    "add": "Add %{name}",
+    "dismiss": "Dismiss %{name}"
   }
 }

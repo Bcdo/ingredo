@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { StaplesSection } from '../../components/shop/StaplesSection';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
@@ -136,6 +137,11 @@ export default function ShopScreen() {
               </Pressable>
             );
           })}
+          <StaplesSection
+            active={activeItems ?? []}
+            purchased={purchasedItems ?? []}
+            now={now}
+          />
           {hasShelf ? (
             <>
               <Text className="mt-4 font-display text-lg text-ink opacity-70">
