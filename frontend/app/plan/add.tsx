@@ -5,15 +5,18 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IdeasRail } from '../../components/plan/IdeasRail';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Stepper } from '../../components/ui/Stepper';
+import { todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
 import { addPlanEntry } from '../../lib/db/mealPlan';
 import { notDeleted } from '../../lib/db/predicates';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
+import { computeRecipeIdeas, getPlanHistory } from '../../lib/suggestions/recipeIdeas';
 import { usePalette } from '../../lib/usePalette';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,6 +57,17 @@ export default function AddPlanEntryScreen() {
   }, [recipeRows, ingredientRows]);
 
   const filtered = useMemo(() => filterRecipes(items, query), [items, query]);
+
+  const planHistory = useMemo(() => getPlanHistory(db), []);
+  const ideas = useMemo(() => {
+    if (typeof date !== 'string') return [];
+    return computeRecipeIdeas(
+      planHistory,
+      new Set(items.map((item) => item.id)),
+      date,
+      todayLocal()
+    );
+  }, [planHistory, items, date]);
 
   if (typeof date !== 'string' || !DATE_RE.test(date)) {
     return <Redirect href="/(tabs)/plan" />;
@@ -112,6 +126,9 @@ export default function AddPlanEntryScreen() {
               className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
             />
           </View>
+          {query === '' ? (
+            <IdeasRail ideas={ideas} items={items} onSelect={select} />
+          ) : null}
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.id}

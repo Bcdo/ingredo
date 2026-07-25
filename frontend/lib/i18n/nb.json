@@ -185,6 +185,9 @@
   "suggestions": {
     "staplesTitle": "Trenger dere…?",
     "add": "Legg til %{name}",
-    "dismiss": "Avvis %{name}"
+    "dismiss": "Avvis %{name}",
+    "ideasTitle": "Forslag",
+    "reasonFavorite": "Ofte laget",
+    "reasonWhile": "Lenge siden sist"
   }
 }

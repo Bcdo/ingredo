@@ -247,3 +247,15 @@ Needs purchase history: buy the same item 3+ times with day-plus gaps. For quick
 - Buy the item again (add + purchase) → after the next due window, the suggestion returns (dismissal expired).
 - With no qualifying history, the section is completely absent — no header, no empty box.
 - Language switch (Settings): title and accessibility labels follow nb/en.
+
+## Recipe ideas (manual pass)
+
+Needs plan history: plan a recipe on 2+ past dates (the plan screen lets you add to any day; or back-date `date` values in a SQLite browser).
+
+- Open plan → add on an empty day: an "Ideas" rail appears between search and the list — often-cooked recipes labeled "A favorite", long-unseen ones "It's been a while".
+- Tap a chip → it selects exactly like tapping the list row (servings footer appears); confirm adds it to the day.
+- A recipe planned within the last week does NOT appear as a favorite.
+- A recipe already planned on the target day never appears.
+- Type in the search box → the rail disappears; clear it → the rail returns.
+- With no qualifying history (fresh install), the rail is completely absent.
+- Language switch: title and captions follow nb/en.

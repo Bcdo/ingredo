@@ -185,6 +185,9 @@
   "suggestions": {
     "staplesTitle": "Do you need…?",
     "add": "Add %{name}",
-    "dismiss": "Dismiss %{name}"
+    "dismiss": "Dismiss %{name}",
+    "ideasTitle": "Ideas",
+    "reasonFavorite": "A favorite",
+    "reasonWhile": "It's been a while"
   }
 }

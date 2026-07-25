@@ -27,6 +27,11 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
   useLiveQuery: jest.fn(),
 }));
 
+jest.mock('../lib/suggestions/recipeIdeas', () => ({
+  getPlanHistory: jest.fn(() => []),
+  computeRecipeIdeas: jest.fn(() => []),
+}));
+
 const mockParams: Record<string, string | undefined> = { date: '2026-07-07' };
 const mockBack = jest.fn();
 const mockPush = jest.fn();
