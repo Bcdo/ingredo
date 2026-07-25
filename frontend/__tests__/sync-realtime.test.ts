@@ -1,11 +1,13 @@
 import { AppState } from 'react-native';
 
+import { refreshSession } from '../lib/api/client';
 import { getSession, subscribeSession } from '../lib/api/session';
 import { syncNow } from '../lib/sync/engine';
 import { initRealtime, resetRealtimeForTests } from '../lib/sync/realtime';
 
 const mockConnection = {
   on: jest.fn(),
+  onclose: jest.fn(),
   start: jest.fn(async () => {}),
   stop: jest.fn(async () => {}),
 };
@@ -145,5 +147,32 @@ describe('initRealtime', () => {
 
     expect(removeMock).toHaveBeenCalled();
     expect(mockConnection.stop).toHaveBeenCalled();
+  });
+
+  it('a closed connection is forgotten so reconcile can restart it', async () => {
+    getSessionMock.mockReturnValue(signedIn);
+    initRealtime();
+    await flush();
+    const closeHandler = mockConnection.onclose.mock.calls[0][0] as () => void;
+
+    closeHandler();
+    appStateListener('active');
+    await flush();
+
+    expect(mockConnection.start).toHaveBeenCalledTimes(2);
+  });
+
+  it('the token factory refreshes before returning a token', async () => {
+    getSessionMock.mockReturnValue(signedIn);
+    initRealtime();
+    await flush();
+
+    const { HubConnectionBuilder } = jest.requireMock('@microsoft/signalr');
+    const withUrlMock = HubConnectionBuilder.mock.results[0].value.withUrl as jest.Mock;
+    const options = withUrlMock.mock.calls[0][1];
+    const token = await options.accessTokenFactory();
+
+    expect(refreshSession).toHaveBeenCalled();
+    expect(token).toBe('access-1');
   });
 });

@@ -20,6 +20,18 @@ let connection: HubConnection | null = null;
 let connectedHouseholdId: string | null = null;
 let appActive = AppState.currentState === 'active';
 
+// Access tokens live 15 minutes (see api/session.ts). Refresh proactively
+// once a held token is older than this margin so a reconnect after a long
+// idle stretch never replays an already-expired token. Gated by elapsed
+// time rather than refreshing unconditionally on every call: SignalR's
+// automatic reconnect invokes accessTokenFactory before EACH retry, and
+// refreshSession() signs the whole session out on a network failure (see
+// doRefresh's catch in api/client.ts) — refreshing on every retry would
+// turn a plain backend outage into a forced sign-out on the very first
+// reconnect attempt, defeating the reconnect-recovery fix below.
+const ACCESS_TOKEN_REFRESH_MARGIN_MS = 10 * 60 * 1000;
+let lastTokenRefreshAt = 0;
+
 function shouldConnect(): boolean {
   return appActive && getSession().status === 'signedIn';
 }
@@ -32,7 +44,14 @@ async function start(): Promise<void> {
       transport: HttpTransportType.WebSockets,
       skipNegotiation: true,
       accessTokenFactory: async () => {
-        if (!getAccessToken()) await refreshSession();
+        // Refresh when we hold no token, or when the held one is old
+        // enough to likely have expired — see the module-level comment
+        // on ACCESS_TOKEN_REFRESH_MARGIN_MS for why this is time-gated
+        // rather than unconditional. refreshSession is single-flighted.
+        if (!getAccessToken() || Date.now() - lastTokenRefreshAt > ACCESS_TOKEN_REFRESH_MARGIN_MS) {
+          await refreshSession();
+          lastTokenRefreshAt = Date.now();
+        }
         return getAccessToken() ?? '';
       },
     })
@@ -41,6 +60,15 @@ async function start(): Promise<void> {
     .build();
   target.on('changed', () => {
     void syncNow();
+  });
+  target.onclose(() => {
+    // Reconnect exhaustion (or a server-side close): forget the dead
+    // connection so the next reconcile — foreground, session change, or
+    // the next changed-driven sync — can start a fresh one.
+    if (connection === target) {
+      connection = null;
+      connectedHouseholdId = null;
+    }
   });
   connection = target;
   try {
@@ -101,4 +129,5 @@ export function resetRealtimeForTests(): void {
   connection = null;
   connectedHouseholdId = null;
   appActive = true;
+  lastTokenRefreshAt = 0;
 }

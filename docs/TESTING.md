@@ -234,5 +234,5 @@ Backend running, two devices signed into the same household, BOTH apps foregroun
 - Check off a shopping item on device A → it updates on device B within a couple of seconds, untouched.
 - Add/edit/delete a recipe or plan entry on A → appears on B similarly fast.
 - Background B, make changes on A, foreground B → changes arrive via the ordinary foreground sync (realtime reconnects too).
-- Stop the backend mid-session: nothing breaks or alerts; edits queue as dirty. Start it again → next trigger (foreground/edit/Sync now) delivers, and realtime quietly reconnects.
+- Stop the backend mid-session: nothing breaks or alerts; edits queue as dirty. Start it again → next trigger (foreground/edit/Sync now) delivers, and the next reconcile after the reconnect window brings realtime back (backgrounding and foregrounding the app forces it immediately).
 - Sign out on one device: its socket closes (no reconnect spam in the backend logs); the other device is unaffected.
