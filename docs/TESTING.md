@@ -259,3 +259,11 @@ Needs plan history on PAST dates — the app only plans ahead, so fabricate it b
 - Type in the search box → the rail disappears; clear it → the rail returns.
 - With no qualifying history (fresh install), the rail is completely absent.
 - Language switch: title and captions follow nb/en.
+
+## Habits overview (manual pass)
+
+- Settings → Habits: three totals up top (recipes, meals planned, items purchased) — sanity-check them against what you'd expect.
+- "Most cooked" lists your top recipes with counts; "Most bought" your top items. With thin history the lists are absent but the totals still show (zeros included).
+- Delete a recipe → it leaves "Most cooked" but "Meals planned" keeps its history.
+- Language switch: everything follows nb/en.
+- Numbers match across two synced devices (same household data, same math).

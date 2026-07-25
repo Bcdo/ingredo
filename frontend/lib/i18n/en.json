@@ -189,5 +189,14 @@
     "ideasTitle": "Ideas",
     "reasonFavorite": "A favorite",
     "reasonWhile": "It's been a while"
+  },
+  "habits": {
+    "title": "Habits",
+    "recipesCaption": "Recipes",
+    "plannedCaption": "Meals planned",
+    "purchasedCaption": "Items purchased",
+    "topRecipes": "Most cooked",
+    "topItems": "Most bought",
+    "times": "× %{count}"
   }
 }

@@ -189,5 +189,14 @@
     "ideasTitle": "Forslag",
     "reasonFavorite": "Ofte laget",
     "reasonWhile": "Lenge siden sist"
+  },
+  "habits": {
+    "title": "Vaner",
+    "recipesCaption": "Oppskrifter",
+    "plannedCaption": "Måltider planlagt",
+    "purchasedCaption": "Varer kjøpt",
+    "topRecipes": "Mest laget",
+    "topItems": "Mest kjøpt",
+    "times": "× %{count}"
   }
 }

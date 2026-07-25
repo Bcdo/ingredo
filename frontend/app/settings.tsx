@@ -77,6 +77,15 @@ export default function SettingsScreen() {
             onSelect={selectLanguage}
           />
         </View>
+        <View className="px-4 pt-6">
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/habits')}
+            className="min-h-14 flex-row items-center justify-between rounded-card bg-linen px-4 active:opacity-80">
+            <Text className="font-body-bold text-base text-ink">{t('habits.title')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={palette.ink} />
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );

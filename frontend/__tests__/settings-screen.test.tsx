@@ -15,7 +15,7 @@ jest.mock('../lib/api/config', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn() },
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -114,5 +114,13 @@ describe('SettingsScreen', () => {
 
     expect(setLanguageModeMock).toHaveBeenCalledWith(expect.anything(), 'nb');
     expect(applyLanguageModeMock).toHaveBeenCalledWith('nb');
+  });
+
+  it('navigates to the habits screen', () => {
+    render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByText('Habits'));
+
+    expect(router.push).toHaveBeenCalledWith('/habits');
   });
 });
