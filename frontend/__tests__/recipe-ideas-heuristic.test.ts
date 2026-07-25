@@ -30,6 +30,13 @@ describe('computeRecipeIdeas', () => {
     expect(computeRecipeIdeas(rows, universe('taco'), TARGET, TODAY)).toEqual([]);
   });
 
+  it('a favorite exactly 7 days stale is still too recent (strict >)', () => {
+    // 2026-07-18 is exactly 7 days before today; 7 is NOT > 7.
+    const rows = history('taco', ['2026-06-18', '2026-07-18']);
+
+    expect(computeRecipeIdeas(rows, universe('taco'), TARGET, TODAY)).toEqual([]);
+  });
+
   it('a single past planning becomes a rediscovery after 21 days', () => {
     const rows = history('suppe', ['2026-06-20']); // 35 days ago
 
@@ -42,6 +49,15 @@ describe('computeRecipeIdeas', () => {
     const rows = history('suppe', ['2026-07-10']); // 15 days ago
 
     expect(computeRecipeIdeas(rows, universe('suppe'), TARGET, TODAY)).toEqual([]);
+  });
+
+  it('a rediscovery exactly 21 days stale qualifies (inclusive ≥)', () => {
+    // 2026-07-04 is exactly 21 days before today.
+    const rows = history('suppe', ['2026-07-04']);
+
+    expect(computeRecipeIdeas(rows, universe('suppe'), TARGET, TODAY)).toEqual([
+      { recipeId: 'suppe', kind: 'while' },
+    ]);
   });
 
   it('dedups: a recipe qualifying for both kinds appears once, as a favorite', () => {
