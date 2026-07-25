@@ -48,6 +48,12 @@ export function useSession(): Session {
   return useSyncExternalStore(subscribe, getSession);
 }
 
+// Non-React subscription for module-level listeners (the realtime
+// connection reconciles on every session change).
+export function subscribeSession(listener: () => void): () => void {
+  return subscribe(listener);
+}
+
 export function getAccessToken(): string | null {
   return accessToken;
 }
