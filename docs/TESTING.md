@@ -226,3 +226,13 @@ Backend running (`docker compose up -d` in `backend/`). Two devices (or emulator
 - Join a household with local content → your content appears in the joined household on both devices; leave → your device re-populates your fresh personal household.
 - Sign out → status line gone, app fully local; sign back in → converges again without duplicates.
 - Purchased-shelf history, plan entries and shopping items all travel, including their tombstones (deleted things stay deleted on both sides).
+
+## Realtime sync (manual pass)
+
+Backend running, two devices signed into the same household, BOTH apps foregrounded.
+
+- Check off a shopping item on device A → it updates on device B within a couple of seconds, untouched.
+- Add/edit/delete a recipe or plan entry on A → appears on B similarly fast.
+- Background B, make changes on A, foreground B → changes arrive via the ordinary foreground sync (realtime reconnects too).
+- Stop the backend mid-session: nothing breaks or alerts; edits queue as dirty. Start it again → next trigger (foreground/edit/Sync now) delivers, and realtime quietly reconnects.
+- Sign out on one device: its socket closes (no reconnect spam in the backend logs); the other device is unaffected.

@@ -21,6 +21,7 @@ import { cssVars } from '../lib/theme';
 import { applyLanguageMode, useLocaleVersion } from '../lib/locale';
 import { getLastSyncedAt } from '../lib/sync/cursor';
 import { syncNow } from '../lib/sync/engine';
+import { initRealtime } from '../lib/sync/realtime';
 import { initLastSyncedAt } from '../lib/sync/status';
 import { initSyncTriggers } from '../lib/sync/trigger';
 import { usePalette } from '../lib/usePalette';
@@ -67,7 +68,12 @@ export default function RootLayout() {
       applyLanguageMode(getLanguageMode(db));
       initLastSyncedAt(getLastSyncedAt(db));
       void restoreSession().then(() => syncNow());
-      return initSyncTriggers();
+      const teardownTriggers = initSyncTriggers();
+      const teardownRealtime = initRealtime();
+      return () => {
+        teardownTriggers();
+        teardownRealtime();
+      };
     }
   }, [state]);
   const palette = usePalette();

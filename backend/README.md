@@ -72,6 +72,14 @@ docker compose up --build     # api on http://localhost:8080
   your pre-push cursor has completed, or you will silently skip other
   devices' rows.
 
+## Realtime
+
+- `/hubs/sync` — SignalR hub, `[Authorize]`d, WebSocket clients pass the
+  access token as `?access_token=` (accepted only on hub paths). Clients
+  never invoke anything; the server sends one message, `changed`, to the
+  `household:<id>` group after every durable content write. Clients answer
+  by pulling — the socket carries no data.
+
 ## Migrations
 
 - `dotnet-ef` is a local tool pinned in `.config/dotnet-tools.json`; run
