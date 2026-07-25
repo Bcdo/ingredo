@@ -2,6 +2,7 @@ using FluentValidation;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
 using Ingredo.Api.MealPlan;
+using Ingredo.Api.Realtime;
 using Ingredo.Api.Recipes;
 using Ingredo.Api.Shopping;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,8 @@ public sealed class SyncService(
     AppDbContext db,
     IValidator<RecipeRequest> recipeValidator,
     IValidator<MealPlanEntryRequest> mealPlanValidator,
-    IValidator<ShoppingItemRequest> shoppingValidator) : ISyncService
+    IValidator<ShoppingItemRequest> shoppingValidator,
+    IChangeNotifier notifier) : ISyncService
 {
     public async Task<SyncPullResponse> PullAsync(
         Guid householdId, long since, CancellationToken cancellationToken)
@@ -105,6 +107,11 @@ public sealed class SyncService(
         await db.SaveChangesAsync(cancellationToken);
         var cursor = await CurrentCursorAsync(householdId, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        if (results.Values.Contains(Applied))
+        {
+            await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
+        }
 
         return new SyncPushResponse(results, cursor);
     }

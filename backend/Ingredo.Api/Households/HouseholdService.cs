@@ -2,6 +2,7 @@ using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.Realtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Households;
@@ -9,7 +10,8 @@ namespace Ingredo.Api.Households;
 public sealed class HouseholdService(
     AppDbContext db,
     IAuthService auth,
-    IJoinCodeService joinCodes) : IHouseholdService
+    IJoinCodeService joinCodes,
+    IChangeNotifier notifier) : IHouseholdService
 {
     public async Task<HouseholdResponse> GetAsync(Guid householdId, CancellationToken cancellationToken)
     {
@@ -148,6 +150,7 @@ public sealed class HouseholdService(
         }
 
         await transaction.CommitAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(target.Id, cancellationToken);
         return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, cancellationToken));
     }
 

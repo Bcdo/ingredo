@@ -1,10 +1,11 @@
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
+using Ingredo.Api.Realtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Recipes;
 
-public sealed class RecipeService(AppDbContext db) : IRecipeService
+public sealed class RecipeService(AppDbContext db, IChangeNotifier notifier) : IRecipeService
 {
     public async Task<List<RecipeSummaryResponse>> ListAsync(Guid householdId, CancellationToken cancellationToken)
     {
@@ -38,6 +39,7 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         recipe.HouseholdId = householdId;
         db.Recipes.Add(recipe);
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
@@ -73,6 +75,7 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         db.RecipeInstructions.AddRange(newInstructions);
 
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 
@@ -88,6 +91,7 @@ public sealed class RecipeService(AppDbContext db) : IRecipeService
         recipe.DeletedAt = now;
         recipe.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<RecipeResponse>.Ok(recipe.ToResponse());
     }
 

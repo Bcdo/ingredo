@@ -1,11 +1,12 @@
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.Realtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Shopping;
 
-public sealed class ShoppingService(AppDbContext db) : IShoppingService
+public sealed class ShoppingService(AppDbContext db, IChangeNotifier notifier) : IShoppingService
 {
     public async Task<List<ShoppingItemResponse>> ListAsync(
         Guid householdId, CancellationToken cancellationToken)
@@ -54,6 +55,7 @@ public sealed class ShoppingService(AppDbContext db) : IShoppingService
         };
         db.ShoppingItems.Add(item);
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<ShoppingItemResponse>.Ok(ToResponse(item));
     }
 
@@ -72,6 +74,7 @@ public sealed class ShoppingService(AppDbContext db) : IShoppingService
         item.PurchasedAt = request.PurchasedAt;
         item.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<ShoppingItemResponse>.Ok(ToResponse(item));
     }
 
@@ -89,6 +92,7 @@ public sealed class ShoppingService(AppDbContext db) : IShoppingService
         item.DeletedAt = now;
         item.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<ShoppingItemResponse>.Ok(ToResponse(item));
     }
 

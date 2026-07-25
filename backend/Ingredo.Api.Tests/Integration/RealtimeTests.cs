@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Ingredo.Api.Auth;
 using Ingredo.Api.Households;
+using Ingredo.Api.Recipes;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -66,5 +67,97 @@ public class RealtimeTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var connection = BuildConnection(joinerAuth.AccessToken);
 
         await Assert.ThrowsAnyAsync<Exception>(() => connection.StartAsync());
+    }
+
+    private static Task<bool> Signal(HubConnection connection)
+    {
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.On("changed", () => tcs.TrySetResult(true));
+        return tcs.Task;
+    }
+
+    private static async Task<bool> Arrived(Task<bool> signal) =>
+        await Task.WhenAny(signal, Task.Delay(TimeSpan.FromSeconds(10))) == signal && signal.Result;
+
+    [Fact]
+    public async Task Crud_write_notifies_the_household_and_only_the_household()
+    {
+        var (memberClient, memberAuth) = await factory.RegisterUserAsync();
+        var (outsiderClient, outsiderAuth) = await factory.RegisterUserAsync();
+        _ = outsiderClient;
+        await using var memberConnection = await ConnectAsync(memberAuth.AccessToken);
+        await using var outsiderConnection = await ConnectAsync(outsiderAuth.AccessToken);
+        var memberSignal = Signal(memberConnection);
+        var outsiderSignal = Signal(outsiderConnection);
+
+        var response = await memberClient.PostAsJsonAsync(
+            "/api/v1/recipes",
+            new RecipeRequest(null, "Varslet taco", null, 4, null,
+                [new IngredientRequest(null, "Mel", 400, "g", "linear", 0)],
+                [new InstructionRequest(null, "Bland.", 0)]));
+        response.EnsureSuccessStatusCode();
+
+        Assert.True(await Arrived(memberSignal));
+        // The outsider's silence is asserted with a short grace window: the
+        // member's signal already proves delivery latency is far below it.
+        await Task.Delay(500);
+        Assert.False(outsiderSignal.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Sync_push_notifies_when_rows_apply()
+    {
+        var (client, auth) = await factory.RegisterUserAsync();
+        await using var connection = await ConnectAsync(auth.AccessToken);
+        var signal = Signal(connection);
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        var push = await client.PostAsJsonAsync("/api/v1/sync/push", new
+        {
+            recipes = new[]
+            {
+                new
+                {
+                    id = Guid.NewGuid(),
+                    title = "Synk-varslet",
+                    description = (string?)null,
+                    servings = 4,
+                    notes = (string?)null,
+                    createdAt = now,
+                    updatedAt = now,
+                    deletedAt = (long?)null,
+                    ingredients = Array.Empty<object>(),
+                    instructions = Array.Empty<object>(),
+                }
+            },
+            mealPlanEntries = (object?)null,
+            shoppingItems = (object?)null,
+        });
+        push.EnsureSuccessStatusCode();
+
+        Assert.True(await Arrived(signal));
+    }
+
+    [Fact]
+    public async Task Join_notifies_the_target_household()
+    {
+        var (hostClient, hostAuth) = await factory.RegisterUserAsync();
+        var (joinerClient, _) = await factory.RegisterUserAsync();
+        await using var hostConnection = await ConnectAsync(hostAuth.AccessToken);
+        var hostSignal = Signal(hostConnection);
+        var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+
+        // Joiner has content so the join re-homes rows into the host household.
+        var created = await joinerClient.PostAsJsonAsync(
+            "/api/v1/recipes",
+            new RecipeRequest(null, "Medgift", null, 2, null,
+                [new IngredientRequest(null, "Salt", null, null, "fixed", 0)],
+                [new InstructionRequest(null, "Ta med.", 0)]));
+        created.EnsureSuccessStatusCode();
+        var join = await joinerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        join.EnsureSuccessStatusCode();
+
+        Assert.True(await Arrived(hostSignal));
     }
 }

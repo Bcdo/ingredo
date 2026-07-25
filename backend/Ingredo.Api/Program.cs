@@ -39,6 +39,7 @@ builder.Services.AddScoped<IShoppingService, ShoppingService>();
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IJoinCodeService, JoinCodeService>();
 builder.Services.AddScoped<IHouseholdService, HouseholdService>();
+builder.Services.AddScoped<IChangeNotifier, SignalRChangeNotifier>();
 builder.Services.AddValidatorsFromAssemblyContaining<RecipeRequestValidator>();
 builder.Services.AddIngredoAuth(builder.Configuration);
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

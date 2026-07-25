@@ -1,11 +1,12 @@
 using Ingredo.Api.Common;
 using Ingredo.Api.Data;
 using Ingredo.Api.Domain;
+using Ingredo.Api.Realtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.MealPlan;
 
-public sealed class MealPlanService(AppDbContext db) : IMealPlanService
+public sealed class MealPlanService(AppDbContext db, IChangeNotifier notifier) : IMealPlanService
 {
     public async Task<List<MealPlanEntryResponse>> ListAsync(
         Guid householdId, DateOnly? from, DateOnly? to, CancellationToken cancellationToken)
@@ -60,6 +61,7 @@ public sealed class MealPlanService(AppDbContext db) : IMealPlanService
         };
         db.MealPlanEntries.Add(entry);
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<MealPlanEntryResponse>.Ok(ToResponse(entry));
     }
 
@@ -80,6 +82,7 @@ public sealed class MealPlanService(AppDbContext db) : IMealPlanService
         entry.SortOrder = request.SortOrder;
         entry.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<MealPlanEntryResponse>.Ok(ToResponse(entry));
     }
 
@@ -97,6 +100,7 @@ public sealed class MealPlanService(AppDbContext db) : IMealPlanService
         entry.DeletedAt = now;
         entry.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyHouseholdChangedAsync(householdId, cancellationToken);
         return ServiceResult<MealPlanEntryResponse>.Ok(ToResponse(entry));
     }
 
