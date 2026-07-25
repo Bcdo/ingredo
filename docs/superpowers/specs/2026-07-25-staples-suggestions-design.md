@@ -26,7 +26,7 @@
 
 1. **The staple heuristic is a pure function** in `lib/suggestions/staples.ts`, operating on `{ normalizedName, name, purchasedAt }` rows (purchased, non-tombstoned):
    - Group by `normalizedName` (case/whitespace-normalized already — language-neutral, no parsing).
-   - An item is a **staple** when it has ≥ 3 purchases. Its **typical interval** is the median gap between consecutive purchase timestamps (median resists one vacation gap). Groups whose median gap exceeds 60 days are ignored (not habitual enough to predict).
+   - An item is a **staple** when it has ≥ 3 purchases. Its **typical interval** is the median gap between consecutive purchase timestamps (median resists one vacation gap). Groups whose median gap is under 1 day (several buys in one shopping event — same-trip noise, not a cadence) or over 60 days (not habitual enough to predict) are ignored.
    - A staple is **due** when `now - lastPurchasedAt ≥ 0.8 × typicalInterval`.
    - Rank by overdueness ratio (`elapsed / typicalInterval`, descending); cap at 5 suggestions.
    - Display name: the most recent purchase's `name` (freshest casing/spelling).
