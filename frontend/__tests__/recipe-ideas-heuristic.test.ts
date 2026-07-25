@@ -98,6 +98,16 @@ describe('computeRecipeIdeas', () => {
     expect(ideas[3].kind).toBe('while');
   });
 
+  it('a recipe already planned for an upcoming day is never suggested', () => {
+    // Real histories always contain future entries (planning ahead is the
+    // point). The future lastDate makes staleness negative, failing both
+    // thresholds — pin that so a refactor (clamping, abs, reordering)
+    // cannot silently start suggesting already-planned dishes.
+    const rows = history('taco', ['2026-05-25', '2026-06-25', '2026-07-28']);
+
+    expect(computeRecipeIdeas(rows, universe('taco'), TARGET, TODAY)).toEqual([]);
+  });
+
   it('caps at six', () => {
     const rows = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].flatMap((id, index) =>
       history(id, ['2026-05-01', `2026-06-${String(10 + index).padStart(2, '0')}`])
