@@ -279,3 +279,15 @@ Needs plan history on PAST dates — the app only plans ahead, so fabricate it b
 - Tap still purchases; long-press on shelf (purchased) rows does nothing.
 - Shelf re-add keeps one tap (last amount); long-press the fresh row to adjust this trip's amount.
 - Both languages: the placeholder hint and Amount label follow nb/en.
+
+## Multi-membership backend (manual pass)
+
+Via Scalar (or curl) against the compose stack — the app UI arrives in a later slice.
+
+- Create a second household: POST /api/v1/households {"name":"Tur"} → response tokens are scoped to it; GET /api/v1/household shows "Tur" with you as owner.
+- GET /api/v1/households lists both, with isActive on the new one.
+- Switch back: POST /api/v1/households/switch {"householdId": <personal id>} → recipes list shows your old content again; the trip household keeps its own.
+- Join is additive: a second user joining your code keeps their personal household (their re-login lands back in it).
+- Leave: leaving the shared household lands you in your oldest other membership; leaving your ONLY household is rejected (409).
+- Old tokens for a household you left get 401 everywhere; refresh recovers.
+- The CURRENT app still works signed into one household throughout (create/switch only via API for now).

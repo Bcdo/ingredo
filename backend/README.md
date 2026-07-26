@@ -47,6 +47,12 @@ docker compose up --build     # api on http://localhost:8080
   stays with the household you left. Also returns a fresh token pair.
 - Departing a shared household you own (by join or leave) promotes the
   longest-standing remaining member to owner.
+- Users can belong to several households. `POST /api/v1/households` creates
+  one (you become owner and switch to it), `GET /api/v1/households` lists
+  your memberships, `POST /api/v1/households/switch` picks the active one.
+  The active household rides on the refresh-token family, so each device
+  remembers its own choice. Join adds a membership (nothing moves); leave
+  sheds one (the last member out deletes the household).
 
 ## Meal plan & shopping
 
