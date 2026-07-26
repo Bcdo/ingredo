@@ -15,3 +15,15 @@ public sealed record HouseholdResponse(
 public sealed record RenameRequest(string Name);
 
 public sealed record JoinRequest(string Code);
+
+public sealed record HouseholdSummaryResponse(
+    Guid Id,
+    string Name,
+    string JoinCode,
+    int MemberCount,
+    string Role,
+    bool IsActive);
+
+public sealed record CreateHouseholdRequest(string Name);
+
+public sealed record SwitchHouseholdRequest(Guid HouseholdId);

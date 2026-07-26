@@ -189,4 +189,70 @@ public sealed class HouseholdService(
         return ServiceResult<AuthResponse>.Ok(
             await auth.IssueTokensAsync(userId, nextHouseholdId, cancellationToken));
     }
+
+    public async Task<AuthResponse> CreateAsync(
+        Guid userId, string name, CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var household = new Household
+        {
+            Id = Guid.NewGuid(),
+            Name = name.Trim(),
+            JoinCode = await joinCodes.NewUniqueCodeAsync(cancellationToken),
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        db.Households.Add(household);
+        db.HouseholdMembers.Add(new HouseholdMember
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            HouseholdId = household.Id,
+            Role = HouseholdRole.Owner,
+            CreatedAt = now,
+        });
+        await db.SaveChangesAsync(cancellationToken);
+        return await auth.IssueTokensAsync(userId, household.Id, cancellationToken);
+    }
+
+    public async Task<List<HouseholdSummaryResponse>> ListAsync(
+        Guid userId, Guid activeHouseholdId, CancellationToken cancellationToken)
+    {
+        var memberships = await db.HouseholdMembers
+            .Where(m => m.UserId == userId)
+            .Join(
+                db.Households,
+                m => m.HouseholdId,
+                h => h.Id,
+                (m, h) => new { h.Id, h.Name, h.JoinCode, m.Role, m.CreatedAt })
+            .OrderBy(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+        var counts = await db.HouseholdMembers
+            .Where(m => memberships.Select(x => x.Id).Contains(m.HouseholdId))
+            .GroupBy(m => m.HouseholdId)
+            .Select(g => new { HouseholdId = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var countById = counts.ToDictionary(c => c.HouseholdId, c => c.Count);
+
+        return memberships
+            .Select(x => new HouseholdSummaryResponse(
+                x.Id,
+                x.Name,
+                JoinCodeGenerator.FormatForDisplay(x.JoinCode),
+                countById.GetValueOrDefault(x.Id, 1),
+                x.Role.ToString().ToLowerInvariant(),
+                x.Id == activeHouseholdId))
+            .ToList();
+    }
+
+    public async Task<ServiceResult<AuthResponse>> SwitchAsync(
+        Guid userId, Guid householdId, CancellationToken cancellationToken)
+    {
+        var isMember = await db.HouseholdMembers.AnyAsync(
+            m => m.UserId == userId && m.HouseholdId == householdId, cancellationToken);
+        if (!isMember) return ServiceResult<AuthResponse>.NotFound();
+        return ServiceResult<AuthResponse>.Ok(
+            await auth.IssueTokensAsync(userId, householdId, cancellationToken));
+    }
 }

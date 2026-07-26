@@ -20,3 +20,14 @@ public sealed class JoinRequestValidator : AbstractValidator<JoinRequest>
         RuleFor(r => r.Code).NotEmpty();
     }
 }
+
+public sealed class CreateHouseholdRequestValidator : AbstractValidator<CreateHouseholdRequest>
+{
+    public CreateHouseholdRequestValidator()
+    {
+        RuleFor(r => r.Name)
+            .Must(name => !string.IsNullOrWhiteSpace(name))
+            .WithMessage("Household name must not be empty.")
+            .MaximumLength(200);
+    }
+}
