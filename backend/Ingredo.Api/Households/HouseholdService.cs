@@ -105,6 +105,16 @@ public sealed class HouseholdService(
         Guid userId, Guid currentHouseholdId, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        // Serialize all membership changes for this user: the safety clause
+        // below trusts a snapshot of the user's OTHER memberships, and two
+        // concurrent leaves from different households would otherwise each
+        // see the other as a landing spot (write-skew under READ COMMITTED)
+        // and strand the user with zero memberships. User rows first, then
+        // the household row — a deadlock-safe order.
+        await db.Database.ExecuteSqlAsync(
+            $"""SELECT 1 FROM "HouseholdMembers" WHERE "UserId" = {userId} FOR UPDATE""",
+            cancellationToken);
         await db.Database.ExecuteSqlAsync(
             $"""SELECT 1 FROM "Households" WHERE "Id" = {currentHouseholdId} FOR UPDATE""",
             cancellationToken);

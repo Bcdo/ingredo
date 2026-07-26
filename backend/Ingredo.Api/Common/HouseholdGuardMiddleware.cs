@@ -5,11 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ingredo.Api.Common;
 
-// An access token can outlive its household MEMBERSHIP: a sole-member
-// join-away deletes the old household while issued tokens still carry its
-// claim for up to the token lifetime, and a token can also outlive its
-// membership without the household dying — you left it, others remain, the
-// household exists but the token must die all the same. Fail those requests
+// An access token can outlive its household MEMBERSHIP: leaving a household
+// removes the membership row while issued tokens still carry its claim for
+// up to the token lifetime — whether or not the household itself survives.
+// If you were the last member, the household is deleted with you; if others
+// remain, the household lives on without you. Either way the token must die
+// all the same. Fail those requests
 // clean — 401 — so clients refresh and get tokens for their current
 // membership. Also catches malformed claims, so downstream Guid.Parse
 // accessors are safe by construction. Anonymous endpoints (health, login,

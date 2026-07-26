@@ -210,10 +210,19 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
             "/api/v1/auth/login", new LoginRequest(roamerEmail, roamerPassword));
         var personalClient = factory.CreateClient();
         personalClient.UseTokens((await relogin.Content.ReadFromJsonAsync<AuthResponse>())!);
+        var personalView = await personalClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
 
         var leave = await personalClient.PostAsJsonAsync("/api/v1/household/leave", new { });
+        leave.EnsureSuccessStatusCode();
         var auth = await leave.Content.ReadFromJsonAsync<AuthResponse>();
         Assert.Equal(household.Id, auth!.User.HouseholdId); // landed on the shared one
+
+        // The abandoned personal household is gone, not just vacated: its
+        // join code no longer resolves to anything.
+        personalClient.UseTokens(auth);
+        var rejoin = await personalClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = personalView!.JoinCode });
+        Assert.Equal(HttpStatusCode.NotFound, rejoin.StatusCode);
     }
 
     [Fact]
