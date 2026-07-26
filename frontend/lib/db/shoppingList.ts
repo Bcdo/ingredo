@@ -4,6 +4,7 @@ import { newId } from './id';
 import { notDeleted } from './predicates';
 import { shoppingItems } from './schema';
 import type { DB } from './types';
+import { parseIngredientLine } from '../import/ingredientLine';
 import { itemKey, normalizeName, sumQuantities, type AggregatedItem } from '../shopping';
 import { scheduleSync } from '../sync/trigger';
 
@@ -97,11 +98,25 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
 }
 
 export function addManualItem(db: DB, rawName: string): boolean {
-  const name = rawName.trim();
+  const line = rawName.trim();
+  if (line === '') return false;
+  // Structured amount prefix via the closed bilingual token map from URL
+  // import — "2 l melk" carries its amount; anything unparseable stays a
+  // plain name, byte-identical to the old behavior.
+  const parsed = parseIngredientLine(line);
+  const name = parsed.name.trim();
   if (name === '') return false;
   addItems(
     db,
-    [{ name, normalizedName: normalizeName(name), quantity: null, unit: null, sources: [] }],
+    [
+      {
+        name,
+        normalizedName: normalizeName(name),
+        quantity: parsed.quantity,
+        unit: parsed.unit,
+        sources: [],
+      },
+    ],
     'merge'
   );
   return true;
@@ -119,6 +134,27 @@ export function purchaseItem(db: DB, id: string): void {
 export function restoreItem(db: DB, id: string): void {
   db.update(shoppingItems)
     .set({ status: 'active', purchasedAt: null, updatedAt: Date.now(), dirty: 1 })
+    .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
+    .run();
+  scheduleSync();
+}
+
+// Long-press editor write: amount only (name edits are delete-and-retype).
+// Guarded like every by-id mutation — a row a pull just tombstoned must
+// not resurrect through a stale editor.
+export function setItemQuantity(
+  db: DB,
+  id: string,
+  quantity: number | null,
+  unit: string | null
+): void {
+  db.update(shoppingItems)
+    .set({
+      quantity,
+      unit: quantity === null ? null : unit,
+      updatedAt: Date.now(),
+      dirty: 1,
+    })
     .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
     .run();
   scheduleSync();

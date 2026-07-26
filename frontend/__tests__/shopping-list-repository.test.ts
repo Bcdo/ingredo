@@ -8,6 +8,7 @@ import {
   purchaseItem,
   readdItem,
   restoreItem,
+  setItemQuantity,
 } from '../lib/db/shoppingList';
 import type { DB } from '../lib/db/types';
 import type { AggregatedItem } from '../lib/shopping';
@@ -316,6 +317,102 @@ describe('tombstone write-guards', () => {
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.status).toBe('purchased');
+    expect(after.updatedAt).toBe(before.updatedAt);
+  });
+});
+
+describe('addManualItem parsing', () => {
+  function onlyRow(db: ReturnType<typeof makeTestDb>) {
+    const rows = db.select().from(shoppingItems).all();
+    expect(rows).toHaveLength(1);
+    return rows[0];
+  }
+
+  it('parses amount and unit: "2 l melk"', () => {
+    const db = makeTestDb();
+    expect(addManualItem(db, '2 l melk')).toBe(true);
+    const row = onlyRow(db);
+    expect(row).toMatchObject({ name: 'melk', normalizedName: 'melk', quantity: 2, unit: 'l' });
+  });
+
+  it('parses a glued unit: "500g mel"', () => {
+    const db = makeTestDb();
+    addManualItem(db, '500g mel');
+    expect(onlyRow(db)).toMatchObject({ name: 'mel', quantity: 500, unit: 'g' });
+  });
+
+  it('parses an amount without a unit: "2 melk"', () => {
+    const db = makeTestDb();
+    addManualItem(db, '2 melk');
+    expect(onlyRow(db)).toMatchObject({ name: 'melk', quantity: 2, unit: null });
+  });
+
+  it('parses a unicode fraction: "½ agurk"', () => {
+    const db = makeTestDb();
+    addManualItem(db, '½ agurk');
+    expect(onlyRow(db)).toMatchObject({ name: 'agurk', quantity: 0.5, unit: null });
+  });
+
+  it('plain names behave exactly as before', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'melk');
+    expect(onlyRow(db)).toMatchObject({ name: 'melk', quantity: null, unit: null });
+  });
+
+  it('still rejects blank input', () => {
+    const db = makeTestDb();
+    expect(addManualItem(db, '   ')).toBe(false);
+    expect(db.select().from(shoppingItems).all()).toHaveLength(0);
+  });
+
+  it('merges same-name same-unit adds by summing', () => {
+    const db = makeTestDb();
+    addManualItem(db, '2 l melk');
+    addManualItem(db, '1 l melk');
+    expect(onlyRow(db)).toMatchObject({ quantity: 3, unit: 'l' });
+  });
+});
+
+describe('setItemQuantity', () => {
+  it('writes amount and unit, bumps updatedAt, stamps dirty', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'melk');
+    const before = db.select().from(shoppingItems).all()[0];
+    db.update(shoppingItems).set({ dirty: 0 }).run();
+
+    setItemQuantity(db, before.id, 2, 'l');
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, before.id)).get()!;
+    expect(after).toMatchObject({ quantity: 2, unit: 'l', dirty: 1 });
+    expect(after.updatedAt).toBeGreaterThanOrEqual(before.updatedAt);
+  });
+
+  it('null amount clears the unit too', () => {
+    const db = makeTestDb();
+    addManualItem(db, '2 l melk');
+    const row = db.select().from(shoppingItems).all()[0];
+
+    setItemQuantity(db, row.id, null, 'l');
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+    expect(after.quantity).toBeNull();
+    expect(after.unit).toBeNull();
+  });
+
+  it('no-ops on tombstoned rows', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'melk');
+    const row = db.select().from(shoppingItems).all()[0];
+    db.update(shoppingItems)
+      .set({ deletedAt: Date.now(), updatedAt: Date.now() })
+      .where(eq(shoppingItems.id, row.id))
+      .run();
+    const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+
+    setItemQuantity(db, row.id, 5, 'kg');
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+    expect(after.quantity).toBe(before.quantity);
     expect(after.updatedAt).toBe(before.updatedAt);
   });
 });
