@@ -51,20 +51,28 @@ public class RealtimeTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Dead_household_token_is_rejected()
+    public async Task Left_household_token_is_rejected()
     {
-        // B's original token references a household that stops existing the
-        // moment sole-member B joins A (shell delete) — the guard's job.
-        // RegisterUserAsync's client is already authenticated (Bearer token
-        // attached), so we reuse it directly instead of CreateClient + UseTokens.
-        var (host, hostAuth) = await factory.RegisterUserAsync();
-        var (joinerClient, joinerAuth) = await factory.RegisterUserAsync();
+        // Join is additive now — it no longer kills any household. So to get
+        // a token the guard must reject, the joiner has to actually LEAVE:
+        // join the host's shared household, then leave it again. The shared
+        // household still exists (the host remains a member) — only the
+        // joiner's membership row in it is gone, which is what the guard
+        // checks. The pre-leave token (scoped to that shared household) is
+        // the one under test.
+        var (host, _) = await factory.RegisterUserAsync();
+        var (joinerClient, _) = await factory.RegisterUserAsync();
         var household = await host.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
         var joinResponse = await joinerClient.PostAsJsonAsync(
             "/api/v1/household/join", new { code = household!.JoinCode });
         joinResponse.EnsureSuccessStatusCode();
+        var joinedAuth = (await joinResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
+        joinerClient.UseTokens(joinedAuth);
 
-        var connection = BuildConnection(joinerAuth.AccessToken);
+        var leaveResponse = await joinerClient.PostAsJsonAsync("/api/v1/household/leave", new { });
+        leaveResponse.EnsureSuccessStatusCode();
+
+        var connection = BuildConnection(joinedAuth.AccessToken); // pre-leave token
 
         await Assert.ThrowsAnyAsync<Exception>(() => connection.StartAsync());
     }
@@ -147,7 +155,8 @@ public class RealtimeTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var hostSignal = Signal(hostConnection);
         var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
 
-        // Joiner has content so the join re-homes rows into the host household.
+        // Joiner has content — irrelevant to notification, but mirrors a
+        // realistic join; additive join never moves it into the host household.
         var created = await joinerClient.PostAsJsonAsync(
             "/api/v1/recipes",
             new RecipeRequest(null, "Medgift", null, 2, null,

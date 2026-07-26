@@ -72,86 +72,33 @@ public sealed class HouseholdService(
         var target = await db.Households.FirstOrDefaultAsync(
             h => h.JoinCode == canonical, cancellationToken);
         if (target is null) return ServiceResult<AuthResponse>.NotFound();
-        if (target.Id == currentHouseholdId) return ServiceResult<AuthResponse>.Conflict();
 
-        var now = DateTimeOffset.UtcNow;
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var alreadyMember = await db.HouseholdMembers.AnyAsync(
+            m => m.UserId == userId && m.HouseholdId == target.Id, cancellationToken);
+        if (alreadyMember) return ServiceResult<AuthResponse>.Conflict();
 
-        // Serialize concurrent membership changes touching these households:
-        // lock both rows in a stable order (deadlock avoidance) so the
-        // sole-membership snapshot below stays authoritative until commit.
-        var lockIds = new[] { currentHouseholdId, target.Id }.Order().ToArray();
-        await db.Database.ExecuteSqlAsync(
-            $"""SELECT 1 FROM "Households" WHERE "Id" = ANY({lockIds}) FOR UPDATE""",
-            cancellationToken);
-
-        var targetStillExists = await db.Households
-            .AnyAsync(h => h.Id == target.Id, cancellationToken);
-        if (!targetStillExists)
-        {
-            return ServiceResult<AuthResponse>.NotFound();
-        }
-
-        var membership = await db.HouseholdMembers.SingleAsync(
-            m => m.UserId == userId && m.HouseholdId == currentHouseholdId, cancellationToken);
-        var remaining = await db.HouseholdMembers
-            .Where(m => m.HouseholdId == currentHouseholdId && m.UserId != userId)
-            .OrderBy(m => m.CreatedAt)
-            .ThenBy(m => m.Id)
-            .ToListAsync(cancellationToken);
-        var othersRemain = remaining.Count > 0;
-
-        // The joiner may have been the owner of a shared household they're
-        // leaving behind — promote the earliest-standing remaining member so
-        // the household they leave isn't left ownerless.
-        if (othersRemain && membership.Role == HouseholdRole.Owner)
-        {
-            remaining[0].Role = HouseholdRole.Owner;
-        }
-
-        db.HouseholdMembers.Remove(membership);
         db.HouseholdMembers.Add(new HouseholdMember
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             HouseholdId = target.Id,
             Role = HouseholdRole.Member,
-            CreatedAt = now,
+            CreatedAt = DateTimeOffset.UtcNow,
         });
-        await db.SaveChangesAsync(cancellationToken);
-
-        if (!othersRemain)
+        try
         {
-            // Personal household: the content merges into the new home, then
-            // the empty shell is deleted. Re-home BEFORE delete — the FK
-            // cascade would otherwise take the recipes down with the shell.
-            await db.Recipes
-                .IgnoreQueryFilters()
-                .Where(r => r.HouseholdId == currentHouseholdId)
-                .ExecuteUpdateAsync(
-                    setters => setters
-                        .SetProperty(r => r.HouseholdId, target.Id)
-                        .SetProperty(r => r.UpdatedAt, now),
-                    cancellationToken);
-            // Delete the shell only if nothing snuck in behind the lock —
-            // a racing recipe insert leaves a benign orphan household
-            // instead of being cascade-destroyed.
-            var membersLeft = await db.HouseholdMembers
-                .AnyAsync(m => m.HouseholdId == currentHouseholdId, cancellationToken);
-            var recipesLeft = await db.Recipes
-                .IgnoreQueryFilters()
-                .AnyAsync(r => r.HouseholdId == currentHouseholdId, cancellationToken);
-            if (!membersLeft && !recipesLeft)
-            {
-                await db.Households
-                    .Where(h => h.Id == currentHouseholdId)
-                    .ExecuteDeleteAsync(cancellationToken);
-            }
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Concurrent double-join: the (UserId, HouseholdId) unique index
+            // is the arbiter.
+            return ServiceResult<AuthResponse>.Conflict();
         }
 
-        await transaction.CommitAsync(cancellationToken);
         await notifier.NotifyHouseholdChangedAsync(target.Id, cancellationToken);
-        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, target.Id, cancellationToken));
+        return ServiceResult<AuthResponse>.Ok(
+            await auth.IssueTokensAsync(userId, target.Id, cancellationToken));
     }
 
     public async Task<ServiceResult<AuthResponse>> LeaveAsync(
@@ -162,44 +109,74 @@ public sealed class HouseholdService(
             $"""SELECT 1 FROM "Households" WHERE "Id" = {currentHouseholdId} FOR UPDATE""",
             cancellationToken);
 
+        var membership = await db.HouseholdMembers.SingleAsync(
+            m => m.UserId == userId && m.HouseholdId == currentHouseholdId, cancellationToken);
         var others = await db.HouseholdMembers
             .Where(m => m.HouseholdId == currentHouseholdId && m.UserId != userId)
             .OrderBy(m => m.CreatedAt)
             .ThenBy(m => m.Id)
             .ToListAsync(cancellationToken);
-        if (others.Count == 0) return ServiceResult<AuthResponse>.Conflict();
+        var otherMemberships = await db.HouseholdMembers
+            .Where(m => m.UserId == userId && m.HouseholdId != currentHouseholdId)
+            .OrderBy(m => m.CreatedAt)
+            .ThenBy(m => m.Id)
+            .ToListAsync(cancellationToken);
 
-        var membership = await db.HouseholdMembers.SingleAsync(
-            m => m.UserId == userId && m.HouseholdId == currentHouseholdId, cancellationToken);
-        var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
+        if (others.Count == 0 && otherMemberships.Count == 0)
+        {
+            // Sole member, nowhere to land: leaving would destroy content
+            // just to mint an identical empty household — and the client's
+            // leave dialog promises content survives.
+            return ServiceResult<AuthResponse>.Conflict();
+        }
 
-        var now = DateTimeOffset.UtcNow;
-        if (membership.Role == HouseholdRole.Owner)
+        if (others.Count > 0 && membership.Role == HouseholdRole.Owner)
         {
             others[0].Role = HouseholdRole.Owner;
         }
         db.HouseholdMembers.Remove(membership);
-
-        var personal = new Household
-        {
-            Id = Guid.NewGuid(),
-            Name = user.DisplayName,
-            JoinCode = await joinCodes.NewUniqueCodeAsync(cancellationToken),
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-        db.Households.Add(personal);
-        db.HouseholdMembers.Add(new HouseholdMember
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            HouseholdId = personal.Id,
-            Role = HouseholdRole.Owner,
-            CreatedAt = now,
-        });
-
         await db.SaveChangesAsync(cancellationToken);
+
+        if (others.Count == 0)
+        {
+            // Last member out: the household and its content go with them.
+            await db.Households
+                .Where(h => h.Id == currentHouseholdId)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        Guid nextHouseholdId;
+        if (otherMemberships.Count > 0)
+        {
+            nextHouseholdId = otherMemberships[0].HouseholdId;
+        }
+        else
+        {
+            var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
+            var now = DateTimeOffset.UtcNow;
+            var personal = new Household
+            {
+                Id = Guid.NewGuid(),
+                Name = user.DisplayName,
+                JoinCode = await joinCodes.NewUniqueCodeAsync(cancellationToken),
+                CreatedAt = now,
+                UpdatedAt = now,
+            };
+            db.Households.Add(personal);
+            db.HouseholdMembers.Add(new HouseholdMember
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                HouseholdId = personal.Id,
+                Role = HouseholdRole.Owner,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync(cancellationToken);
+            nextHouseholdId = personal.Id;
+        }
+
         await transaction.CommitAsync(cancellationToken);
-        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, personal.Id, cancellationToken));
+        return ServiceResult<AuthResponse>.Ok(
+            await auth.IssueTokensAsync(userId, nextHouseholdId, cancellationToken));
     }
 }

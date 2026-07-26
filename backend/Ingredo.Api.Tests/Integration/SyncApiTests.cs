@@ -239,43 +239,29 @@ public class SyncApiTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyn
     }
 
     [Fact]
-    public async Task Join_rehome_rows_surface_in_the_target_households_next_incremental_pull()
+    public async Task Join_moves_nothing_across_households()
     {
-        // B's recipe is created first, so its insert-time SyncSeq is the
-        // smallest relevant value — well below the cursor A is about to
-        // capture. A's pre-join cursor is then strictly greater than that
-        // insert-time SyncSeq (the sequence is global, shared across
-        // households). That means the only way B's recipe can still show up
-        // in A's incremental pull afterwards is if joining re-homed it with
-        // a *fresh*, trigger-assigned SyncSeq — if the DB trigger never
-        // fired, B's row would keep its original (too-old) SyncSeq and stay
-        // invisible to a pull since preJoinCursor. So this ordering makes
-        // the trigger firing the only way the assertion below can pass.
+        // Additive join: B's recipe stays in B's household — A's pull never
+        // sees it, and B's row keeps its identity (no re-home, no SyncSeq
+        // churn from membership changes).
         var (bClient, _) = await factory.RegisterUserAsync("B");
         var bRecipeResponse = await bClient.PostAsJsonAsync(
             "/api/v1/recipes",
-            new RecipeRequest(null, "B sin oppskrift", null, 4, null,
-                [new IngredientRequest(null, "Mel", 400, "g", "linear", 0)],
-                [new InstructionRequest(null, "Bland.", 0)]));
-        var bRecipe = (await bRecipeResponse.Content.ReadFromJsonAsync<RecipeResponse>())!;
+            new RecipeRequest(null, "B sin oppskrift", null, 2, null,
+                [new IngredientRequest(null, "Salt", null, null, "fixed", 0)],
+                [new InstructionRequest(null, "Ta med.", 0)]));
+        bRecipeResponse.EnsureSuccessStatusCode();
 
         await CreateRecipe("A sin egen oppskrift");
         var preJoinCursor = (await Pull()).Cursor;
 
-        // B is the sole member of its own (personal) household, so joining
-        // A's household re-homes B's content into A's household via
-        // ExecuteUpdateAsync — the one write path that bypasses EF value
-        // generation, relying on the DB trigger to assign a fresh SyncSeq.
-        var aHousehold = await _client.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
-        var joinResponse = await bClient.PostAsJsonAsync(
-            "/api/v1/household/join", new JoinRequest(aHousehold!.JoinCode));
-        Assert.Equal(HttpStatusCode.OK, joinResponse.StatusCode);
-        var joinAuth = (await joinResponse.Content.ReadFromJsonAsync<AuthResponse>())!;
-        bClient.UseTokens(joinAuth); // B now carries a token scoped to A's household
+        var household = await _client.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        var join = await bClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        join.EnsureSuccessStatusCode();
 
-        var pull = await Pull(preJoinCursor);
-        var rehomed = Assert.Single(pull.Recipes, r => r.Id == bRecipe.Id);
-        Assert.Equal("B sin oppskrift", rehomed.Title);
+        var incremental = await Pull(preJoinCursor);
+        Assert.DoesNotContain(incremental.Recipes, r => r.Title == "B sin oppskrift");
     }
 
     [Fact]

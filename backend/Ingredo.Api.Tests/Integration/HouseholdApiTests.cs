@@ -28,6 +28,25 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     private static async Task<List<RecipeSummaryResponse>> Recipes(HttpClient client) =>
         (await client.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes"))!;
 
+    private static async Task CreateRecipeNamed(HttpClient client, string title) =>
+        (await client.PostAsJsonAsync("/api/v1/recipes", NewRecipe(title))).EnsureSuccessStatusCode();
+
+    // Registers a user with retrievable credentials — RegisterUserAsync only
+    // returns the issued tokens, but a couple of tests below need to
+    // re-login later to prove the personal household survived.
+    private static async Task<(HttpClient Client, string Email, string Password)> RegisterWithCredentialsAsync(
+        ApiFactory factory, string displayName = "Test Bruker")
+    {
+        const string password = "passord123";
+        var email = $"user-{Guid.NewGuid():N}@test.local";
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/auth/register", new RegisterRequest(email, password, displayName));
+        response.EnsureSuccessStatusCode();
+        client.UseTokens((await response.Content.ReadFromJsonAsync<AuthResponse>())!);
+        return (client, email, password);
+    }
+
     [Fact]
     public async Task Get_returns_household_with_formatted_code_and_owner_member()
     {
@@ -43,34 +62,53 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Join_merges_personal_content_both_ways_and_deletes_the_empty_shell()
+    public async Task Join_is_additive_both_households_keep_their_content()
     {
-        var (kari, _) = await factory.RegisterUserAsync("Kari");
-        var (ola, _) = await factory.RegisterUserAsync("Ola");
-        await kari.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Karis vafler"));
-        await ola.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Olas taco"));
-        var kariOldCode = (await Household(kari)).JoinCode;
-        var olaCode = (await Household(ola)).JoinCode;
+        var (hostClient, _) = await factory.RegisterUserAsync();
+        var (joinerClient, joinerEmail, joinerPassword) = await RegisterWithCredentialsAsync(factory);
+        await CreateRecipeNamed(hostClient, "Vertens taco");
+        await CreateRecipeNamed(joinerClient, "Egen suppe");
+        var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
 
-        await Join(kari, olaCode);
+        var join = await joinerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        var auth = await join.Content.ReadFromJsonAsync<AuthResponse>();
+        joinerClient.UseTokens(auth!);
 
-        Assert.Equal(
-            ["Karis vafler", "Olas taco"],
-            (await Recipes(kari)).Select(r => r.Title).OrderBy(t => t));
-        Assert.Equal(
-            ["Karis vafler", "Olas taco"],
-            (await Recipes(ola)).Select(r => r.Title).OrderBy(t => t));
-        Assert.Equal(2, (await Household(kari)).Members.Count);
+        // Active is now the joined household: host content visible, own not.
+        var joined = await joinerClient.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes");
+        Assert.Contains(joined!, r => r.Title == "Vertens taco");
+        Assert.DoesNotContain(joined!, r => r.Title == "Egen suppe");
 
-        // Kari's emptied personal household is gone — its code no longer joins.
-        var (third, _) = await factory.RegisterUserAsync("Nils");
-        var stale = await third.PostAsJsonAsync(
-            "/api/v1/household/join", new JoinRequest(kariOldCode));
-        Assert.Equal(HttpStatusCode.NotFound, stale.StatusCode);
+        // The personal household still exists with its content: prove
+        // persistence via a fresh login, which lands on the OLDEST
+        // membership — the personal one, created first at registration.
+        var relogin = await factory.CreateClient().PostAsJsonAsync(
+            "/api/v1/auth/login",
+            new LoginRequest(joinerEmail, joinerPassword));
+        var personalAuth = await relogin.Content.ReadFromJsonAsync<AuthResponse>();
+        var personalClient = factory.CreateClient();
+        personalClient.UseTokens(personalAuth!);
+        var personal = await personalClient.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes");
+        Assert.Contains(personal!, r => r.Title == "Egen suppe");
     }
 
     [Fact]
-    public async Task Join_from_a_shared_household_moves_alone_and_content_stays()
+    public async Task Joining_a_household_you_already_belong_to_conflicts()
+    {
+        var (hostClient, _) = await factory.RegisterUserAsync();
+        var (joinerClient, _) = await factory.RegisterUserAsync();
+        var code = (await Household(hostClient)).JoinCode;
+        await Join(joinerClient, code);
+
+        var second = await joinerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new JoinRequest(code));
+
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Join_from_a_shared_household_adds_membership_without_leaving()
     {
         var (a, _) = await factory.RegisterUserAsync("A");
         var (b, _) = await factory.RegisterUserAsync("B");
@@ -78,14 +116,15 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         await a.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Felles gryte"));
         await Join(b, (await Household(a)).JoinCode); // A+B share; the recipe is theirs
 
-        await Join(a, (await Household(c)).JoinCode); // A leaves the shared pool for C's
+        await Join(a, (await Household(c)).JoinCode); // A additionally joins C's household
 
-        Assert.Empty(await Recipes(a));                       // content stayed behind
+        // A's active household is now C's — empty, additive join moved nothing.
+        Assert.Empty(await Recipes(a));
+        // B still has the shared content and the A+B household is untouched.
         Assert.Equal(
             ["Felles gryte"], (await Recipes(b)).Select(r => r.Title));
         var bHousehold = await Household(b);
-        var bMember = Assert.Single(bHousehold.Members);      // B is alone now…
-        Assert.Equal("owner", bMember.Role);                  // …and was promoted
+        Assert.Equal(2, bHousehold.Members.Count); // A remains a member alongside B
     }
 
     [Fact]
@@ -120,30 +159,61 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Leave_creates_a_fresh_personal_household_and_content_stays()
+    public async Task Leave_lands_on_the_oldest_remaining_membership()
     {
-        var (kari, _) = await factory.RegisterUserAsync("Kari");
-        var (ola, _) = await factory.RegisterUserAsync("Ola");
-        await Join(kari, (await Household(ola)).JoinCode);
-        await kari.PostAsJsonAsync("/api/v1/recipes", NewRecipe("Felles kake"));
+        // Joiner has personal (oldest) + host household; leaving the host
+        // household lands back on personal, and the host household keeps
+        // its members and content.
+        var (hostClient, _) = await factory.RegisterUserAsync();
+        var (joinerClient, _) = await factory.RegisterUserAsync();
+        await CreateRecipeNamed(joinerClient, "Egen suppe");
+        var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        var join = await joinerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        joinerClient.UseTokens((await join.Content.ReadFromJsonAsync<AuthResponse>())!);
 
-        var leave = await kari.PostAsJsonAsync("/api/v1/household/leave", new { });
-        Assert.Equal(HttpStatusCode.OK, leave.StatusCode);
-        kari.UseTokens((await leave.Content.ReadFromJsonAsync<AuthResponse>())!);
+        var leave = await joinerClient.PostAsJsonAsync("/api/v1/household/leave", new { });
+        var auth = await leave.Content.ReadFromJsonAsync<AuthResponse>();
+        joinerClient.UseTokens(auth!);
 
-        Assert.Empty(await Recipes(kari));
-        var fresh = await Household(kari);
-        Assert.Equal("Kari", fresh.Name);
-        Assert.Equal("owner", Assert.Single(fresh.Members).Role);
-        Assert.Equal(["Felles kake"], (await Recipes(ola)).Select(r => r.Title));
+        var recipes = await joinerClient.GetFromJsonAsync<List<RecipeSummaryResponse>>("/api/v1/recipes");
+        Assert.Contains(recipes!, r => r.Title == "Egen suppe");
+        var hostView = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        Assert.Single(hostView!.Members);
     }
 
     [Fact]
-    public async Task Leave_as_sole_member_conflicts()
+    public async Task Sole_member_with_no_other_membership_cannot_leave()
     {
         var (client, _) = await factory.RegisterUserAsync();
-        var response = await client.PostAsJsonAsync("/api/v1/household/leave", new { });
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        var leave = await client.PostAsJsonAsync("/api/v1/household/leave", new { });
+
+        Assert.Equal(HttpStatusCode.Conflict, leave.StatusCode);
+    }
+
+    [Fact]
+    public async Task Last_member_leaving_a_shared_household_deletes_it()
+    {
+        // A creates content in own household, joins B's household, then the
+        // OLD personal household (A was sole member, A has another
+        // membership) is deleted when A leaves it. Requires switching back
+        // to it — via login (oldest membership IS the personal one).
+        var (hostClient, _) = await factory.RegisterUserAsync();
+        var (roamerClient, roamerEmail, roamerPassword) = await RegisterWithCredentialsAsync(factory);
+        var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        var join = await roamerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        join.EnsureSuccessStatusCode();
+
+        var relogin = await factory.CreateClient().PostAsJsonAsync(
+            "/api/v1/auth/login", new LoginRequest(roamerEmail, roamerPassword));
+        var personalClient = factory.CreateClient();
+        personalClient.UseTokens((await relogin.Content.ReadFromJsonAsync<AuthResponse>())!);
+
+        var leave = await personalClient.PostAsJsonAsync("/api/v1/household/leave", new { });
+        var auth = await leave.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.Equal(household.Id, auth!.User.HouseholdId); // landed on the shared one
     }
 
     [Fact]

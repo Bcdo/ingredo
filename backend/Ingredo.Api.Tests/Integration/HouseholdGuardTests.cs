@@ -19,9 +19,19 @@ public class HouseholdGuardTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var stale = factory.CreateClient();
         stale.UseTokens(kariAuth);
 
-        // …then Kari (sole member) joins Ola: her old household is deleted.
+        // …Kari additively joins Ola's household — her personal household
+        // survives the join (join no longer re-homes content or deletes
+        // anything)…
         var joined = await kari.PostAsJsonAsync("/api/v1/household/join", new JoinRequest(olaCode));
         Assert.Equal(HttpStatusCode.OK, joined.StatusCode);
+
+        // …then Kari, still on her ORIGINAL (personal-household) token,
+        // leaves that household. She's its sole member, but now has Ola's
+        // household to land on, so leaving is allowed — and the now-empty
+        // personal household is actually deleted: the "dead household" this
+        // test is about.
+        var left = await kari.PostAsJsonAsync("/api/v1/household/leave", new { });
+        Assert.Equal(HttpStatusCode.OK, left.StatusCode);
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/recipes")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await stale.GetAsync("/api/v1/household")).StatusCode);
@@ -72,19 +82,29 @@ public class HouseholdGuardTests(ApiFactory factory) : IClassFixture<ApiFactory>
     [Fact]
     public async Task Tokens_for_a_household_you_left_fail_with_401()
     {
-        // B joins A's household (old token now claims B's vacated personal
-        // household — under the OLD join that household is deleted; under
-        // either semantic B is no longer a member, which is what the guard
-        // now checks).
-        var (hostClient, hostAuth) = await factory.RegisterUserAsync();
-        var (joinerClient, joinerAuth) = await factory.RegisterUserAsync();
+        // Join is additive — it doesn't remove any membership, so a token for
+        // a household you merely joined-away-from no longer exists under the
+        // new semantics. To exercise the "you left" case, the joiner must
+        // actually leave: join the host's household, then leave it again.
+        // The household itself survives (the host remains a member) — only
+        // the joiner's membership row is gone, which is what the guard
+        // checks. The pre-leave token (scoped to that shared household) is
+        // the one under test.
+        var (hostClient, _) = await factory.RegisterUserAsync();
+        var (joinerClient, _) = await factory.RegisterUserAsync();
         var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
         var join = await joinerClient.PostAsJsonAsync(
             "/api/v1/household/join", new { code = household!.JoinCode });
         join.EnsureSuccessStatusCode();
+        var joinedAuth = (await join.Content.ReadFromJsonAsync<AuthResponse>())!;
+        joinerClient.UseTokens(joinedAuth);
 
         var stale = factory.CreateClient();
-        stale.UseTokens(joinerAuth);
+        stale.UseTokens(joinedAuth); // token scoped to the (still-existing) shared household
+
+        var leave = await joinerClient.PostAsJsonAsync("/api/v1/household/leave", new { });
+        leave.EnsureSuccessStatusCode();
+
         var response = await stale.GetAsync("/api/v1/recipes");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
