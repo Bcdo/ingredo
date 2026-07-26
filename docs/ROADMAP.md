@@ -1,5 +1,7 @@
 # Roadmap
 
+> All seven phases completed as of 2026-07-26. New work gets its own spec under `docs/superpowers/specs/`.
+
 ## Phase 1 - Local MVP
 
 - Recipes

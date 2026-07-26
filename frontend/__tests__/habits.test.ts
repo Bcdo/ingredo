@@ -152,6 +152,8 @@ describe('getHabitsData', () => {
     addManualItem(db, 'Melk');
     const item = db.select().from(shoppingItems).all()[0];
     purchaseItem(db, item.id);
+    // Still-active item: must NOT count as purchased.
+    addManualItem(db, 'Brød');
 
     const data = getHabitsData(db);
 
