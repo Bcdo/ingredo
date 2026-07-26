@@ -4,6 +4,7 @@
     "slug": "frontend",
     "version": "1.0.0",
     "scheme": "frontend",
+    "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
       "android"
