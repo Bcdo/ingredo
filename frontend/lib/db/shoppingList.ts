@@ -141,7 +141,10 @@ export function restoreItem(db: DB, id: string): void {
 
 // Long-press editor write: amount only (name edits are delete-and-retype).
 // Guarded like every by-id mutation — a row a pull just tombstoned must
-// not resurrect through a stale editor.
+// not resurrect through a stale editor. Also restricted to active rows: a
+// sync pull can flip the row to purchased while the editor is open, and
+// that mid-edit purchase race must not let a stale Save resurrect the
+// quantity on an already-purchased (history) row.
 export function setItemQuantity(
   db: DB,
   id: string,
@@ -155,7 +158,9 @@ export function setItemQuantity(
       updatedAt: Date.now(),
       dirty: 1,
     })
-    .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
+    .where(
+      and(eq(shoppingItems.id, id), eq(shoppingItems.status, 'active'), notDeleted(shoppingItems))
+    )
     .run();
   scheduleSync();
 }

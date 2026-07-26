@@ -378,13 +378,14 @@ describe('setItemQuantity', () => {
     const db = makeTestDb();
     addManualItem(db, 'melk');
     const before = db.select().from(shoppingItems).all()[0];
-    db.update(shoppingItems).set({ dirty: 0 }).run();
+    const backdated = before.updatedAt - 10_000;
+    db.update(shoppingItems).set({ dirty: 0, updatedAt: backdated }).run();
 
     setItemQuantity(db, before.id, 2, 'l');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, before.id)).get()!;
     expect(after).toMatchObject({ quantity: 2, unit: 'l', dirty: 1 });
-    expect(after.updatedAt).toBeGreaterThanOrEqual(before.updatedAt);
+    expect(after.updatedAt).toBeGreaterThan(backdated);
   });
 
   it('null amount clears the unit too', () => {
@@ -410,6 +411,20 @@ describe('setItemQuantity', () => {
     const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
 
     setItemQuantity(db, row.id, 5, 'kg');
+
+    const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+    expect(after.quantity).toBe(before.quantity);
+    expect(after.updatedAt).toBe(before.updatedAt);
+  });
+
+  it('no-ops on purchased rows (mid-edit purchase race)', () => {
+    const db = makeTestDb();
+    addManualItem(db, 'melk');
+    const row = db.select().from(shoppingItems).all()[0];
+    purchaseItem(db, row.id);
+    const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
+
+    setItemQuantity(db, row.id, 9, 'kg');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.quantity).toBe(before.quantity);

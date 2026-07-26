@@ -221,4 +221,15 @@ describe('ShopScreen', () => {
 
     expect(setItemQuantity).toHaveBeenCalledWith(expect.anything(), flour.id, 2, flour.unit);
   });
+
+  it('long-press on a shelf row does not open the editor', () => {
+    activeRows = [];
+    purchasedRows = [butter];
+    mockQueries();
+    render(<ShopScreen />);
+
+    fireEvent(screen.getByText('Smør'), 'longPress');
+
+    expect(screen.queryByTestId('quantity-input')).toBeNull();
+  });
 });
