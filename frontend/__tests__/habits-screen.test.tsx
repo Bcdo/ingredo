@@ -24,8 +24,8 @@ describe('HabitsScreen', () => {
   it('shows totals and both top lists', () => {
     computeHabitsMock.mockReturnValue({
       totals: { recipeCount: 12, plannedCount: 87, purchasedCount: 240 },
-      topRecipes: [{ title: 'Fredagstaco', count: 14 }],
-      topItems: [{ name: 'Melk', count: 31 }],
+      topRecipes: [{ id: 'fredagstaco', title: 'Fredagstaco', count: 14 }],
+      topItems: [{ normalizedName: 'melk', name: 'Melk', count: 31 }],
     });
 
     render(<HabitsScreen />);

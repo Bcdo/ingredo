@@ -18,8 +18,8 @@ export type HabitsData = {
 
 export type Habits = {
   totals: { recipeCount: number; plannedCount: number; purchasedCount: number };
-  topRecipes: { title: string; count: number }[];
-  topItems: { name: string; count: number }[];
+  topRecipes: { id: string; title: string; count: number }[];
+  topItems: { normalizedName: string; name: string; count: number }[];
 };
 
 export function getHabitsData(db: DB): HabitsData {
@@ -54,7 +54,8 @@ export function getHabitsData(db: DB): HabitsData {
 }
 
 function topOf<T>(counts: Map<string, { display: T; count: number }>, byName: (display: T) => string) {
-  return Array.from(counts.values())
+  return Array.from(counts.entries())
+    .map(([key, value]) => ({ key, ...value }))
     .sort((a, b) => b.count - a.count || byName(a.display).localeCompare(byName(b.display)))
     .slice(0, TOP_COUNT);
 }
@@ -93,11 +94,13 @@ export function computeHabits(data: HabitsData): Habits {
       plannedCount: data.planEntries.length,
       purchasedCount: data.purchases.length,
     },
-    topRecipes: topOf(recipeCounts, (title) => title).map(({ display, count }) => ({
+    topRecipes: topOf(recipeCounts, (title) => title).map(({ key, display, count }) => ({
+      id: key,
       title: display,
       count,
     })),
-    topItems: topOf(itemCounts, (display) => display.name).map(({ display, count }) => ({
+    topItems: topOf(itemCounts, (display) => display.name).map(({ key, display, count }) => ({
+      normalizedName: key,
       name: display.name,
       count,
     })),

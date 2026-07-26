@@ -267,3 +267,4 @@ Needs plan history on PAST dates — the app only plans ahead, so fabricate it b
 - Delete a recipe → it leaves "Most cooked" but "Meals planned" keeps its history.
 - Language switch: everything follows nb/en.
 - Numbers match across two synced devices (same household data, same math).
+- Dev note: after pulling this feature, a fresh `npx tsc --noEmit` may flag `router.push('/habits')` until you run `npx expo start` once — Expo regenerates its gitignored typed-routes file then.

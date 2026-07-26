@@ -24,12 +24,16 @@ export default function HabitsScreen() {
     {
       key: 'recipes',
       title: t('habits.topRecipes'),
-      rows: habits.topRecipes.map((row) => ({ label: row.title, count: row.count })),
+      rows: habits.topRecipes.map((row) => ({ key: row.id, label: row.title, count: row.count })),
     },
     {
       key: 'items',
       title: t('habits.topItems'),
-      rows: habits.topItems.map((row) => ({ label: row.name, count: row.count })),
+      rows: habits.topItems.map((row) => ({
+        key: row.normalizedName,
+        label: row.name,
+        count: row.count,
+      })),
     },
   ];
 
@@ -63,7 +67,7 @@ export default function HabitsScreen() {
               <View className="gap-2">
                 {list.rows.map((row) => (
                   <View
-                    key={row.label}
+                    key={row.key}
                     className="flex-row items-center justify-between rounded-card bg-linen px-4 py-3">
                     <Text className="flex-1 font-body-bold text-base text-ink" numberOfLines={1}>
                       {row.label}

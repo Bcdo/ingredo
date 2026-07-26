@@ -41,7 +41,7 @@ describe('computeHabits', () => {
       })
     );
 
-    expect(habits.topRecipes).toEqual([{ title: 'Taco', count: 1 }]);
+    expect(habits.topRecipes).toEqual([{ id: 'taco', title: 'Taco', count: 1 }]);
     expect(habits.totals.plannedCount).toBe(3);
   });
 
@@ -63,9 +63,26 @@ describe('computeHabits', () => {
     );
 
     expect(habits.topRecipes).toEqual([
-      { title: 'Taco', count: 2 },
-      { title: 'Brød', count: 1 },
-      { title: 'Suppe', count: 1 },
+      { id: 'c', title: 'Taco', count: 2 },
+      { id: 'b', title: 'Brød', count: 1 },
+      { id: 'a', title: 'Suppe', count: 1 },
+    ]);
+  });
+
+  it('keeps two identically-titled recipes distinct', () => {
+    const habits = computeHabits(
+      emptyData({
+        recipes: [
+          { id: 'p1', title: 'Pasta' },
+          { id: 'p2', title: 'Pasta' },
+        ],
+        planEntries: [{ recipeId: 'p1' }, { recipeId: 'p1' }, { recipeId: 'p2' }],
+      })
+    );
+
+    expect(habits.topRecipes).toEqual([
+      { id: 'p1', title: 'Pasta', count: 2 },
+      { id: 'p2', title: 'Pasta', count: 1 },
     ]);
   });
 
@@ -95,8 +112,8 @@ describe('computeHabits', () => {
     );
 
     expect(habits.topItems).toEqual([
-      { name: 'Melk', count: 2 },
-      { name: 'Brød', count: 1 },
+      { normalizedName: 'melk', name: 'Melk', count: 2 },
+      { normalizedName: 'brød', name: 'Brød', count: 1 },
     ]);
   });
 
