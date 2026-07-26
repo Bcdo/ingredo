@@ -268,3 +268,14 @@ Needs plan history on PAST dates — the app only plans ahead, so fabricate it b
 - Language switch: everything follows nb/en.
 - Numbers match across two synced devices (same household data, same math).
 - Dev note: after pulling this feature, a fresh `npx tsc --noEmit` may flag `router.push('/habits')` until you run `npx expo start` once — Expo regenerates its gitignored typed-routes file then.
+
+## Shopping quantities (manual pass)
+
+- Quick-add "2 l melk" → the item lands as "melk" with "2 l" shown; plain "melk" still adds without an amount.
+- "500g mel", "½ agurk" and "2 melk" all parse (glued unit, unicode fraction, amount-only).
+- Adding "1 l melk" when "2 l melk" is on the list merges to 3 l (same unit); a different unit stays a separate row (existing behavior).
+- Long-press an active item → editor opens with current amount/unit; change and save → the row updates and syncs to the other device.
+- Blank amount + save → the amount disappears from the row.
+- Tap still purchases; long-press on shelf (purchased) rows does nothing.
+- Shelf re-add keeps one tap (last amount); long-press the fresh row to adjust this trip's amount.
+- Both languages: the placeholder hint and Amount label follow nb/en.

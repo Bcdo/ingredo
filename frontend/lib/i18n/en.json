@@ -6,7 +6,8 @@
     "shop": "Shop"
   },
   "shop": {
-    "quickAddPlaceholder": "Add an item…",
+    "quickAddPlaceholder": "Add (e.g. 2 l milk)",
+    "editAmount": "Amount",
     "emptyTitle": "Nothing to buy yet",
     "emptyBody": "Add items here, from a recipe, or send your whole week over from the Plan tab.",
     "recentlyPurchased": "Recently purchased",

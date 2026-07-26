@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
+import { QuantityEditor, type QuantityEditorItem } from '../../components/shop/QuantityEditor';
 import { StaplesSection } from '../../components/shop/StaplesSection';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -18,6 +19,7 @@ import {
   purchaseItem,
   readdItem,
   restoreItem,
+  setItemQuantity,
 } from '../../lib/db/shoppingList';
 import { currentLocale, t } from '../../lib/i18n';
 import { displayQuantity } from '../../lib/measure';
@@ -31,6 +33,7 @@ export default function ShopScreen() {
   const [draft, setDraft] = useState('');
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
   const [now, setNow] = useState(() => Date.now());
+  const [editing, setEditing] = useState<QuantityEditorItem | null>(null);
   const locale = currentLocale();
 
   useFocusEffect(
@@ -120,6 +123,14 @@ export default function ShopScreen() {
                 key={item.id}
                 accessibilityRole="button"
                 onPress={() => purchase(item.id)}
+                onLongPress={() =>
+                  setEditing({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                  })
+                }
                 className="active:opacity-80">
                 <Card className="min-h-14 flex-row items-center gap-3">
                   {quantity ? (
@@ -169,6 +180,16 @@ export default function ShopScreen() {
           ) : null}
         </ScrollView>
       )}
+      {editing ? (
+        <QuantityEditor
+          item={editing}
+          onCancel={() => setEditing(null)}
+          onSave={(quantity, unit) => {
+            setItemQuantity(db, editing.id, quantity, unit);
+            setEditing(null);
+          }}
+        />
+      ) : null}
     </View>
   );
 }

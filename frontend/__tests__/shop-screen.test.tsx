@@ -3,7 +3,13 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import React from 'react';
 
 import ShopScreen from '../app/(tabs)/shop';
-import { addManualItem, purchaseItem, readdItem, restoreItem } from '../lib/db/shoppingList';
+import {
+  addManualItem,
+  purchaseItem,
+  readdItem,
+  restoreItem,
+  setItemQuantity,
+} from '../lib/db/shoppingList';
 
 jest.mock('../lib/db/client', () => {
   const node: Record<string, unknown> = {};
@@ -34,6 +40,7 @@ jest.mock('../lib/db/shoppingList', () => ({
   purchaseItem: jest.fn(),
   readdItem: jest.fn(),
   restoreItem: jest.fn(),
+  setItemQuantity: jest.fn(),
   parseSources: (json: string) => {
     try {
       const value = JSON.parse(json);
@@ -171,7 +178,7 @@ describe('ShopScreen', () => {
 
   it('quick-add submits the draft and clears the input', () => {
     render(<ShopScreen />);
-    const input = screen.getByPlaceholderText('Add an item…');
+    const input = screen.getByPlaceholderText('Add (e.g. 2 l milk)');
 
     fireEvent.changeText(input, 'Kaffe');
     fireEvent(input, 'submitEditing');
@@ -183,11 +190,35 @@ describe('ShopScreen', () => {
   it('keeps a rejected draft (blank input) in place', () => {
     addManualItemMock.mockReturnValueOnce(false);
     render(<ShopScreen />);
-    const input = screen.getByPlaceholderText('Add an item…');
+    const input = screen.getByPlaceholderText('Add (e.g. 2 l milk)');
 
     fireEvent.changeText(input, '   ');
     fireEvent(input, 'submitEditing');
 
     expect(input.props.value).toBe('   ');
+  });
+
+  it('long-press opens the quantity editor for an active item', () => {
+    activeRows = [flour];
+    purchasedRows = [];
+    mockQueries();
+    render(<ShopScreen />);
+
+    fireEvent(screen.getByText('Mel'), 'longPress');
+
+    expect(screen.getByTestId('quantity-input')).toBeOnTheScreen();
+  });
+
+  it('saving the editor writes through setItemQuantity', () => {
+    activeRows = [flour];
+    purchasedRows = [];
+    mockQueries();
+    render(<ShopScreen />);
+    fireEvent(screen.getByText('Mel'), 'longPress');
+
+    fireEvent.changeText(screen.getByTestId('quantity-input'), '2');
+    fireEvent.press(screen.getByText('Save'));
+
+    expect(setItemQuantity).toHaveBeenCalledWith(expect.anything(), flour.id, 2, flour.unit);
   });
 });
