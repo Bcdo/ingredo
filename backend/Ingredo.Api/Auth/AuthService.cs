@@ -57,7 +57,7 @@ public sealed class AuthService(
         db.Users.Add(user);
         db.Households.Add(household);
         db.HouseholdMembers.Add(membership);
-        var refreshValue = IssueRefreshToken(user.Id, familyId: Guid.NewGuid(), now);
+        var refreshValue = IssueRefreshToken(user.Id, familyId: Guid.NewGuid(), household.Id, now);
         await db.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user, household, refreshValue));
@@ -97,8 +97,8 @@ public sealed class AuthService(
             user.UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        var household = await HouseholdOf(user.Id, cancellationToken);
-        var refreshValue = IssueRefreshToken(user.Id, familyId: Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var household = await OldestHouseholdOf(user.Id, cancellationToken);
+        var refreshValue = IssueRefreshToken(user.Id, familyId: Guid.NewGuid(), household.Id, DateTimeOffset.UtcNow);
         await db.SaveChangesAsync(cancellationToken);
         return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user, household, refreshValue));
     }
@@ -123,10 +123,18 @@ public sealed class AuthService(
         }
         if (stored.ExpiresAt <= now) return ServiceResult<AuthResponse>.Unauthorized();
 
-        stored.RevokedAt = now;
+        // The device's remembered household normally still exists, but it can
+        // die from under it (sole-member join/leave merges + deletes it) —
+        // that's not theft, just a stale device. Land it on the user's
+        // current oldest membership instead of hard-failing the refresh, the
+        // same claim a fresh login would produce.
+        var household = await db.Households.FirstOrDefaultAsync(
+            h => h.Id == stored.HouseholdId, cancellationToken);
         var user = await db.Users.SingleAsync(u => u.Id == stored.UserId, cancellationToken);
-        var household = await HouseholdOf(user.Id, cancellationToken);
-        var refreshValue = IssueRefreshToken(user.Id, stored.FamilyId, now);
+        household ??= await OldestHouseholdOf(user.Id, cancellationToken);
+
+        stored.RevokedAt = now;
+        var refreshValue = IssueRefreshToken(user.Id, stored.FamilyId, household.Id, now);
         await db.SaveChangesAsync(cancellationToken);
         return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user, household, refreshValue));
     }
@@ -146,23 +154,29 @@ public sealed class AuthService(
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user is null) return ServiceResult<UserResponse>.NotFound();
-        var household = await HouseholdOf(userId, cancellationToken);
+        // slice-④ note: this reports the OLDEST household for lack of request
+        // context (MeAsync only receives userId, not the claim household).
+        // The frontend's Account section uses getHousehold() — the singular
+        // claim-scoped endpoint — for display, so nothing user-visible
+        // depends on this household.
+        var household = await OldestHouseholdOf(userId, cancellationToken);
         return ServiceResult<UserResponse>.Ok(ToUserResponse(user, household));
     }
 
     // Used by household membership moves: mints a fresh token pair whose
-    // household claim reflects the user's CURRENT membership. Call only
-    // after the membership change has committed.
-    public async Task<AuthResponse> IssueTokensAsync(Guid userId, CancellationToken cancellationToken)
+    // household claim reflects the given household. Call only after the
+    // membership change has committed.
+    public async Task<AuthResponse> IssueTokensAsync(
+        Guid userId, Guid householdId, CancellationToken cancellationToken)
     {
         var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
-        var household = await HouseholdOf(userId, cancellationToken);
-        var refreshValue = IssueRefreshToken(userId, familyId: Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var household = await db.Households.SingleAsync(h => h.Id == householdId, cancellationToken);
+        var refreshValue = IssueRefreshToken(userId, familyId: Guid.NewGuid(), householdId, DateTimeOffset.UtcNow);
         await db.SaveChangesAsync(cancellationToken);
         return BuildAuthResponse(user, household, refreshValue);
     }
 
-    private string IssueRefreshToken(Guid userId, Guid familyId, DateTimeOffset now)
+    private string IssueRefreshToken(Guid userId, Guid familyId, Guid householdId, DateTimeOffset now)
     {
         var value = tokens.CreateRefreshTokenValue();
         db.RefreshTokens.Add(new RefreshToken
@@ -170,6 +184,7 @@ public sealed class AuthService(
             Id = Guid.NewGuid(),
             UserId = userId,
             FamilyId = familyId,
+            HouseholdId = householdId,
             TokenHash = tokens.HashRefreshToken(value),
             ExpiresAt = now.AddDays(jwtOptions.Value.RefreshTokenDays),
             CreatedAt = now,
@@ -177,9 +192,14 @@ public sealed class AuthService(
         return value;
     }
 
-    private async Task<Household> HouseholdOf(Guid userId, CancellationToken cancellationToken) =>
+    // Deterministic-oldest: with multiple memberships this is the user's
+    // longest-standing household, used wherever there's no request-scoped
+    // claim to resolve instead (register/login mint, and MeAsync below).
+    private async Task<Household> OldestHouseholdOf(Guid userId, CancellationToken cancellationToken) =>
         await db.HouseholdMembers
             .Where(m => m.UserId == userId)
+            .OrderBy(m => m.CreatedAt)
+            .ThenBy(m => m.Id)
             .Join(db.Households, m => m.HouseholdId, h => h.Id, (m, h) => h)
             .FirstAsync(cancellationToken);
 

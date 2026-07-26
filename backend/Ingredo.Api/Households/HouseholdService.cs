@@ -151,7 +151,7 @@ public sealed class HouseholdService(
 
         await transaction.CommitAsync(cancellationToken);
         await notifier.NotifyHouseholdChangedAsync(target.Id, cancellationToken);
-        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, cancellationToken));
+        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, target.Id, cancellationToken));
     }
 
     public async Task<ServiceResult<AuthResponse>> LeaveAsync(
@@ -200,6 +200,6 @@ public sealed class HouseholdService(
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, cancellationToken));
+        return ServiceResult<AuthResponse>.Ok(await auth.IssueTokensAsync(userId, personal.Id, cancellationToken));
     }
 }

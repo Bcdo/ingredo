@@ -68,4 +68,25 @@ public class HouseholdGuardTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Empty(me.GetCustomAttributes(
             typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), true));
     }
+
+    [Fact]
+    public async Task Tokens_for_a_household_you_left_fail_with_401()
+    {
+        // B joins A's household (old token now claims B's vacated personal
+        // household — under the OLD join that household is deleted; under
+        // either semantic B is no longer a member, which is what the guard
+        // now checks).
+        var (hostClient, hostAuth) = await factory.RegisterUserAsync();
+        var (joinerClient, joinerAuth) = await factory.RegisterUserAsync();
+        var household = await hostClient.GetFromJsonAsync<HouseholdResponse>("/api/v1/household");
+        var join = await joinerClient.PostAsJsonAsync(
+            "/api/v1/household/join", new { code = household!.JoinCode });
+        join.EnsureSuccessStatusCode();
+
+        var stale = factory.CreateClient();
+        stale.UseTokens(joinerAuth);
+        var response = await stale.GetAsync("/api/v1/recipes");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
