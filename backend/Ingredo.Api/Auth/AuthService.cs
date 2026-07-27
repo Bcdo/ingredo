@@ -128,8 +128,15 @@ public sealed class AuthService(
         // that's not theft, just a stale device. Land it on the user's
         // current oldest membership instead of hard-failing the refresh, the
         // same claim a fresh login would produce.
-        var household = await db.Households.FirstOrDefaultAsync(
-            h => h.Id == stored.HouseholdId, cancellationToken);
+        //
+        // The family's household is only valid while the user is still a
+        // MEMBER of it — leaving a household (which may survive with other
+        // members) must re-home this family exactly like household deletion
+        // does. The rotated token below stamps the landing permanently.
+        var household = await db.HouseholdMembers
+            .Where(m => m.UserId == stored.UserId && m.HouseholdId == stored.HouseholdId)
+            .Join(db.Households, m => m.HouseholdId, h => h.Id, (m, h) => h)
+            .FirstOrDefaultAsync(cancellationToken);
         var user = await db.Users.SingleAsync(u => u.Id == stored.UserId, cancellationToken);
         household ??= await OldestHouseholdOf(user.Id, cancellationToken);
 

@@ -291,3 +291,4 @@ Via Scalar (or curl) against the compose stack — the app UI arrives in a later
 - Leave: leaving the shared household lands you in your oldest other membership; leaving your ONLY household is rejected (409).
 - Old tokens for a household you left get 401 everywhere; refresh recovers.
 - The CURRENT app still works signed into one household throughout (create/switch only via API for now).
+- Interim note (until the app's multi-household slices land): joining or leaving a household FROM THE APP triggers the sync engine's adoption path, which COPIES your collection into the landing household (originals stay in the other household — nothing is lost, but leave-and-rejoin round trips accumulate duplicates). For trip-style switching, prefer the API switch endpoint for now; the app UI arrives in a later slice.
