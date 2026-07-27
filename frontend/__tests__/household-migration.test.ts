@@ -57,6 +57,15 @@ describe('migration 0005 backfill', () => {
       };
       expect(row.household_id).toBe('h1');
     }
+
+    // The upgrade path must also seed the NEW active_household_id settings
+    // key from the OLD sync_household_id key, atomically with the content
+    // backfill — otherwise a cold-started or signed-out upgraded device
+    // never restores its partition and sees an empty NULL bucket.
+    const activeHousehold = sqlite
+      .prepare(`SELECT value FROM settings WHERE key = 'active_household_id'`)
+      .get() as { value: string } | undefined;
+    expect(activeHousehold?.value).toBe('h1');
   });
 
   it('leaves a never-synced device in the NULL bucket', () => {
@@ -71,5 +80,12 @@ describe('migration 0005 backfill', () => {
       };
       expect(row.household_id).toBeNull();
     }
+
+    // With no sync_household_id row to select from, the INSERT..SELECT
+    // backfill must insert zero rows — not a NULL-valued row.
+    const activeHousehold = sqlite
+      .prepare(`SELECT value FROM settings WHERE key = 'active_household_id'`)
+      .get() as { value: string } | undefined;
+    expect(activeHousehold).toBeUndefined();
   });
 });

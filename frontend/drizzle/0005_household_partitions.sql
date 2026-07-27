@@ -6,4 +6,5 @@ ALTER TABLE `shopping_items` ADD `household_id` text;--> statement-breakpoint
 CREATE INDEX `shopping_items_household_idx` ON `shopping_items` (`household_id`);--> statement-breakpoint
 UPDATE `recipes` SET `household_id` = (SELECT `value` FROM `settings` WHERE `key` = 'sync_household_id');--> statement-breakpoint
 UPDATE `meal_plan_entries` SET `household_id` = (SELECT `value` FROM `settings` WHERE `key` = 'sync_household_id');--> statement-breakpoint
-UPDATE `shopping_items` SET `household_id` = (SELECT `value` FROM `settings` WHERE `key` = 'sync_household_id');
+UPDATE `shopping_items` SET `household_id` = (SELECT `value` FROM `settings` WHERE `key` = 'sync_household_id');--> statement-breakpoint
+INSERT INTO `settings` (`key`, `value`) SELECT 'active_household_id', `value` FROM `settings` WHERE `key` = 'sync_household_id';

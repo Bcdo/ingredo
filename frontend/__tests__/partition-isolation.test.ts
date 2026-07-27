@@ -73,6 +73,25 @@ describe('partition isolation', () => {
     expect(getPlanHistory(db, 'h1')).toHaveLength(1);
     expect(getPlanHistory(db, null)).toHaveLength(0);
     expect(getHabitsData(db, 'h1').recipes).toHaveLength(1);
+
+    // getHabitsData's planEntries and purchases queries must be equally
+    // partition-scoped as its recipes query — a household with plan entries
+    // and purchases in ANOTHER partition should see none of them.
+    const item2 = { ...item, name: 'Ost', normalizedName: 'ost' };
+    addItems(db, 'h1', [item], 'merge');
+    addItems(db, 'h2', [item2], 'merge');
+
+    const rowsIn = (householdId: string | null) =>
+      db.select().from(shoppingItems).where(inHousehold(shoppingItems, householdId)).all();
+
+    purchaseItem(db, 'h1', rowsIn('h1')[0].id);
+    purchaseItem(db, 'h2', rowsIn('h2')[0].id);
+
+    const habits = getHabitsData(db, 'h1');
+    expect(habits.planEntries).toHaveLength(1);
+    expect(habits.planEntries[0].recipeId).toBe(r1);
+    expect(habits.purchases).toHaveLength(1);
+    expect(habits.purchases[0].normalizedName).toBe('melk');
   });
 
   it('shopping merge only sees its own partition', () => {
