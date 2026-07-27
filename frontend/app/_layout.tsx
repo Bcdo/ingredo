@@ -16,6 +16,7 @@ import { applyColorMode } from '../lib/colorMode';
 import { restoreSession } from '../lib/api/client';
 import { db } from '../lib/db/client';
 import { getColorMode, getLanguageMode } from '../lib/db/settings';
+import { initActiveHousehold } from '../lib/household';
 import { t } from '../lib/i18n';
 import { cssVars } from '../lib/theme';
 import { applyLanguageMode, useLocaleVersion } from '../lib/locale';
@@ -67,10 +68,12 @@ export default function RootLayout() {
       applyColorMode(getColorMode(db));
       applyLanguageMode(getLanguageMode(db));
       initLastSyncedAt(getLastSyncedAt(db));
+      const teardownHousehold = initActiveHousehold(db);
       void restoreSession().then(() => syncNow());
       const teardownTriggers = initSyncTriggers();
       const teardownRealtime = initRealtime();
       return () => {
+        teardownHousehold();
         teardownTriggers();
         teardownRealtime();
       };
