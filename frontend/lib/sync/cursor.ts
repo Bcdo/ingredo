@@ -46,12 +46,14 @@ export function storePullResult(db: DB, cursor: number, householdId: string): vo
 
 // The adoption flow: any household change (first sign-in, join, leave,
 // account switch) restarts sync from zero with everything marked for
-// upload — tombstones included, so deletes replicate too.
+// upload — tombstones included, so deletes replicate too. The whole device
+// belongs to one household until slice ③, and the re-tag states that in
+// the household_id column (adopting the NULL bucket on first sign-in).
 export function ensureHousehold(db: DB, householdId: string): boolean {
   if (getSyncHouseholdId(db) === householdId) return false;
   write(db, CURSOR_KEY, '0');
-  db.update(recipes).set({ dirty: 1 }).run();
-  db.update(mealPlanEntries).set({ dirty: 1 }).run();
-  db.update(shoppingItems).set({ dirty: 1 }).run();
+  db.update(recipes).set({ dirty: 1, householdId }).run();
+  db.update(mealPlanEntries).set({ dirty: 1, householdId }).run();
+  db.update(shoppingItems).set({ dirty: 1, householdId }).run();
   return true;
 }

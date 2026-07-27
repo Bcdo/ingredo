@@ -25,7 +25,7 @@ function shouldApply(local: { dirty: number; updatedAt: number } | undefined, se
   return serverUpdatedAt >= local.updatedAt;
 }
 
-function applyRecipe(db: DB, row: SyncRecipeRowDto): void {
+function applyRecipe(db: DB, row: SyncRecipeRowDto, householdId: string): void {
   const local = db.select().from(recipes).where(eq(recipes.id, row.id)).get();
   if (!shouldApply(local, row.updatedAt)) return;
 
@@ -34,6 +34,7 @@ function applyRecipe(db: DB, row: SyncRecipeRowDto): void {
     description: row.description,
     servings: row.servings,
     notes: row.notes,
+    householdId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     deletedAt: row.deletedAt,
@@ -68,7 +69,7 @@ function applyRecipe(db: DB, row: SyncRecipeRowDto): void {
   }
 }
 
-function applyMealPlanEntry(db: DB, row: SyncMealPlanRowDto): void {
+function applyMealPlanEntry(db: DB, row: SyncMealPlanRowDto, householdId: string): void {
   const local = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, row.id)).get();
   if (!shouldApply(local, row.updatedAt)) return;
 
@@ -77,6 +78,7 @@ function applyMealPlanEntry(db: DB, row: SyncMealPlanRowDto): void {
     recipeId: row.recipeId,
     servings: row.servings,
     sortOrder: row.sortOrder,
+    householdId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     deletedAt: row.deletedAt,
@@ -89,7 +91,7 @@ function applyMealPlanEntry(db: DB, row: SyncMealPlanRowDto): void {
   }
 }
 
-function applyShoppingItem(db: DB, row: SyncShoppingRowDto): void {
+function applyShoppingItem(db: DB, row: SyncShoppingRowDto, householdId: string): void {
   const local = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get();
   if (!shouldApply(local, row.updatedAt)) return;
 
@@ -101,6 +103,7 @@ function applyShoppingItem(db: DB, row: SyncShoppingRowDto): void {
     sources: row.sources,
     status: row.status === 'purchased' ? ('purchased' as const) : ('active' as const),
     purchasedAt: row.purchasedAt,
+    householdId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     deletedAt: row.deletedAt,
@@ -113,12 +116,12 @@ function applyShoppingItem(db: DB, row: SyncShoppingRowDto): void {
   }
 }
 
-export function applyPull(db: DB, pull: SyncPullResponseDto): void {
+export function applyPull(db: DB, pull: SyncPullResponseDto, householdId: string): void {
   db.transaction((tx) => {
     const txDb = tx as unknown as DB;
     // Recipes first: same-pull meal-plan rows may reference them (FK).
-    for (const row of pull.recipes) applyRecipe(txDb, row);
-    for (const row of pull.mealPlanEntries) applyMealPlanEntry(txDb, row);
-    for (const row of pull.shoppingItems) applyShoppingItem(txDb, row);
+    for (const row of pull.recipes) applyRecipe(txDb, row, householdId);
+    for (const row of pull.mealPlanEntries) applyMealPlanEntry(txDb, row, householdId);
+    for (const row of pull.shoppingItems) applyShoppingItem(txDb, row, householdId);
   });
 }

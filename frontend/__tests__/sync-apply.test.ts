@@ -39,11 +39,43 @@ const sampleRecipe = () => ({
   instructions: [{ text: 'Rør.' }],
 });
 
+const pullWithOneRowPerTable = (): SyncPullResponseDto =>
+  emptyPull({
+    recipes: [serverRecipe({})],
+    mealPlanEntries: [
+      {
+        id: 'entry-1',
+        date: '2026-07-25',
+        recipeId: 'server-recipe-1',
+        servings: 2,
+        sortOrder: 0,
+        createdAt: 1000,
+        updatedAt: 2000,
+        deletedAt: null,
+      },
+    ],
+    shoppingItems: [
+      {
+        id: 'item-1',
+        name: 'Melk',
+        normalizedName: 'melk',
+        quantity: 1000,
+        unit: 'ml',
+        sources: '[]',
+        status: 'active',
+        purchasedAt: null,
+        createdAt: 1000,
+        updatedAt: 2000,
+        deletedAt: null,
+      },
+    ],
+  });
+
 describe('applyPull', () => {
   it('inserts absent rows with dirty 0, aggregates included', () => {
     const db = makeTestDb();
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({})] }));
+    applyPull(db, emptyPull({ recipes: [serverRecipe({})] }), 'h1');
 
     const row = db.select().from(recipes).where(eq(recipes.id, 'server-recipe-1')).get()!;
     expect(row.title).toBe('Fra serveren');
@@ -62,7 +94,7 @@ describe('applyPull', () => {
     const localId = createRecipe(db, sampleRecipe());
     db.update(recipes).set({ dirty: 0, updatedAt: 9999 }).run();
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 500 })] }));
+    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 500 })] }), 'h1');
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.title).toBe('Fra serveren');
@@ -75,7 +107,7 @@ describe('applyPull', () => {
     const localId = createRecipe(db, sampleRecipe());
     db.update(recipes).set({ updatedAt: 3000 }).run(); // dirty stays 1 from create
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }));
+    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }), 'h1');
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.title).toBe('Lokal');
@@ -93,7 +125,7 @@ describe('applyPull', () => {
     const localId = createRecipe(db, sampleRecipe());
     db.update(recipes).set({ updatedAt: 2000 }).run();
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }));
+    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }), 'h1');
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.title).toBe('Fra serveren');
@@ -113,7 +145,8 @@ describe('applyPull', () => {
 
     applyPull(
       db,
-      emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 5000, deletedAt: 5000 })] })
+      emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 5000, deletedAt: 5000 })] }),
+      'h1'
     );
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
@@ -128,7 +161,8 @@ describe('applyPull', () => {
       db,
       emptyPull({
         recipes: [serverRecipe({ id: 'ghost', updatedAt: 5000, deletedAt: 5000, ingredients: [], instructions: [] })],
-      })
+      }),
+      'h1'
     );
 
     const row = db.select().from(recipes).where(eq(recipes.id, 'ghost')).get()!;
@@ -141,7 +175,7 @@ describe('applyPull', () => {
     const now = db.select().from(recipes).get()!.updatedAt;
     db.update(recipes).set({ deletedAt: now, dirty: 0 }).run();
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: now + 1000 })] }));
+    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: now + 1000 })] }), 'h1');
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.deletedAt).toBeNull();
@@ -182,7 +216,8 @@ describe('applyPull', () => {
             deletedAt: null,
           },
         ],
-      })
+      }),
+      'h1'
     );
 
     expect(db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, 'entry-1')).get()!.dirty).toBe(0);
@@ -227,7 +262,8 @@ describe('applyPull', () => {
             deletedAt: null,
           },
         ],
-      })
+      }),
+      'h1'
     );
 
     const item = db.select().from(shoppingItems).where(eq(shoppingItems.id, 'item-1')).get()!;
@@ -257,8 +293,17 @@ describe('applyPull', () => {
               deletedAt: null,
             },
           ],
-        })
+        }),
+        'h1'
       )
     ).not.toThrow();
+  });
+
+  it('stamps pulled rows with the pulled household', () => {
+    const db = makeTestDb();
+    applyPull(db, pullWithOneRowPerTable(), 'h1');
+    expect(db.select().from(recipes).get()?.householdId).toBe('h1');
+    expect(db.select().from(mealPlanEntries).get()?.householdId).toBe('h1');
+    expect(db.select().from(shoppingItems).get()?.householdId).toBe('h1');
   });
 });

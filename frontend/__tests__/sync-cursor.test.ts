@@ -73,4 +73,46 @@ describe('sync cursor store', () => {
     expect(ensureHousehold(db, 'household-1')).toBe(true);
     expect(getSyncCursor(db)).toBe(0);
   });
+
+  it('re-tags every content row onto the adopted household', () => {
+    const db = makeTestDb();
+    // one row per table in the NULL bucket (repo helpers leave householdId
+    // unset), one per table already tagged to a foreign household.
+    const recipeId = createRecipe(db, sampleRecipe());
+    addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
+    addManualItem(db, 'Melk');
+
+    db.insert(recipes)
+      .values({ id: 'foreign-recipe', title: 'Foreign', createdAt: 1000, updatedAt: 1000, householdId: 'old' })
+      .run();
+    db.insert(mealPlanEntries)
+      .values({
+        id: 'foreign-entry',
+        date: '2026-07-21',
+        recipeId,
+        servings: 2,
+        sortOrder: 0,
+        createdAt: 1000,
+        updatedAt: 1000,
+        householdId: 'old',
+      })
+      .run();
+    db.insert(shoppingItems)
+      .values({
+        id: 'foreign-item',
+        name: 'Egg',
+        normalizedName: 'egg',
+        createdAt: 1000,
+        updatedAt: 1000,
+        householdId: 'old',
+      })
+      .run();
+
+    ensureHousehold(db, 'h2');
+    for (const table of [recipes, mealPlanEntries, shoppingItems]) {
+      const rows = db.select().from(table).all();
+      expect(rows.every((row) => row.householdId === 'h2')).toBe(true);
+      expect(rows.every((row) => row.dirty === 1)).toBe(true);
+    }
+  });
 });

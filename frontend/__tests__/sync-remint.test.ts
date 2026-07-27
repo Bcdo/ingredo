@@ -66,4 +66,15 @@ describe('remintConflicted', () => {
       remintConflicted(db, { recipes: ['ghost'], mealPlanEntries: [], shoppingItems: [] })
     ).toBe(0);
   });
+
+  it('carries householdId onto the re-minted row', () => {
+    const db = makeTestDb();
+    const oldId = createRecipe(db, sampleRecipe());
+    db.update(recipes).set({ householdId: 'h1' }).where(eq(recipes.id, oldId)).run();
+
+    remintConflicted(db, { recipes: [oldId], mealPlanEntries: [], shoppingItems: [] });
+
+    const fresh = db.select().from(recipes).all()[0];
+    expect(fresh.householdId).toBe('h1');
+  });
 });

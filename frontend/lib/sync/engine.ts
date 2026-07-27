@@ -61,7 +61,7 @@ async function runCycle(): Promise<SyncResult> {
 
     const since = getSyncCursor(db);
     const pull = await apiFetch<SyncPullResponseDto>(`/api/v1/sync/changes?since=${since}`);
-    applyPull(db, pull);
+    applyPull(db, pull, session.householdId);
     storePullResult(db, pull.cursor, session.householdId);
 
     markIdle(Date.now(), pendingConflicts);
