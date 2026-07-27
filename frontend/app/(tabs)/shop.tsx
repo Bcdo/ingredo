@@ -56,7 +56,8 @@ export default function ShopScreen() {
           inHousehold(shoppingItems, householdId)
         )
       )
-      .orderBy(asc(shoppingItems.createdAt))
+      .orderBy(asc(shoppingItems.createdAt)),
+    [householdId]
   );
   const { data: purchasedItems } = useLiveQuery(
     db
@@ -69,7 +70,8 @@ export default function ShopScreen() {
           inHousehold(shoppingItems, householdId)
         )
       )
-      .orderBy(desc(shoppingItems.purchasedAt))
+      .orderBy(desc(shoppingItems.purchasedAt)),
+    [householdId]
   );
 
   const submitDraft = () => {

@@ -39,7 +39,8 @@ export default function AddPlanEntryScreen() {
       .select()
       .from(recipes)
       .where(and(notDeleted(recipes), inHousehold(recipes, householdId)))
-      .orderBy(desc(recipes.updatedAt))
+      .orderBy(desc(recipes.updatedAt)),
+    [householdId]
   );
   const { data: ingredientRows } = useLiveQuery(
     db

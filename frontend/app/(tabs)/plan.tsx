@@ -82,7 +82,8 @@ export default function PlanScreen() {
           notDeleted(shoppingItems),
           inHousehold(shoppingItems, householdId)
         )
-      )
+      ),
+    [householdId]
   );
 
   const pending = useMemo(() => {
