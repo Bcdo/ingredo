@@ -36,6 +36,13 @@
       "when": 1784687823553,
       "tag": "0004_sync_prep",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1785145516697,
+      "tag": "0005_household_partitions",
+      "breakpoints": true
     }
   ]
 }

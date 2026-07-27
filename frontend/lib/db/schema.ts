@@ -1,16 +1,21 @@
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
-export const recipes = sqliteTable('recipes', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  servings: integer('servings').notNull().default(4),
-  notes: text('notes'),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-  deletedAt: integer('deleted_at'),
-  dirty: integer('dirty').notNull().default(1),
-});
+export const recipes = sqliteTable(
+  'recipes',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    description: text('description'),
+    servings: integer('servings').notNull().default(4),
+    notes: text('notes'),
+    householdId: text('household_id'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    deletedAt: integer('deleted_at'),
+    dirty: integer('dirty').notNull().default(1),
+  },
+  (table) => [index('recipes_household_idx').on(table.householdId)]
+);
 
 export const recipeIngredients = sqliteTable('recipe_ingredients', {
   id: text('id').primaryKey(),
@@ -45,12 +50,16 @@ export const mealPlanEntries = sqliteTable(
       .references(() => recipes.id, { onDelete: 'cascade' }),
     servings: integer('servings').notNull(),
     sortOrder: integer('sort_order').notNull(),
+    householdId: text('household_id'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
     deletedAt: integer('deleted_at'),
     dirty: integer('dirty').notNull().default(1),
   },
-  (table) => [index('meal_plan_entries_date_idx').on(table.date)]
+  (table) => [
+    index('meal_plan_entries_date_idx').on(table.date),
+    index('meal_plan_entries_household_idx').on(table.householdId),
+  ]
 );
 
 export const settings = sqliteTable('settings', {
@@ -71,12 +80,16 @@ export const shoppingItems = sqliteTable(
       .notNull()
       .default('active'),
     purchasedAt: integer('purchased_at'),
+    householdId: text('household_id'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
     deletedAt: integer('deleted_at'),
     dirty: integer('dirty').notNull().default(1),
   },
-  (table) => [index('shopping_items_status_idx').on(table.status, table.normalizedName)]
+  (table) => [
+    index('shopping_items_status_idx').on(table.status, table.normalizedName),
+    index('shopping_items_household_idx').on(table.householdId),
+  ]
 );
 
 export type RecipeRow = typeof recipes.$inferSelect;
