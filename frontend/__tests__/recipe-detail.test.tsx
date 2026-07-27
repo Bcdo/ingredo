@@ -53,6 +53,7 @@ const recipeRow: RecipeRow = {
   id: 'r1',
   title: 'Tomato Soup',
   description: null,
+  householdId: null,
   servings: 4,
   notes: null,
   createdAt: 1,
