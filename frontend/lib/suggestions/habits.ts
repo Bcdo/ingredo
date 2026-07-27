@@ -1,6 +1,6 @@
 import { and, eq, isNotNull } from 'drizzle-orm';
 
-import { notDeleted } from '../db/predicates';
+import { inHousehold, notDeleted } from '../db/predicates';
 import { mealPlanEntries, recipes, shoppingItems } from '../db/schema';
 import type { DB } from '../db/types';
 
@@ -22,17 +22,17 @@ export type Habits = {
   topItems: { normalizedName: string; name: string; count: number }[];
 };
 
-export function getHabitsData(db: DB): HabitsData {
+export function getHabitsData(db: DB, householdId: string | null): HabitsData {
   return {
     recipes: db
       .select({ id: recipes.id, title: recipes.title })
       .from(recipes)
-      .where(notDeleted(recipes))
+      .where(and(notDeleted(recipes), inHousehold(recipes, householdId)))
       .all(),
     planEntries: db
       .select({ recipeId: mealPlanEntries.recipeId })
       .from(mealPlanEntries)
-      .where(notDeleted(mealPlanEntries))
+      .where(and(notDeleted(mealPlanEntries), inHousehold(mealPlanEntries, householdId)))
       .all(),
     purchases: db
       .select({
@@ -45,7 +45,8 @@ export function getHabitsData(db: DB): HabitsData {
         and(
           eq(shoppingItems.status, 'purchased'),
           notDeleted(shoppingItems),
-          isNotNull(shoppingItems.purchasedAt)
+          isNotNull(shoppingItems.purchasedAt),
+          inHousehold(shoppingItems, householdId)
         )
       )
       .all()
@@ -53,7 +54,10 @@ export function getHabitsData(db: DB): HabitsData {
   };
 }
 
-function topOf<T>(counts: Map<string, { display: T; count: number }>, byName: (display: T) => string) {
+function topOf<T>(
+  counts: Map<string, { display: T; count: number }>,
+  byName: (display: T) => string
+) {
   return Array.from(counts.entries())
     .map(([key, value]) => ({ key, ...value }))
     .sort((a, b) => b.count - a.count || byName(a.display).localeCompare(byName(b.display)))
@@ -72,7 +76,10 @@ export function computeHabits(data: HabitsData): Habits {
     else recipeCounts.set(entry.recipeId, { display: title, count: 1 });
   }
 
-  const itemCounts = new Map<string, { display: { name: string; purchasedAt: number }; count: number }>();
+  const itemCounts = new Map<
+    string,
+    { display: { name: string; purchasedAt: number }; count: number }
+  >();
   for (const purchase of data.purchases) {
     const current = itemCounts.get(purchase.normalizedName);
     if (!current) {

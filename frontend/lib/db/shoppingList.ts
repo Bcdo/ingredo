@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { newId } from './id';
-import { notDeleted } from './predicates';
+import { inHousehold, notDeleted } from './predicates';
 import { shoppingItems } from './schema';
 import type { DB } from './types';
 import { parseIngredientLine } from '../import/ingredientLine';
@@ -44,7 +44,12 @@ function premerge(items: AggregatedItem[]): AggregatedItem[] {
   return Array.from(byKey.values());
 }
 
-export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number {
+export function addItems(
+  db: DB,
+  householdId: string | null,
+  items: AggregatedItem[],
+  mode: AddMode
+): number {
   const batch = premerge(items);
   if (batch.length === 0) return 0;
   const now = Date.now();
@@ -54,7 +59,13 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
     const activeRows = txDb
       .select()
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'active'), notDeleted(shoppingItems)))
+      .where(
+        and(
+          eq(shoppingItems.status, 'active'),
+          notDeleted(shoppingItems),
+          inHousehold(shoppingItems, householdId)
+        )
+      )
       .all();
     const byKey = new Map(activeRows.map((row) => [itemKey(row), row]));
     for (const item of batch) {
@@ -71,6 +82,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
             sources: JSON.stringify(item.sources),
             status: 'active',
             purchasedAt: null,
+            householdId,
             createdAt: now,
             updatedAt: now,
             dirty: 1,
@@ -97,7 +109,7 @@ export function addItems(db: DB, items: AggregatedItem[], mode: AddMode): number
   return written;
 }
 
-export function addManualItem(db: DB, rawName: string): boolean {
+export function addManualItem(db: DB, householdId: string | null, rawName: string): boolean {
   const line = rawName.trim();
   if (line === '') return false;
   // Structured amount prefix via the closed bilingual token map from URL
@@ -108,6 +120,7 @@ export function addManualItem(db: DB, rawName: string): boolean {
   if (name === '') return false;
   addItems(
     db,
+    householdId,
     [
       {
         name,
@@ -122,19 +135,31 @@ export function addManualItem(db: DB, rawName: string): boolean {
   return true;
 }
 
-export function purchaseItem(db: DB, id: string): void {
+export function purchaseItem(db: DB, householdId: string | null, id: string): void {
   const now = Date.now();
   db.update(shoppingItems)
     .set({ status: 'purchased', purchasedAt: now, updatedAt: now, dirty: 1 })
-    .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
+    .where(
+      and(
+        eq(shoppingItems.id, id),
+        notDeleted(shoppingItems),
+        inHousehold(shoppingItems, householdId)
+      )
+    )
     .run();
   scheduleSync();
 }
 
-export function restoreItem(db: DB, id: string): void {
+export function restoreItem(db: DB, householdId: string | null, id: string): void {
   db.update(shoppingItems)
     .set({ status: 'active', purchasedAt: null, updatedAt: Date.now(), dirty: 1 })
-    .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
+    .where(
+      and(
+        eq(shoppingItems.id, id),
+        notDeleted(shoppingItems),
+        inHousehold(shoppingItems, householdId)
+      )
+    )
     .run();
   scheduleSync();
 }
@@ -147,6 +172,7 @@ export function restoreItem(db: DB, id: string): void {
 // quantity on an already-purchased (history) row.
 export function setItemQuantity(
   db: DB,
+  householdId: string | null,
   id: string,
   quantity: number | null,
   unit: string | null
@@ -159,7 +185,12 @@ export function setItemQuantity(
       dirty: 1,
     })
     .where(
-      and(eq(shoppingItems.id, id), eq(shoppingItems.status, 'active'), notDeleted(shoppingItems))
+      and(
+        eq(shoppingItems.id, id),
+        eq(shoppingItems.status, 'active'),
+        notDeleted(shoppingItems),
+        inHousehold(shoppingItems, householdId)
+      )
     )
     .run();
   scheduleSync();
@@ -168,15 +199,22 @@ export function setItemQuantity(
 // Quick re-add from the shelf: copy a purchased row into a fresh active
 // item. The purchased row is history and stays untouched; recipe sources
 // are dropped because last month's attribution would mislead in the aisle.
-export function readdItem(db: DB, id: string): void {
+export function readdItem(db: DB, householdId: string | null, id: string): void {
   const row = db
     .select()
     .from(shoppingItems)
-    .where(and(eq(shoppingItems.id, id), notDeleted(shoppingItems)))
+    .where(
+      and(
+        eq(shoppingItems.id, id),
+        notDeleted(shoppingItems),
+        inHousehold(shoppingItems, householdId)
+      )
+    )
     .get();
   if (!row) return;
   addItems(
     db,
+    householdId,
     [
       {
         name: row.name,

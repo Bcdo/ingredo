@@ -8,7 +8,8 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { addDays, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
+import { useActiveHouseholdId } from '../../lib/household';
 import { mealPlanEntries, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 
@@ -16,6 +17,7 @@ type TodayItem = { id: string; date: string; recipeId: string; servings: number;
 
 export default function TodayScreen() {
   const router = useRouter();
+  const householdId = useActiveHouseholdId();
   const today = todayLocal();
   const tomorrow = addDays(today, 1);
 
@@ -35,11 +37,12 @@ export default function TodayScreen() {
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, tomorrow),
           notDeleted(recipes),
-          notDeleted(mealPlanEntries)
+          notDeleted(mealPlanEntries),
+          inHousehold(mealPlanEntries, householdId)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),
-    [today]
+    [today, householdId]
   );
 
   const items = (rows ?? []) as TodayItem[];

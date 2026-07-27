@@ -190,7 +190,7 @@ describe('RecipeDetailScreen — add to shopping list', () => {
     fireEvent.press(screen.getByText('Add 2 ingredients to shopping list'));
 
     expect(addItemsMock).toHaveBeenCalledTimes(1);
-    const [, items, mode] = addItemsMock.mock.calls[0];
+    const [, , items, mode] = addItemsMock.mock.calls[0];
     expect(mode).toBe('merge');
     expect(items).toHaveLength(2);
     expect(
@@ -216,7 +216,7 @@ describe('RecipeDetailScreen — add to shopping list', () => {
     fireEvent.press(screen.getByText('Flour'));
     fireEvent.press(screen.getByText('Add 1 ingredients to shopping list'));
 
-    const [, items] = addItemsMock.mock.calls[0];
+    const [, , items] = addItemsMock.mock.calls[0];
     expect(items).toHaveLength(1);
     expect(items[0].normalizedName).toBe('chili flakes');
   });

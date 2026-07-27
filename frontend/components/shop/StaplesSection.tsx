@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { db } from '../../lib/db/client';
 import { addItems } from '../../lib/db/shoppingList';
+import { useActiveHouseholdId } from '../../lib/household';
 import { t } from '../../lib/i18n';
 import { dismissStaple, getStapleDismissals } from '../../lib/suggestions/dismissals';
 import { computeStaples, type StapleSuggestion } from '../../lib/suggestions/staples';
@@ -16,6 +17,7 @@ type StaplesSectionProps = {
 // Quiet by design: renders nothing at all when no staple is due, and never
 // reads the database until there is a candidate to filter.
 export function StaplesSection({ active, purchased, now }: StaplesSectionProps) {
+  const householdId = useActiveHouseholdId();
   const [dismissalsVersion, setDismissalsVersion] = useState(0);
 
   const rows = purchased.filter(
@@ -54,6 +56,7 @@ export function StaplesSection({ active, purchased, now }: StaplesSectionProps) 
   const add = (staple: StapleSuggestion) => {
     addItems(
       db,
+      householdId,
       [
         {
           name: staple.name,

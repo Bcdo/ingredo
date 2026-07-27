@@ -1,4 +1,8 @@
-import { computeRecipeIdeas, getPlanHistory, type PlanHistoryRow } from '../lib/suggestions/recipeIdeas';
+import {
+  computeRecipeIdeas,
+  getPlanHistory,
+  type PlanHistoryRow,
+} from '../lib/suggestions/recipeIdeas';
 import { addPlanEntry, removePlanEntry } from '../lib/db/mealPlan';
 import { createRecipe } from '../lib/db/recipes';
 import { makeTestDb } from './helpers/testDb';
@@ -127,7 +131,7 @@ describe('computeRecipeIdeas', () => {
 describe('getPlanHistory', () => {
   it('returns non-tombstoned entries only', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, {
+    const recipeId = createRecipe(db, null, {
       title: 'Taco',
       description: null,
       servings: 4,
@@ -135,11 +139,11 @@ describe('getPlanHistory', () => {
       ingredients: [{ name: 'Mel', quantity: 400, unit: 'g' }],
       instructions: [{ text: 'Bland.' }],
     });
-    addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    const removedId = addPlanEntry(db, { date: '2026-07-21', recipeId, servings: 2 });
-    removePlanEntry(db, removedId);
+    addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    const removedId = addPlanEntry(db, null, { date: '2026-07-21', recipeId, servings: 2 });
+    removePlanEntry(db, null, removedId);
 
-    const rows = getPlanHistory(db);
+    const rows = getPlanHistory(db, null);
 
     expect(rows).toEqual([{ recipeId, date: '2026-07-20' }]);
   });

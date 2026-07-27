@@ -7,7 +7,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Card } from '../../components/ui/Card';
 import { addDays, rollingWeek, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
+import { useActiveHouseholdId } from '../../lib/household';
 import { mealPlanEntries, recipeIngredients, recipes, shoppingItems } from '../../lib/db/schema';
 import { addItems } from '../../lib/db/shoppingList';
 import { t } from '../../lib/i18n';
@@ -18,6 +19,7 @@ type PlanItem = { id: string; date: string; servings: number; title: string };
 
 export default function PlanScreen() {
   const router = useRouter();
+  const householdId = useActiveHouseholdId();
   const today = todayLocal();
   const week = rollingWeek(today);
 
@@ -36,11 +38,12 @@ export default function PlanScreen() {
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
           notDeleted(recipes),
-          notDeleted(mealPlanEntries)
+          notDeleted(mealPlanEntries),
+          inHousehold(mealPlanEntries, householdId)
         )
       )
       .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.sortOrder)),
-    [today]
+    [today, householdId]
   );
 
   const { data: ingredientRows } = useLiveQuery(
@@ -62,17 +65,24 @@ export default function PlanScreen() {
           gte(mealPlanEntries.date, today),
           lte(mealPlanEntries.date, addDays(today, 6)),
           notDeleted(recipes),
-          notDeleted(mealPlanEntries)
+          notDeleted(mealPlanEntries),
+          inHousehold(mealPlanEntries, householdId)
         )
       ),
-    [today]
+    [today, householdId]
   );
 
   const { data: activeItems } = useLiveQuery(
     db
       .select({ normalizedName: shoppingItems.normalizedName, unit: shoppingItems.unit })
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'active'), notDeleted(shoppingItems)))
+      .where(
+        and(
+          eq(shoppingItems.status, 'active'),
+          notDeleted(shoppingItems),
+          inHousehold(shoppingItems, householdId)
+        )
+      )
   );
 
   const pending = useMemo(() => {
@@ -83,7 +93,7 @@ export default function PlanScreen() {
   }, [ingredientRows, activeItems]);
 
   const addWeek = () => {
-    addItems(db, pending, 'skip-existing');
+    addItems(db, householdId, pending, 'skip-existing');
   };
 
   const byDate = new Map<string, PlanItem[]>();

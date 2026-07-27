@@ -1,4 +1,4 @@
-import { desc } from 'drizzle-orm';
+import { and, desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -12,7 +12,8 @@ import { Stepper } from '../../components/ui/Stepper';
 import { todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
 import { addPlanEntry } from '../../lib/db/mealPlan';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
+import { useActiveHouseholdId } from '../../lib/household';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
@@ -27,13 +28,18 @@ export default function AddPlanEntryScreen() {
   const palette = usePalette();
   const { date } = useLocalSearchParams<{ date: string }>();
   const insets = useSafeAreaInsets();
+  const householdId = useActiveHouseholdId();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<PickerItem | null>(null);
   const [servings, setServings] = useState(1);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const { data: recipeRows } = useLiveQuery(
-    db.select().from(recipes).where(notDeleted(recipes)).orderBy(desc(recipes.updatedAt))
+    db
+      .select()
+      .from(recipes)
+      .where(and(notDeleted(recipes), inHousehold(recipes, householdId)))
+      .orderBy(desc(recipes.updatedAt))
   );
   const { data: ingredientRows } = useLiveQuery(
     db
@@ -58,7 +64,7 @@ export default function AddPlanEntryScreen() {
 
   const filtered = useMemo(() => filterRecipes(items, query), [items, query]);
 
-  const planHistory = useMemo(() => getPlanHistory(db), []);
+  const planHistory = useMemo(() => getPlanHistory(db, householdId), [householdId]);
   const ideas = useMemo(() => {
     if (typeof date !== 'string') return [];
     return computeRecipeIdeas(
@@ -82,7 +88,7 @@ export default function AddPlanEntryScreen() {
     setSaveFailed(false);
     if (!selected) return;
     try {
-      addPlanEntry(db, { date, recipeId: selected.id, servings });
+      addPlanEntry(db, householdId, { date, recipeId: selected.id, servings });
       router.back();
     } catch {
       setSaveFailed(true);
@@ -126,9 +132,7 @@ export default function AddPlanEntryScreen() {
               className="min-h-14 rounded-card bg-linen px-4 font-body text-base text-ink"
             />
           </View>
-          {query === '' ? (
-            <IdeasRail ideas={ideas} items={items} onSelect={select} />
-          ) : null}
+          {query === '' ? <IdeasRail ideas={ideas} items={items} onSelect={select} /> : null}
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.id}

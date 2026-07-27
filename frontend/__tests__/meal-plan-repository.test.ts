@@ -13,7 +13,7 @@ import type { DB } from '../lib/db/types';
 import { makeTestDb } from './helpers/testDb';
 
 function seedRecipe(db: DB, title: string): string {
-  return createRecipe(db, {
+  return createRecipe(db, null, {
     title,
     description: null,
     servings: 4,
@@ -28,9 +28,9 @@ describe('meal plan repository', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
 
-    const id1 = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 4 });
-    const id2 = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 6 });
-    addPlanEntry(db, { date: '2026-07-08', recipeId, servings: 2 });
+    const id1 = addPlanEntry(db, null, { date: '2026-07-07', recipeId, servings: 4 });
+    const id2 = addPlanEntry(db, null, { date: '2026-07-07', recipeId, servings: 6 });
+    addPlanEntry(db, null, { date: '2026-07-08', recipeId, servings: 2 });
 
     const rows = db
       .select()
@@ -47,10 +47,10 @@ describe('meal plan repository', () => {
   it('moves an entry to the end of the target day', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    addPlanEntry(db, { date: '2026-07-08', recipeId, servings: 4 });
-    const moving = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 4 });
+    addPlanEntry(db, null, { date: '2026-07-08', recipeId, servings: 4 });
+    const moving = addPlanEntry(db, null, { date: '2026-07-07', recipeId, servings: 4 });
 
-    movePlanEntry(db, moving, '2026-07-08');
+    movePlanEntry(db, null, moving, '2026-07-08');
 
     const moved = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, moving)).get();
     expect(moved?.date).toBe('2026-07-08');
@@ -60,9 +60,9 @@ describe('meal plan repository', () => {
   it('updates servings', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const id = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 4 });
+    const id = addPlanEntry(db, null, { date: '2026-07-07', recipeId, servings: 4 });
 
-    setPlanEntryServings(db, id, 7);
+    setPlanEntryServings(db, null, id, 7);
 
     const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
     expect(row?.servings).toBe(7);
@@ -71,9 +71,9 @@ describe('meal plan repository', () => {
   it('tombstones an entry (not hard-delete)', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const id = addPlanEntry(db, { date: '2026-07-07', recipeId, servings: 4 });
+    const id = addPlanEntry(db, null, { date: '2026-07-07', recipeId, servings: 4 });
 
-    removePlanEntry(db, id);
+    removePlanEntry(db, null, id);
 
     const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
     expect(row).toBeDefined();
@@ -85,9 +85,9 @@ describe('sync prep', () => {
   it('remove tombstones the entry instead of deleting it', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const id = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+    const id = addPlanEntry(db, null, { date: '2026-07-22', recipeId, servings: 2 });
 
-    removePlanEntry(db, id);
+    removePlanEntry(db, null, id);
 
     const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
     expect(row).toBeDefined();
@@ -99,10 +99,10 @@ describe('sync prep', () => {
   it('tombstoned entries do not consume sort orders', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const first = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
-    removePlanEntry(db, first);
+    const first = addPlanEntry(db, null, { date: '2026-07-22', recipeId, servings: 2 });
+    removePlanEntry(db, null, first);
 
-    const second = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+    const second = addPlanEntry(db, null, { date: '2026-07-22', recipeId, servings: 2 });
 
     const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, second)).get();
     expect(row!.sortOrder).toBe(0);
@@ -111,10 +111,10 @@ describe('sync prep', () => {
   it('writes stamp the dirty flag', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const id = addPlanEntry(db, { date: '2026-07-22', recipeId, servings: 2 });
+    const id = addPlanEntry(db, null, { date: '2026-07-22', recipeId, servings: 2 });
     db.update(mealPlanEntries).set({ dirty: 0 }).where(eq(mealPlanEntries.id, id)).run();
 
-    setPlanEntryServings(db, id, 6);
+    setPlanEntryServings(db, null, id, 6);
 
     const row = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, id)).get();
     expect(row!.dirty).toBe(1);
@@ -124,10 +124,10 @@ describe('sync prep', () => {
     const db = makeTestDb();
     const keep = seedRecipe(db, 'Keeper');
     const gone = seedRecipe(db, 'Goner');
-    addPlanEntry(db, { date: '2026-07-07', recipeId: keep, servings: 4 });
-    addPlanEntry(db, { date: '2026-07-07', recipeId: gone, servings: 4 });
+    addPlanEntry(db, null, { date: '2026-07-07', recipeId: keep, servings: 4 });
+    addPlanEntry(db, null, { date: '2026-07-07', recipeId: gone, servings: 4 });
 
-    softDeleteRecipe(db, gone);
+    softDeleteRecipe(db, null, gone);
 
     // Mirrors the screens' read query.
     const rows = db
@@ -150,11 +150,11 @@ describe('tombstone write-guards', () => {
   it('movePlanEntry no-ops on a tombstoned entry', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    removePlanEntry(db, entryId);
+    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    removePlanEntry(db, null, entryId);
     const before = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
 
-    movePlanEntry(db, entryId, '2026-07-21');
+    movePlanEntry(db, null, entryId, '2026-07-21');
 
     const after = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
     expect(after.date).toBe('2026-07-20');
@@ -164,10 +164,10 @@ describe('tombstone write-guards', () => {
   it('setPlanEntryServings no-ops on a tombstoned entry', () => {
     const db = makeTestDb();
     const recipeId = seedRecipe(db, 'Soup');
-    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    removePlanEntry(db, entryId);
+    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    removePlanEntry(db, null, entryId);
 
-    setPlanEntryServings(db, entryId, 6);
+    setPlanEntryServings(db, null, entryId, 6);
 
     const after = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()!;
     expect(after.servings).toBe(2);

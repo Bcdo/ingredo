@@ -137,12 +137,12 @@ describe('ShopScreen', () => {
     render(<ShopScreen />);
 
     fireEvent.press(screen.getByText('Mel'));
-    expect(purchaseItemMock).toHaveBeenCalledWith(expect.anything(), 's1');
+    expect(purchaseItemMock).toHaveBeenCalledWith(expect.anything(), null, 's1');
 
     expect(screen.getByText('Recently purchased')).toBeOnTheScreen();
     expect(screen.getByText('This trip')).toBeOnTheScreen();
     fireEvent.press(screen.getByText('Smør'));
-    expect(restoreItemMock).toHaveBeenCalledWith(expect.anything(), 's2');
+    expect(restoreItemMock).toHaveBeenCalledWith(expect.anything(), null, 's2');
     expect(readdItemMock).not.toHaveBeenCalled();
   });
 
@@ -153,7 +153,7 @@ describe('ShopScreen', () => {
     expect(screen.getByText('Earlier')).toBeOnTheScreen();
     expect(screen.queryByText('This trip')).toBeNull();
     fireEvent.press(screen.getByText('Kaffe'));
-    expect(readdItemMock).toHaveBeenCalledWith(expect.anything(), 's3');
+    expect(readdItemMock).toHaveBeenCalledWith(expect.anything(), null, 's3');
     expect(restoreItemMock).not.toHaveBeenCalled();
   });
 
@@ -183,7 +183,7 @@ describe('ShopScreen', () => {
     fireEvent.changeText(input, 'Kaffe');
     fireEvent(input, 'submitEditing');
 
-    expect(addManualItemMock).toHaveBeenCalledWith(expect.anything(), 'Kaffe');
+    expect(addManualItemMock).toHaveBeenCalledWith(expect.anything(), null, 'Kaffe');
     expect(input.props.value).toBe('');
   });
 
@@ -219,7 +219,7 @@ describe('ShopScreen', () => {
     fireEvent.changeText(screen.getByTestId('quantity-input'), '2');
     fireEvent.press(screen.getByText('Save'));
 
-    expect(setItemQuantity).toHaveBeenCalledWith(expect.anything(), flour.id, 2, flour.unit);
+    expect(setItemQuantity).toHaveBeenCalledWith(expect.anything(), null, flour.id, 2, flour.unit);
   });
 
   it('long-press on a shelf row does not open the editor', () => {

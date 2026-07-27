@@ -3,7 +3,7 @@
 import { and, eq } from 'drizzle-orm';
 
 import { createRecipe, type RecipeInput } from '../db/recipes';
-import { notDeleted } from '../db/predicates';
+import { inHousehold, notDeleted } from '../db/predicates';
 import { recipes } from '../db/schema';
 import type { DB } from '../db/types';
 
@@ -158,16 +158,18 @@ export const SAMPLE_RECIPES: RecipeInput[] = [
   },
 ];
 
-export function seedSampleData(db: DB): number {
+export function seedSampleData(db: DB, householdId: string | null): number {
   let inserted = 0;
   for (const sample of SAMPLE_RECIPES) {
     const existing = db
       .select({ id: recipes.id })
       .from(recipes)
-      .where(and(eq(recipes.title, sample.title), notDeleted(recipes)))
+      .where(
+        and(eq(recipes.title, sample.title), notDeleted(recipes), inHousehold(recipes, householdId))
+      )
       .all();
     if (existing.length === 0) {
-      createRecipe(db, sample);
+      createRecipe(db, householdId, sample);
       inserted += 1;
     }
   }

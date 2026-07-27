@@ -48,6 +48,7 @@ describe('StaplesSection', () => {
 
     expect(addItemsMock).toHaveBeenCalledWith(
       expect.anything(),
+      null,
       [{ name: 'Melk', normalizedName: 'melk', quantity: null, unit: null, sources: [] }],
       'merge'
     );
@@ -55,11 +56,7 @@ describe('StaplesSection', () => {
 
   it('excludes staples already on the active list', () => {
     const { toJSON } = render(
-      <StaplesSection
-        active={[{ normalizedName: 'melk' }]}
-        purchased={duePurchases}
-        now={NOW}
-      />
+      <StaplesSection active={[{ normalizedName: 'melk' }]} purchased={duePurchases} now={NOW} />
     );
     expect(toJSON()).toBeNull();
   });

@@ -1,7 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { newId } from './id';
-import { notDeleted } from './predicates';
+import { inHousehold, notDeleted } from './predicates';
 import {
   recipes,
   recipeIngredients,
@@ -57,7 +57,7 @@ function insertChildren(tx: DB, recipeId: string, input: RecipeInput) {
   });
 }
 
-export function createRecipe(db: DB, input: RecipeInput): string {
+export function createRecipe(db: DB, householdId: string | null, input: RecipeInput): string {
   const id = newId();
   const now = Date.now();
   db.transaction((tx) => {
@@ -68,6 +68,7 @@ export function createRecipe(db: DB, input: RecipeInput): string {
         description: input.description,
         servings: input.servings,
         notes: input.notes,
+        householdId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -80,10 +81,23 @@ export function createRecipe(db: DB, input: RecipeInput): string {
   return id;
 }
 
-export function updateRecipe(db: DB, id: string, input: RecipeInput): void {
+export function updateRecipe(
+  db: DB,
+  householdId: string | null,
+  id: string,
+  input: RecipeInput
+): void {
   const now = Date.now();
   db.transaction((tx) => {
-    tx.update(recipes)
+    const txDb = tx as unknown as DB;
+    const owned = txDb
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(and(eq(recipes.id, id), inHousehold(recipes, householdId)))
+      .get();
+    if (!owned) return;
+    txDb
+      .update(recipes)
       .set({
         title: input.title,
         description: input.description,
@@ -94,27 +108,31 @@ export function updateRecipe(db: DB, id: string, input: RecipeInput): void {
       })
       .where(eq(recipes.id, id))
       .run();
-    tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id)).run();
-    tx.delete(recipeInstructions).where(eq(recipeInstructions.recipeId, id)).run();
-    insertChildren(tx as unknown as DB, id, input);
+    txDb.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id)).run();
+    txDb.delete(recipeInstructions).where(eq(recipeInstructions.recipeId, id)).run();
+    insertChildren(txDb, id, input);
   });
   scheduleSync();
 }
 
-export function softDeleteRecipe(db: DB, id: string): void {
+export function softDeleteRecipe(db: DB, householdId: string | null, id: string): void {
   const now = Date.now();
   db.update(recipes)
     .set({ deletedAt: now, updatedAt: now, dirty: 1 })
-    .where(eq(recipes.id, id))
+    .where(and(eq(recipes.id, id), inHousehold(recipes, householdId)))
     .run();
   scheduleSync();
 }
 
-export function getRecipe(db: DB, id: string): RecipeWithDetails | null {
+export function getRecipe(
+  db: DB,
+  householdId: string | null,
+  id: string
+): RecipeWithDetails | null {
   const recipe = db
     .select()
     .from(recipes)
-    .where(and(eq(recipes.id, id), notDeleted(recipes)))
+    .where(and(eq(recipes.id, id), notDeleted(recipes), inHousehold(recipes, householdId)))
     .get();
   if (!recipe) return null;
 

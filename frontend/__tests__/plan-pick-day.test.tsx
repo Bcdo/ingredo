@@ -72,7 +72,7 @@ describe('PickDayScreen', () => {
     render(<PickDayScreen />);
     fireEvent.press(screen.getByText('Tomorrow'));
 
-    expect(addPlanEntry).toHaveBeenCalledWith(expect.anything(), {
+    expect(addPlanEntry).toHaveBeenCalledWith(expect.anything(), null, {
       date: addDays(todayLocal(), 1),
       recipeId: 'r1',
       servings: 4,
@@ -86,7 +86,7 @@ describe('PickDayScreen', () => {
     render(<PickDayScreen />);
     fireEvent.press(screen.getByText('Today'));
 
-    expect(movePlanEntry).toHaveBeenCalledWith(expect.anything(), 'e1', todayLocal());
+    expect(movePlanEntry).toHaveBeenCalledWith(expect.anything(), null, 'e1', todayLocal());
     expect(mockBack).toHaveBeenCalled();
   });
 });

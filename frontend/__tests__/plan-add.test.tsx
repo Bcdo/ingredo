@@ -98,7 +98,7 @@ describe('AddPlanEntryScreen', () => {
     fireEvent.press(screen.getByLabelText('increment')); // 2 → 3
     fireEvent.press(screen.getByText('Add to plan'));
 
-    expect(addPlanEntry).toHaveBeenCalledWith(expect.anything(), {
+    expect(addPlanEntry).toHaveBeenCalledWith(expect.anything(), null, {
       date: '2026-07-07',
       recipeId: 'r2',
       servings: 3,

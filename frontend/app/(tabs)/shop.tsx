@@ -10,7 +10,8 @@ import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
 import { FIELD_LIMITS } from '../../lib/fieldLimits';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
+import { useActiveHouseholdId } from '../../lib/household';
 import { shoppingItems } from '../../lib/db/schema';
 import { getUnitSystem, type UnitSystem } from '../../lib/db/settings';
 import {
@@ -30,6 +31,7 @@ import { unitLabel } from '../../lib/unitLabel';
 
 export default function ShopScreen() {
   const palette = usePalette();
+  const householdId = useActiveHouseholdId();
   const [draft, setDraft] = useState('');
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
   const [now, setNow] = useState(() => Date.now());
@@ -47,34 +49,46 @@ export default function ShopScreen() {
     db
       .select()
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'active'), notDeleted(shoppingItems)))
+      .where(
+        and(
+          eq(shoppingItems.status, 'active'),
+          notDeleted(shoppingItems),
+          inHousehold(shoppingItems, householdId)
+        )
+      )
       .orderBy(asc(shoppingItems.createdAt))
   );
   const { data: purchasedItems } = useLiveQuery(
     db
       .select()
       .from(shoppingItems)
-      .where(and(eq(shoppingItems.status, 'purchased'), notDeleted(shoppingItems)))
+      .where(
+        and(
+          eq(shoppingItems.status, 'purchased'),
+          notDeleted(shoppingItems),
+          inHousehold(shoppingItems, householdId)
+        )
+      )
       .orderBy(desc(shoppingItems.purchasedAt))
   );
 
   const submitDraft = () => {
-    if (addManualItem(db, draft)) setDraft('');
+    if (addManualItem(db, householdId, draft)) setDraft('');
   };
 
   const purchase = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    purchaseItem(db, id);
+    purchaseItem(db, householdId, id);
   };
 
   const restore = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    restoreItem(db, id);
+    restoreItem(db, householdId, id);
   };
 
   const readd = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    readdItem(db, id);
+    readdItem(db, householdId, id);
   };
 
   const quantityText = (quantity: number | null, unit: string | null) => {
@@ -148,11 +162,7 @@ export default function ShopScreen() {
               </Pressable>
             );
           })}
-          <StaplesSection
-            active={activeItems ?? []}
-            purchased={purchasedItems ?? []}
-            now={now}
-          />
+          <StaplesSection active={activeItems ?? []} purchased={purchasedItems ?? []} now={now} />
           {hasShelf ? (
             <>
               <Text className="mt-4 font-display text-lg text-ink opacity-70">
@@ -185,7 +195,7 @@ export default function ShopScreen() {
           item={editing}
           onCancel={() => setEditing(null)}
           onSave={(quantity, unit) => {
-            setItemQuantity(db, editing.id, quantity, unit);
+            setItemQuantity(db, householdId, editing.id, quantity, unit);
             setEditing(null);
           }}
         />

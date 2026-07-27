@@ -1,5 +1,7 @@
+import { and } from 'drizzle-orm';
+
 import { mealPlanEntries } from '../db/schema';
-import { notDeleted } from '../db/predicates';
+import { inHousehold, notDeleted } from '../db/predicates';
 import type { DB } from '../db/types';
 
 // Recipe ideas: what your own plan history recommends. Pure and
@@ -14,11 +16,11 @@ export type PlanHistoryRow = { recipeId: string; date: string };
 
 export type RecipeIdea = { recipeId: string; kind: 'favorite' | 'while' };
 
-export function getPlanHistory(db: DB): PlanHistoryRow[] {
+export function getPlanHistory(db: DB, householdId: string | null): PlanHistoryRow[] {
   return db
     .select({ recipeId: mealPlanEntries.recipeId, date: mealPlanEntries.date })
     .from(mealPlanEntries)
-    .where(notDeleted(mealPlanEntries))
+    .where(and(notDeleted(mealPlanEntries), inHousehold(mealPlanEntries, householdId)))
     .all();
 }
 

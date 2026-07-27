@@ -53,12 +53,7 @@ describe('computeHabits', () => {
           { id: 'b', title: 'Brød' },
           { id: 'c', title: 'Taco' },
         ],
-        planEntries: [
-          { recipeId: 'c' },
-          { recipeId: 'c' },
-          { recipeId: 'a' },
-          { recipeId: 'b' },
-        ],
+        planEntries: [{ recipeId: 'c' }, { recipeId: 'c' }, { recipeId: 'a' }, { recipeId: 'b' }],
       })
     );
 
@@ -129,7 +124,7 @@ describe('computeHabits', () => {
 describe('getHabitsData', () => {
   it('reads live recipes, non-tombstoned entries, purchased non-tombstoned items', () => {
     const db = makeTestDb();
-    const keptId = createRecipe(db, {
+    const keptId = createRecipe(db, null, {
       title: 'Taco',
       description: null,
       servings: 4,
@@ -137,7 +132,7 @@ describe('getHabitsData', () => {
       ingredients: [{ name: 'Mel', quantity: 400, unit: 'g' }],
       instructions: [{ text: 'Bland.' }],
     });
-    const goneId = createRecipe(db, {
+    const goneId = createRecipe(db, null, {
       title: 'Borte',
       description: null,
       servings: 2,
@@ -145,17 +140,21 @@ describe('getHabitsData', () => {
       ingredients: [{ name: 'Salt', quantity: null, unit: null }],
       instructions: [{ text: 'Glem.' }],
     });
-    addPlanEntry(db, { date: '2026-07-20', recipeId: keptId, servings: 2 });
-    const removedEntry = addPlanEntry(db, { date: '2026-07-21', recipeId: keptId, servings: 2 });
-    removePlanEntry(db, removedEntry);
-    softDeleteRecipe(db, goneId);
-    addManualItem(db, 'Melk');
+    addPlanEntry(db, null, { date: '2026-07-20', recipeId: keptId, servings: 2 });
+    const removedEntry = addPlanEntry(db, null, {
+      date: '2026-07-21',
+      recipeId: keptId,
+      servings: 2,
+    });
+    removePlanEntry(db, null, removedEntry);
+    softDeleteRecipe(db, null, goneId);
+    addManualItem(db, null, 'Melk');
     const item = db.select().from(shoppingItems).all()[0];
-    purchaseItem(db, item.id);
+    purchaseItem(db, null, item.id);
     // Still-active item: must NOT count as purchased.
-    addManualItem(db, 'Brød');
+    addManualItem(db, null, 'Brød');
 
-    const data = getHabitsData(db);
+    const data = getHabitsData(db, null);
 
     expect(data.recipes).toEqual([{ id: keptId, title: 'Taco' }]);
     expect(data.planEntries).toEqual([{ recipeId: keptId }]);

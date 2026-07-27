@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { desc } from 'drizzle-orm';
+import { and, desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -9,8 +9,9 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
 import { seedSampleData } from '../../lib/dev/sampleData';
+import { useActiveHouseholdId } from '../../lib/household';
 import { recipeIngredients, recipes } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { filterRecipes } from '../../lib/search';
@@ -21,10 +22,15 @@ type ListItem = { id: string; title: string; servings: number; ingredientNames: 
 export default function RecipesScreen() {
   const palette = usePalette();
   const router = useRouter();
+  const householdId = useActiveHouseholdId();
   const [query, setQuery] = useState('');
 
   const { data: recipeRows } = useLiveQuery(
-    db.select().from(recipes).where(notDeleted(recipes)).orderBy(desc(recipes.updatedAt))
+    db
+      .select()
+      .from(recipes)
+      .where(and(notDeleted(recipes), inHousehold(recipes, householdId)))
+      .orderBy(desc(recipes.updatedAt))
   );
   const { data: ingredientRows } = useLiveQuery(
     db
@@ -103,7 +109,7 @@ export default function RecipesScreen() {
               <Button
                 label={t('recipes.devSeed')}
                 variant="ghost"
-                onPress={() => seedSampleData(db)}
+                onPress={() => seedSampleData(db, householdId)}
               />
             </View>
           ) : null}

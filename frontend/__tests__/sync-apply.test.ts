@@ -91,7 +91,7 @@ describe('applyPull', () => {
 
   it('applies server state unconditionally over clean local rows, even older', () => {
     const db = makeTestDb();
-    const localId = createRecipe(db, sampleRecipe());
+    const localId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ dirty: 0, updatedAt: 9999 }).run();
 
     applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 500 })] }), 'h1');
@@ -104,7 +104,7 @@ describe('applyPull', () => {
 
   it('keeps a dirty local row that is newer than the server row', () => {
     const db = makeTestDb();
-    const localId = createRecipe(db, sampleRecipe());
+    const localId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ updatedAt: 3000 }).run(); // dirty stays 1 from create
 
     applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }), 'h1');
@@ -122,7 +122,7 @@ describe('applyPull', () => {
 
   it('replaces a dirty local row on server tie or newer, clearing dirty', () => {
     const db = makeTestDb();
-    const localId = createRecipe(db, sampleRecipe());
+    const localId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ updatedAt: 2000 }).run();
 
     applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: 2000 })] }), 'h1');
@@ -140,7 +140,7 @@ describe('applyPull', () => {
 
   it('applies tombstones and hides nothing physically', () => {
     const db = makeTestDb();
-    const localId = createRecipe(db, sampleRecipe());
+    const localId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ dirty: 0 }).run();
 
     applyPull(
@@ -160,7 +160,15 @@ describe('applyPull', () => {
     applyPull(
       db,
       emptyPull({
-        recipes: [serverRecipe({ id: 'ghost', updatedAt: 5000, deletedAt: 5000, ingredients: [], instructions: [] })],
+        recipes: [
+          serverRecipe({
+            id: 'ghost',
+            updatedAt: 5000,
+            deletedAt: 5000,
+            ingredients: [],
+            instructions: [],
+          }),
+        ],
       }),
       'h1'
     );
@@ -171,11 +179,15 @@ describe('applyPull', () => {
 
   it('resurrects a local tombstone from a newer live server row', () => {
     const db = makeTestDb();
-    const localId = createRecipe(db, sampleRecipe());
+    const localId = createRecipe(db, null, sampleRecipe());
     const now = db.select().from(recipes).get()!.updatedAt;
     db.update(recipes).set({ deletedAt: now, dirty: 0 }).run();
 
-    applyPull(db, emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: now + 1000 })] }), 'h1');
+    applyPull(
+      db,
+      emptyPull({ recipes: [serverRecipe({ id: localId, updatedAt: now + 1000 })] }),
+      'h1'
+    );
 
     const row = db.select().from(recipes).where(eq(recipes.id, localId)).get()!;
     expect(row.deletedAt).toBeNull();
@@ -220,7 +232,9 @@ describe('applyPull', () => {
       'h1'
     );
 
-    expect(db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, 'entry-1')).get()!.dirty).toBe(0);
+    expect(
+      db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, 'entry-1')).get()!.dirty
+    ).toBe(0);
     const item = db.select().from(shoppingItems).where(eq(shoppingItems.id, 'item-1')).get()!;
     expect(item.status).toBe('active');
     expect(item.dirty).toBe(0);

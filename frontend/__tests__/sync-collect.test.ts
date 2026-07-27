@@ -26,7 +26,7 @@ function markAllClean(db: ReturnType<typeof makeTestDb>) {
 describe('collectDirty', () => {
   it('is empty when nothing is dirty', () => {
     const db = makeTestDb();
-    createRecipe(db, sampleRecipe());
+    createRecipe(db, null, sampleRecipe());
     markAllClean(db);
 
     const batch = collectDirty(db);
@@ -39,7 +39,7 @@ describe('collectDirty', () => {
 
   it('maps a dirty recipe as a full aggregate with ordered children', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, sampleRecipe());
+    const id = createRecipe(db, null, sampleRecipe());
 
     const batch = collectDirty(db);
 
@@ -55,11 +55,11 @@ describe('collectDirty', () => {
 
   it('includes tombstones', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, sampleRecipe());
-    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
+    const recipeId = createRecipe(db, null, sampleRecipe());
+    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
     markAllClean(db);
-    removePlanEntry(db, entryId);
-    softDeleteRecipe(db, recipeId);
+    removePlanEntry(db, null, entryId);
+    softDeleteRecipe(db, null, recipeId);
 
     const batch = collectDirty(db);
 
@@ -69,11 +69,11 @@ describe('collectDirty', () => {
 
   it('maps meal-plan and shopping fields onto the wire shapes', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, sampleRecipe());
-    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    addManualItem(db, 'Melk');
+    const recipeId = createRecipe(db, null, sampleRecipe());
+    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    addManualItem(db, null, 'Melk');
     const item = db.select().from(shoppingItems).all()[0];
-    purchaseItem(db, item.id);
+    purchaseItem(db, null, item.id);
 
     const batch = collectDirty(db);
 
@@ -92,9 +92,9 @@ describe('collectDirty', () => {
 
   it('only dirty rows are collected', () => {
     const db = makeTestDb();
-    const keptClean = createRecipe(db, sampleRecipe());
+    const keptClean = createRecipe(db, null, sampleRecipe());
     markAllClean(db);
-    const dirtyOne = createRecipe(db, { ...sampleRecipe(), title: 'Ny' });
+    const dirtyOne = createRecipe(db, null, { ...sampleRecipe(), title: 'Ny' });
 
     const batch = collectDirty(db);
 
@@ -104,9 +104,9 @@ describe('collectDirty', () => {
 
   it('an edited recipe carries its edited state', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, sampleRecipe());
+    const id = createRecipe(db, null, sampleRecipe());
     markAllClean(db);
-    updateRecipe(db, id, { ...sampleRecipe(), title: 'Taco 2.0' });
+    updateRecipe(db, null, id, { ...sampleRecipe(), title: 'Taco 2.0' });
 
     const batch = collectDirty(db);
 

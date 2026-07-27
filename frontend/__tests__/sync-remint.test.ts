@@ -19,11 +19,19 @@ const sampleRecipe = () => ({
 describe('remintConflicted', () => {
   it('re-mints a recipe with fresh child ids and re-points plan entries', () => {
     const db = makeTestDb();
-    const oldId = createRecipe(db, sampleRecipe());
-    const entryId = addPlanEntry(db, { date: '2026-07-25', recipeId: oldId, servings: 2 });
-    const oldChildIds = db.select().from(recipeIngredients).all().map((c) => c.id);
+    const oldId = createRecipe(db, null, sampleRecipe());
+    const entryId = addPlanEntry(db, null, { date: '2026-07-25', recipeId: oldId, servings: 2 });
+    const oldChildIds = db
+      .select()
+      .from(recipeIngredients)
+      .all()
+      .map((c) => c.id);
 
-    const count = remintConflicted(db, { recipes: [oldId], mealPlanEntries: [], shoppingItems: [] });
+    const count = remintConflicted(db, {
+      recipes: [oldId],
+      mealPlanEntries: [],
+      shoppingItems: [],
+    });
 
     expect(count).toBe(1);
     expect(db.select().from(recipes).where(eq(recipes.id, oldId)).get()).toBeUndefined();
@@ -42,9 +50,9 @@ describe('remintConflicted', () => {
 
   it('re-mints entries and shopping items by copy+delete', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, sampleRecipe());
-    const entryId = addPlanEntry(db, { date: '2026-07-25', recipeId, servings: 2 });
-    addManualItem(db, 'Melk');
+    const recipeId = createRecipe(db, null, sampleRecipe());
+    const entryId = addPlanEntry(db, null, { date: '2026-07-25', recipeId, servings: 2 });
+    addManualItem(db, null, 'Melk');
     const itemId = db.select().from(shoppingItems).all()[0].id;
 
     const count = remintConflicted(db, {
@@ -54,8 +62,12 @@ describe('remintConflicted', () => {
     });
 
     expect(count).toBe(2);
-    expect(db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()).toBeUndefined();
-    expect(db.select().from(shoppingItems).where(eq(shoppingItems.id, itemId)).get()).toBeUndefined();
+    expect(
+      db.select().from(mealPlanEntries).where(eq(mealPlanEntries.id, entryId)).get()
+    ).toBeUndefined();
+    expect(
+      db.select().from(shoppingItems).where(eq(shoppingItems.id, itemId)).get()
+    ).toBeUndefined();
     expect(db.select().from(mealPlanEntries).all()[0].dirty).toBe(1);
     expect(db.select().from(shoppingItems).all()[0].dirty).toBe(1);
   });
@@ -69,7 +81,7 @@ describe('remintConflicted', () => {
 
   it('carries householdId onto the re-minted row', () => {
     const db = makeTestDb();
-    const oldId = createRecipe(db, sampleRecipe());
+    const oldId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ householdId: 'h1' }).where(eq(recipes.id, oldId)).run();
 
     remintConflicted(db, { recipes: [oldId], mealPlanEntries: [], shoppingItems: [] });

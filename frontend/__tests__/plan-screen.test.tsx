@@ -113,7 +113,7 @@ describe('PlanScreen', () => {
 
     fireEvent.press(screen.getByText('Add week to shopping list · 2 ingredients'));
     expect(addItemsMock).toHaveBeenCalledTimes(1);
-    const [, items, mode] = addItemsMock.mock.calls[0];
+    const [, , items, mode] = addItemsMock.mock.calls[0];
     expect(mode).toBe('skip-existing');
     expect(items).toHaveLength(2);
     expect(

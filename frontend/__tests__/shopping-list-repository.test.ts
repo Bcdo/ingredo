@@ -33,6 +33,7 @@ describe('addItems', () => {
     const db = makeTestDb();
     const written = addItems(
       db,
+      null,
       [item(), item({ name: 'Egg', normalizedName: 'egg', quantity: 3, unit: 'stk', sources: [] })],
       'merge'
     );
@@ -53,8 +54,13 @@ describe('addItems', () => {
 
   it('skip-existing mode leaves an existing active key untouched', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'skip-existing');
-    const written = addItems(db, [item({ quantity: 900, sources: ['Vafler'] })], 'skip-existing');
+    addItems(db, null, [item()], 'skip-existing');
+    const written = addItems(
+      db,
+      null,
+      [item({ quantity: 900, sources: ['Vafler'] })],
+      'skip-existing'
+    );
 
     expect(written).toBe(0);
     const rows = allRows(db);
@@ -65,9 +71,10 @@ describe('addItems', () => {
 
   it('merge mode sums quantities and unions sources on an existing active key', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const written = addItems(
       db,
+      null,
       [item({ quantity: 250, sources: ['Vafler', 'Pannekaker'] })],
       'merge'
     );
@@ -83,11 +90,13 @@ describe('addItems', () => {
     const db = makeTestDb();
     addItems(
       db,
+      null,
       [item({ name: 'Tomater', normalizedName: 'tomater', quantity: 400, unit: 'g' })],
       'merge'
     );
     addItems(
       db,
+      null,
       [item({ name: 'Tomater', normalizedName: 'tomater', quantity: 2, unit: 'stk' })],
       'merge'
     );
@@ -97,9 +106,9 @@ describe('addItems', () => {
 
   it('purchased rows are not merge targets — buying again creates a fresh active row', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
-    purchaseItem(db, allRows(db)[0].id);
-    const written = addItems(db, [item({ quantity: 200 })], 'merge');
+    addItems(db, null, [item()], 'merge');
+    purchaseItem(db, null, allRows(db)[0].id);
+    const written = addItems(db, null, [item({ quantity: 200 })], 'merge');
 
     expect(written).toBe(1);
     const rows = allRows(db);
@@ -112,6 +121,7 @@ describe('addItems', () => {
     const db = makeTestDb();
     const written = addItems(
       db,
+      null,
       [item({ quantity: 100 }), item({ quantity: 200, sources: ['Vafler'] })],
       'merge'
     );
@@ -125,14 +135,14 @@ describe('addItems', () => {
 
   it('returns 0 for an empty batch', () => {
     const db = makeTestDb();
-    expect(addItems(db, [], 'merge')).toBe(0);
+    expect(addItems(db, null, [], 'merge')).toBe(0);
   });
 });
 
 describe('addManualItem', () => {
   it('trims the name and stores a quantity-less item with no sources', () => {
     const db = makeTestDb();
-    expect(addManualItem(db, '  Smør ')).toBe(true);
+    expect(addManualItem(db, null, '  Smør ')).toBe(true);
 
     const rows = allRows(db);
     expect(rows).toHaveLength(1);
@@ -147,14 +157,14 @@ describe('addManualItem', () => {
 
   it('is a no-op on blank input', () => {
     const db = makeTestDb();
-    expect(addManualItem(db, '   ')).toBe(false);
+    expect(addManualItem(db, null, '   ')).toBe(false);
     expect(allRows(db)).toHaveLength(0);
   });
 
   it('merges into an existing unit-less active item instead of duplicating', () => {
     const db = makeTestDb();
-    addManualItem(db, 'Smør');
-    addManualItem(db, 'smør');
+    addManualItem(db, null, 'Smør');
+    addManualItem(db, null, 'smør');
     expect(allRows(db)).toHaveLength(1);
   });
 });
@@ -162,15 +172,15 @@ describe('addManualItem', () => {
 describe('purchase and restore', () => {
   it('round-trips status and preserves quantity', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const id = allRows(db)[0].id;
 
-    purchaseItem(db, id);
+    purchaseItem(db, null, id);
     let row = db.select().from(shoppingItems).where(eq(shoppingItems.id, id)).get()!;
     expect(row.status).toBe('purchased');
     expect(row.purchasedAt).not.toBeNull();
 
-    restoreItem(db, id);
+    restoreItem(db, null, id);
     row = db.select().from(shoppingItems).where(eq(shoppingItems.id, id)).get()!;
     expect(row.status).toBe('active');
     expect(row.purchasedAt).toBeNull();
@@ -189,11 +199,11 @@ describe('parseSources', () => {
 describe('readdItem', () => {
   it('copies a purchased row into a fresh active item with empty sources', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const original = allRows(db)[0];
-    purchaseItem(db, original.id);
+    purchaseItem(db, null, original.id);
 
-    readdItem(db, original.id);
+    readdItem(db, null, original.id);
 
     const rows = allRows(db);
     expect(rows).toHaveLength(2);
@@ -215,12 +225,12 @@ describe('readdItem', () => {
 
   it('merges into an existing active twin instead of duplicating', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const first = allRows(db)[0];
-    purchaseItem(db, first.id);
-    addItems(db, [item({ quantity: 200 })], 'merge');
+    purchaseItem(db, null, first.id);
+    addItems(db, null, [item({ quantity: 200 })], 'merge');
 
-    readdItem(db, first.id);
+    readdItem(db, null, first.id);
 
     const rows = allRows(db);
     expect(rows).toHaveLength(2);
@@ -230,7 +240,7 @@ describe('readdItem', () => {
 
   it('is a no-op for an unknown id', () => {
     const db = makeTestDb();
-    readdItem(db, 'nope');
+    readdItem(db, null, 'nope');
     expect(allRows(db)).toHaveLength(0);
   });
 });
@@ -238,29 +248,29 @@ describe('readdItem', () => {
 describe('sync prep', () => {
   it('writes stamp the dirty flag on insert, merge, purchase, and restore', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const row = allRows(db)[0];
     expect(row.dirty).toBe(1);
 
     db.update(shoppingItems).set({ dirty: 0 }).where(eq(shoppingItems.id, row.id)).run();
-    purchaseItem(db, row.id);
+    purchaseItem(db, null, row.id);
     expect(allRows(db)[0].dirty).toBe(1);
 
     db.update(shoppingItems).set({ dirty: 0 }).where(eq(shoppingItems.id, row.id)).run();
-    restoreItem(db, row.id);
+    restoreItem(db, null, row.id);
     expect(allRows(db)[0].dirty).toBe(1);
   });
 
   it('tombstoned active rows are invisible to merge', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const buried = allRows(db)[0];
     db.update(shoppingItems)
       .set({ deletedAt: Date.now() })
       .where(eq(shoppingItems.id, buried.id))
       .run();
 
-    addItems(db, [item({ quantity: 200 })], 'merge');
+    addItems(db, null, [item({ quantity: 200 })], 'merge');
 
     const rows = allRows(db);
     expect(rows).toHaveLength(2); // fresh row inserted; tombstone NOT merged into
@@ -270,15 +280,15 @@ describe('sync prep', () => {
 
   it('readd is a no-op for a tombstoned source row', () => {
     const db = makeTestDb();
-    addItems(db, [item()], 'merge');
+    addItems(db, null, [item()], 'merge');
     const source = allRows(db)[0];
-    purchaseItem(db, source.id);
+    purchaseItem(db, null, source.id);
     db.update(shoppingItems)
       .set({ deletedAt: Date.now() })
       .where(eq(shoppingItems.id, source.id))
       .run();
 
-    readdItem(db, source.id);
+    readdItem(db, null, source.id);
 
     expect(allRows(db)).toHaveLength(1); // no copy was made from the tombstone
   });
@@ -294,11 +304,11 @@ describe('tombstone write-guards', () => {
 
   it('purchaseItem no-ops on a tombstoned item', () => {
     const db = makeTestDb();
-    addManualItem(db, 'Melk');
+    addManualItem(db, null, 'Melk');
     const row = db.select().from(shoppingItems).all()[0];
     tombstone(db, row.id);
 
-    purchaseItem(db, row.id);
+    purchaseItem(db, null, row.id);
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.status).toBe('active');
@@ -307,13 +317,13 @@ describe('tombstone write-guards', () => {
 
   it('restoreItem no-ops on a tombstoned item', () => {
     const db = makeTestDb();
-    addManualItem(db, 'Melk');
+    addManualItem(db, null, 'Melk');
     const row = db.select().from(shoppingItems).all()[0];
-    purchaseItem(db, row.id);
+    purchaseItem(db, null, row.id);
     tombstone(db, row.id);
     const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
 
-    restoreItem(db, row.id);
+    restoreItem(db, null, row.id);
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.status).toBe('purchased');
@@ -330,45 +340,45 @@ describe('addManualItem parsing', () => {
 
   it('parses amount and unit: "2 l melk"', () => {
     const db = makeTestDb();
-    expect(addManualItem(db, '2 l melk')).toBe(true);
+    expect(addManualItem(db, null, '2 l melk')).toBe(true);
     const row = onlyRow(db);
     expect(row).toMatchObject({ name: 'melk', normalizedName: 'melk', quantity: 2, unit: 'l' });
   });
 
   it('parses a glued unit: "500g mel"', () => {
     const db = makeTestDb();
-    addManualItem(db, '500g mel');
+    addManualItem(db, null, '500g mel');
     expect(onlyRow(db)).toMatchObject({ name: 'mel', quantity: 500, unit: 'g' });
   });
 
   it('parses an amount without a unit: "2 melk"', () => {
     const db = makeTestDb();
-    addManualItem(db, '2 melk');
+    addManualItem(db, null, '2 melk');
     expect(onlyRow(db)).toMatchObject({ name: 'melk', quantity: 2, unit: null });
   });
 
   it('parses a unicode fraction: "½ agurk"', () => {
     const db = makeTestDb();
-    addManualItem(db, '½ agurk');
+    addManualItem(db, null, '½ agurk');
     expect(onlyRow(db)).toMatchObject({ name: 'agurk', quantity: 0.5, unit: null });
   });
 
   it('plain names behave exactly as before', () => {
     const db = makeTestDb();
-    addManualItem(db, 'melk');
+    addManualItem(db, null, 'melk');
     expect(onlyRow(db)).toMatchObject({ name: 'melk', quantity: null, unit: null });
   });
 
   it('still rejects blank input', () => {
     const db = makeTestDb();
-    expect(addManualItem(db, '   ')).toBe(false);
+    expect(addManualItem(db, null, '   ')).toBe(false);
     expect(db.select().from(shoppingItems).all()).toHaveLength(0);
   });
 
   it('merges same-name same-unit adds by summing', () => {
     const db = makeTestDb();
-    addManualItem(db, '2 l melk');
-    addManualItem(db, '1 l melk');
+    addManualItem(db, null, '2 l melk');
+    addManualItem(db, null, '1 l melk');
     expect(onlyRow(db)).toMatchObject({ quantity: 3, unit: 'l' });
   });
 });
@@ -376,12 +386,12 @@ describe('addManualItem parsing', () => {
 describe('setItemQuantity', () => {
   it('writes amount and unit, bumps updatedAt, stamps dirty', () => {
     const db = makeTestDb();
-    addManualItem(db, 'melk');
+    addManualItem(db, null, 'melk');
     const before = db.select().from(shoppingItems).all()[0];
     const backdated = before.updatedAt - 10_000;
     db.update(shoppingItems).set({ dirty: 0, updatedAt: backdated }).run();
 
-    setItemQuantity(db, before.id, 2, 'l');
+    setItemQuantity(db, null, before.id, 2, 'l');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, before.id)).get()!;
     expect(after).toMatchObject({ quantity: 2, unit: 'l', dirty: 1 });
@@ -390,10 +400,10 @@ describe('setItemQuantity', () => {
 
   it('null amount clears the unit too', () => {
     const db = makeTestDb();
-    addManualItem(db, '2 l melk');
+    addManualItem(db, null, '2 l melk');
     const row = db.select().from(shoppingItems).all()[0];
 
-    setItemQuantity(db, row.id, null, 'l');
+    setItemQuantity(db, null, row.id, null, 'l');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.quantity).toBeNull();
@@ -402,7 +412,7 @@ describe('setItemQuantity', () => {
 
   it('no-ops on tombstoned rows', () => {
     const db = makeTestDb();
-    addManualItem(db, 'melk');
+    addManualItem(db, null, 'melk');
     const row = db.select().from(shoppingItems).all()[0];
     db.update(shoppingItems)
       .set({ deletedAt: Date.now(), updatedAt: Date.now() })
@@ -410,7 +420,7 @@ describe('setItemQuantity', () => {
       .run();
     const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
 
-    setItemQuantity(db, row.id, 5, 'kg');
+    setItemQuantity(db, null, row.id, 5, 'kg');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.quantity).toBe(before.quantity);
@@ -419,12 +429,12 @@ describe('setItemQuantity', () => {
 
   it('no-ops on purchased rows (mid-edit purchase race)', () => {
     const db = makeTestDb();
-    addManualItem(db, 'melk');
+    addManualItem(db, null, 'melk');
     const row = db.select().from(shoppingItems).all()[0];
-    purchaseItem(db, row.id);
+    purchaseItem(db, null, row.id);
     const before = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
 
-    setItemQuantity(db, row.id, 9, 'kg');
+    setItemQuantity(db, null, row.id, 9, 'kg');
 
     const after = db.select().from(shoppingItems).where(eq(shoppingItems.id, row.id)).get()!;
     expect(after.quantity).toBe(before.quantity);

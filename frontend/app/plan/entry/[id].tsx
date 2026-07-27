@@ -9,13 +9,15 @@ import { Button } from '../../../components/ui/Button';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
 import { removePlanEntry, setPlanEntryServings } from '../../../lib/db/mealPlan';
-import { notDeleted } from '../../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../../lib/db/predicates';
+import { useActiveHouseholdId } from '../../../lib/household';
 import { mealPlanEntries, recipes } from '../../../lib/db/schema';
 import { t } from '../../../lib/i18n';
 
 export default function PlanEntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const householdId = useActiveHouseholdId();
 
   const { data: rows, updatedAt } = useLiveQuery(
     db
@@ -31,10 +33,11 @@ export default function PlanEntryScreen() {
         and(
           eq(mealPlanEntries.id, id),
           notDeleted(recipes),
-          notDeleted(mealPlanEntries)
+          notDeleted(mealPlanEntries),
+          inHousehold(mealPlanEntries, householdId)
         )
       ),
-    [id]
+    [id, householdId]
   );
 
   const entry = rows[0];
@@ -55,7 +58,7 @@ export default function PlanEntryScreen() {
         <Text className="font-body-bold text-sm text-ink">{t('form.servingsLabel')}</Text>
         <Stepper
           value={entry.servings}
-          onChange={(next) => setPlanEntryServings(db, entry.id, next)}
+          onChange={(next) => setPlanEntryServings(db, householdId, entry.id, next)}
           min={1}
         />
       </View>
@@ -74,7 +77,7 @@ export default function PlanEntryScreen() {
           label={t('plan.remove')}
           variant="ghost"
           onPress={() => {
-            removePlanEntry(db, entry.id);
+            removePlanEntry(db, householdId, entry.id);
             router.back();
           }}
         />

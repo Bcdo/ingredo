@@ -10,10 +10,11 @@ import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Stepper } from '../../../components/ui/Stepper';
 import { db } from '../../../lib/db/client';
-import { notDeleted } from '../../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../../lib/db/predicates';
 import { addItems } from '../../../lib/db/shoppingList';
 import { softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
+import { useActiveHouseholdId } from '../../../lib/household';
 import { usePalette } from '../../../lib/usePalette';
 import { recipeIngredients, recipeInstructions, recipes } from '../../../lib/db/schema';
 import { currentLocale, t } from '../../../lib/i18n';
@@ -26,6 +27,7 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const householdId = useActiveHouseholdId();
 
   const [servingsOverride, setServingsOverride] = useState<number | null>(null);
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
@@ -36,8 +38,8 @@ export default function RecipeDetailScreen() {
     db
       .select()
       .from(recipes)
-      .where(and(eq(recipes.id, id), notDeleted(recipes))),
-    [id]
+      .where(and(eq(recipes.id, id), notDeleted(recipes), inHousehold(recipes, householdId))),
+    [id, householdId]
   );
   const { data: ingredients } = useLiveQuery(
     db
@@ -101,7 +103,7 @@ export default function RecipeDetailScreen() {
           scaling: ing.scaling,
         }))
       );
-      addItems(db, items, 'merge');
+      addItems(db, householdId, items, 'merge');
       setListNotice('added');
     } catch {
       setListNotice('failed');
@@ -115,7 +117,7 @@ export default function RecipeDetailScreen() {
         text: t('detail.deleteConfirm'),
         style: 'destructive',
         onPress: () => {
-          softDeleteRecipe(db, recipe.id);
+          softDeleteRecipe(db, householdId, recipe.id);
           router.back();
         },
       },

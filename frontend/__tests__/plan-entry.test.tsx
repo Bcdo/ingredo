@@ -68,7 +68,7 @@ describe('PlanEntryScreen', () => {
     render(<PlanEntryScreen />);
 
     fireEvent.press(screen.getByLabelText('increment'));
-    expect(setPlanEntryServings).toHaveBeenCalledWith(expect.anything(), 'e1', 5);
+    expect(setPlanEntryServings).toHaveBeenCalledWith(expect.anything(), null, 'e1', 5);
   });
 
   it('opens the recipe, moves, and removes', () => {
@@ -82,7 +82,7 @@ describe('PlanEntryScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/plan/pick-day?entry=e1');
 
     fireEvent.press(screen.getByText('Remove from plan'));
-    expect(removePlanEntry).toHaveBeenCalledWith(expect.anything(), 'e1');
+    expect(removePlanEntry).toHaveBeenCalledWith(expect.anything(), null, 'e1');
     expect(mockBack).toHaveBeenCalled();
   });
 });

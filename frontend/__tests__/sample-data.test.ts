@@ -21,13 +21,13 @@ describe('seedSampleData', () => {
   it('inserts every sample with full details into an empty database', () => {
     const db = makeTestDb();
 
-    const inserted = seedSampleData(db);
+    const inserted = seedSampleData(db, null);
 
     expect(inserted).toBe(SAMPLE_RECIPES.length);
     const rows = liveRecipes(db);
     expect(rows).toHaveLength(SAMPLE_RECIPES.length);
     for (const row of rows) {
-      const details = getRecipe(db, row.id);
+      const details = getRecipe(db, null, row.id);
       expect(details).not.toBeNull();
       expect(details!.ingredients.length).toBeGreaterThan(0);
       expect(details!.instructions.length).toBeGreaterThan(0);
@@ -36,15 +36,15 @@ describe('seedSampleData', () => {
 
   it('inserts nothing on a second run', () => {
     const db = makeTestDb();
-    seedSampleData(db);
+    seedSampleData(db, null);
 
-    expect(seedSampleData(db)).toBe(0);
+    expect(seedSampleData(db, null)).toBe(0);
     expect(liveRecipes(db)).toHaveLength(SAMPLE_RECIPES.length);
   });
 
   it('leaves user recipes alone and restores only deleted samples', () => {
     const db = makeTestDb();
-    createRecipe(db, {
+    createRecipe(db, null, {
       title: 'Bestemors lapskaus',
       description: null,
       servings: 4,
@@ -52,12 +52,12 @@ describe('seedSampleData', () => {
       ingredients: [{ name: 'Poteter', quantity: 500, unit: 'g' }],
       instructions: [{ text: 'Kok alt sammen.' }],
     });
-    seedSampleData(db);
+    seedSampleData(db, null);
 
     const firstSample = liveRecipes(db).find((r) => r.title === SAMPLE_RECIPES[0].title)!;
-    softDeleteRecipe(db, firstSample.id);
+    softDeleteRecipe(db, null, firstSample.id);
 
-    expect(seedSampleData(db)).toBe(1);
+    expect(seedSampleData(db, null)).toBe(1);
     const titles = liveRecipes(db).map((r) => r.title);
     expect(titles).toContain('Bestemors lapskaus');
     expect(titles.filter((t) => t === SAMPLE_RECIPES[0].title)).toHaveLength(1);

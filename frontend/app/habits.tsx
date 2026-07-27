@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { db } from '../lib/db/client';
+import { useActiveHouseholdId } from '../lib/household';
 import { t } from '../lib/i18n';
 import { computeHabits, getHabitsData } from '../lib/suggestions/habits';
 import { usePalette } from '../lib/usePalette';
@@ -12,12 +13,17 @@ import { usePalette } from '../lib/usePalette';
 export default function HabitsScreen() {
   const insets = useSafeAreaInsets();
   const palette = usePalette();
-  const habits = useMemo(() => computeHabits(getHabitsData(db)), []);
+  const householdId = useActiveHouseholdId();
+  const habits = useMemo(() => computeHabits(getHabitsData(db, householdId)), [householdId]);
 
   const totals = [
     { key: 'recipes', value: habits.totals.recipeCount, caption: t('habits.recipesCaption') },
     { key: 'planned', value: habits.totals.plannedCount, caption: t('habits.plannedCaption') },
-    { key: 'purchased', value: habits.totals.purchasedCount, caption: t('habits.purchasedCaption') },
+    {
+      key: 'purchased',
+      value: habits.totals.purchasedCount,
+      caption: t('habits.purchasedCaption'),
+    },
   ];
 
   const lists = [

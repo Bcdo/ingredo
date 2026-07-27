@@ -7,8 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { rollingWeek, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
 import { addPlanEntry, movePlanEntry } from '../../lib/db/mealPlan';
-import { notDeleted } from '../../lib/db/predicates';
+import { inHousehold, notDeleted } from '../../lib/db/predicates';
 import { getRecipe } from '../../lib/db/recipes';
+import { useActiveHouseholdId } from '../../lib/household';
 import { mealPlanEntries } from '../../lib/db/schema';
 import { t } from '../../lib/i18n';
 import { dayHeading } from '../../lib/planFormat';
@@ -19,6 +20,7 @@ export default function PickDayScreen() {
     entry?: string;
   }>();
   const insets = useSafeAreaInsets();
+  const householdId = useActiveHouseholdId();
   const [saveFailed, setSaveFailed] = useState(false);
 
   const today = todayLocal();
@@ -26,8 +28,8 @@ export default function PickDayScreen() {
 
   // Both loads happen once — the sheet owns no live state.
   const recipeDetails = useMemo(
-    () => (typeof recipeId === 'string' ? getRecipe(db, recipeId) : null),
-    [recipeId]
+    () => (typeof recipeId === 'string' ? getRecipe(db, householdId, recipeId) : null),
+    [recipeId, householdId]
   );
   const entryRow = useMemo(
     () =>
@@ -35,10 +37,16 @@ export default function PickDayScreen() {
         ? db
             .select()
             .from(mealPlanEntries)
-            .where(and(eq(mealPlanEntries.id, entryId), notDeleted(mealPlanEntries)))
+            .where(
+              and(
+                eq(mealPlanEntries.id, entryId),
+                notDeleted(mealPlanEntries),
+                inHousehold(mealPlanEntries, householdId)
+              )
+            )
             .get()
         : undefined,
-    [entryId]
+    [entryId, householdId]
   );
 
   const mode = entryRow ? 'move' : recipeDetails ? 'add' : 'invalid';
@@ -50,9 +58,9 @@ export default function PickDayScreen() {
     setSaveFailed(false);
     try {
       if (mode === 'move' && entryRow) {
-        movePlanEntry(db, entryRow.id, date);
+        movePlanEntry(db, householdId, entryRow.id, date);
       } else if (recipeDetails) {
-        addPlanEntry(db, {
+        addPlanEntry(db, householdId, {
           date,
           recipeId: recipeDetails.recipe.id,
           servings: recipeDetails.recipe.servings,

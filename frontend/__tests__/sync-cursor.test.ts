@@ -47,10 +47,10 @@ describe('sync cursor store', () => {
 
   it('ensureHousehold on a switch resets the cursor and marks everything dirty, tombstones included', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, sampleRecipe());
-    const entryId = addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    removePlanEntry(db, entryId);
-    addManualItem(db, 'Melk');
+    const recipeId = createRecipe(db, null, sampleRecipe());
+    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    removePlanEntry(db, null, entryId);
+    addManualItem(db, null, 'Melk');
     // Simulate a completed sync: everything clean, cursor advanced.
     db.update(recipes).set({ dirty: 0 }).run();
     db.update(mealPlanEntries).set({ dirty: 0 }).run();
@@ -61,7 +61,9 @@ describe('sync cursor store', () => {
 
     expect(getSyncCursor(db)).toBe(0);
     expect(db.select().from(recipes).where(eq(recipes.dirty, 0)).all()).toHaveLength(0);
-    expect(db.select().from(mealPlanEntries).where(eq(mealPlanEntries.dirty, 0)).all()).toHaveLength(0);
+    expect(
+      db.select().from(mealPlanEntries).where(eq(mealPlanEntries.dirty, 0)).all()
+    ).toHaveLength(0);
     expect(db.select().from(shoppingItems).where(eq(shoppingItems.dirty, 0)).all()).toHaveLength(0);
     // The stored household id is NOT updated by the reset — only a
     // successful pull writes it.
@@ -78,12 +80,18 @@ describe('sync cursor store', () => {
     const db = makeTestDb();
     // one row per table in the NULL bucket (repo helpers leave householdId
     // unset), one per table already tagged to a foreign household.
-    const recipeId = createRecipe(db, sampleRecipe());
-    addPlanEntry(db, { date: '2026-07-20', recipeId, servings: 2 });
-    addManualItem(db, 'Melk');
+    const recipeId = createRecipe(db, null, sampleRecipe());
+    addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    addManualItem(db, null, 'Melk');
 
     db.insert(recipes)
-      .values({ id: 'foreign-recipe', title: 'Foreign', createdAt: 1000, updatedAt: 1000, householdId: 'old' })
+      .values({
+        id: 'foreign-recipe',
+        title: 'Foreign',
+        createdAt: 1000,
+        updatedAt: 1000,
+        householdId: 'old',
+      })
       .run();
     db.insert(mealPlanEntries)
       .values({

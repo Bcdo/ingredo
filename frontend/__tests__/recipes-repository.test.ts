@@ -25,9 +25,9 @@ const input = (overrides: Partial<RecipeInput> = {}): RecipeInput => ({
 describe('recipes repository', () => {
   it('creates a recipe with ingredients and instructions in order', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, input());
+    const id = createRecipe(db, null, input());
 
-    const details = getRecipe(db, id);
+    const details = getRecipe(db, null, id);
     expect(details).not.toBeNull();
     expect(details!.recipe.title).toBe('Tomato Soup');
     expect(details!.ingredients.map((i) => i.name)).toEqual(['Tomatoes', 'Salt']);
@@ -37,11 +37,12 @@ describe('recipes repository', () => {
 
   it('updates by replacing child rows and bumping updatedAt', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, input());
-    const before = getRecipe(db, id)!.recipe;
+    const id = createRecipe(db, null, input());
+    const before = getRecipe(db, null, id)!.recipe;
 
     updateRecipe(
       db,
+      null,
       id,
       input({
         title: 'Roasted Tomato Soup',
@@ -50,7 +51,7 @@ describe('recipes repository', () => {
       })
     );
 
-    const after = getRecipe(db, id)!;
+    const after = getRecipe(db, null, id)!;
     expect(after.recipe.title).toBe('Roasted Tomato Soup');
     expect(after.recipe.updatedAt).toBeGreaterThanOrEqual(before.updatedAt);
     expect(after.ingredients).toHaveLength(1);
@@ -61,11 +62,11 @@ describe('recipes repository', () => {
 
   it('soft-deletes: getRecipe returns null, row remains', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, input());
+    const id = createRecipe(db, null, input());
 
-    softDeleteRecipe(db, id);
+    softDeleteRecipe(db, null, id);
 
-    expect(getRecipe(db, id)).toBeNull();
+    expect(getRecipe(db, null, id)).toBeNull();
     const all = db.select().from(recipes).all();
     expect(all).toHaveLength(1);
     expect(all[0].deletedAt).not.toBeNull();
@@ -79,14 +80,14 @@ describe('recipes repository', () => {
     // name is NOT NULL — force a constraint failure on the second ingredient
     (bad.ingredients[1] as { name: string | null }).name = null;
 
-    expect(() => createRecipe(db, bad)).toThrow();
+    expect(() => createRecipe(db, null, bad)).toThrow();
     expect(db.select().from(recipes).all()).toHaveLength(0);
     expect(db.select().from(recipeIngredients).all()).toHaveLength(0);
   });
 
   it('round-trips the ingredient scaling flag and defaults it to linear', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, {
+    const id = createRecipe(db, null, {
       title: 'Chili',
       description: null,
       servings: 4,
@@ -97,7 +98,7 @@ describe('recipes repository', () => {
       ],
       instructions: [],
     });
-    const details = getRecipe(db, id);
+    const details = getRecipe(db, null, id);
     expect(details?.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
   });
 });
@@ -105,15 +106,15 @@ describe('recipes repository', () => {
 describe('sync prep', () => {
   it('create, update, and soft delete stamp the dirty flag', () => {
     const db = makeTestDb();
-    const id = createRecipe(db, input());
+    const id = createRecipe(db, null, input());
     expect(db.select().from(recipes).where(eq(recipes.id, id)).get()!.dirty).toBe(1);
 
     db.update(recipes).set({ dirty: 0 }).where(eq(recipes.id, id)).run();
-    updateRecipe(db, id, input());
+    updateRecipe(db, null, id, input());
     expect(db.select().from(recipes).where(eq(recipes.id, id)).get()!.dirty).toBe(1);
 
     db.update(recipes).set({ dirty: 0 }).where(eq(recipes.id, id)).run();
-    softDeleteRecipe(db, id);
+    softDeleteRecipe(db, null, id);
     const row = db.select().from(recipes).where(eq(recipes.id, id)).get()!;
     expect(row.dirty).toBe(1);
     expect(row.deletedAt).not.toBeNull();

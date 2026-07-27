@@ -81,7 +81,7 @@ describe('syncNow gating', () => {
 describe('syncNow cycle', () => {
   it('pushes dirty rows then pulls, storing the pull cursor only', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     apiFetchMock
       .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 999 })
       .mockResolvedValueOnce(emptyPull);
@@ -99,7 +99,7 @@ describe('syncNow cycle', () => {
 
   it('skips the push entirely when nothing is dirty', async () => {
     const db = freshDb();
-    createRecipe(db, sampleRecipe());
+    createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ dirty: 0 }).run();
     storePullResult(db, 7, 'household-1');
     apiFetchMock.mockResolvedValueOnce({ ...emptyPull, cursor: 8 });
@@ -112,11 +112,14 @@ describe('syncNow cycle', () => {
 
   it('a mid-flight edit stays dirty (compare-and-clear)', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     apiFetchMock
       .mockImplementationOnce(async () => {
-        // The user edits while the push request is on the wire.
-        updateRecipe(db, recipeId, { ...sampleRecipe(), title: 'Redigert' });
+        // The user edits while the push request is on the wire. By this point
+        // ensureHousehold has already re-tagged the row onto the session's
+        // household (see lib/sync/cursor.ts), so the update must target that
+        // partition, not the NULL bucket it was created in.
+        updateRecipe(db, 'household-1', recipeId, { ...sampleRecipe(), title: 'Redigert' });
         return { results: { [recipeId]: 'applied' }, cursor: 999 };
       })
       .mockResolvedValueOnce(emptyPull);
@@ -132,7 +135,7 @@ describe('syncNow cycle', () => {
   // reflects that resolution — it queues a follow-up cycle it does not wait for here.
   it('conflict outcomes are re-minted rather than left dirty and counted', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     apiFetchMock
       .mockResolvedValueOnce({ results: { [recipeId]: 'conflict' }, cursor: 999 })
       .mockResolvedValueOnce(emptyPull)
@@ -154,17 +157,19 @@ describe('syncNow cycle', () => {
 
   it('conflicted rows are re-minted and delivered by an automatic follow-up', async () => {
     const db = freshDb();
-    const oldId = createRecipe(db, sampleRecipe());
+    const oldId = createRecipe(db, null, sampleRecipe());
     apiFetchMock
       // Cycle 1: everything conflicts (post-leave adoption against the old household).
       .mockResolvedValueOnce({ results: { [oldId]: 'conflict' }, cursor: 999 })
       .mockResolvedValueOnce({ ...emptyPull, cursor: 1 })
       // Follow-up: the re-minted row inserts cleanly.
-      .mockImplementationOnce(async (path: string, init?: { body?: { recipes?: { id: string }[] } }) => {
-        const pushed = init!.body!.recipes![0];
-        expect(pushed.id).not.toBe(oldId);
-        return { results: { [pushed.id]: 'applied' }, cursor: 1000 };
-      })
+      .mockImplementationOnce(
+        async (path: string, init?: { body?: { recipes?: { id: string }[] } }) => {
+          const pushed = init!.body!.recipes![0];
+          expect(pushed.id).not.toBe(oldId);
+          return { results: { [pushed.id]: 'applied' }, cursor: 1000 };
+        }
+      )
       .mockResolvedValueOnce({ ...emptyPull, cursor: 2 });
 
     await syncNow();
@@ -180,7 +185,7 @@ describe('syncNow cycle', () => {
 
   it('a failed push fails the cycle without clearing or moving the cursor', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     storePullResult(db, 7, 'household-1');
     apiFetchMock.mockRejectedValueOnce(new Error('down'));
 
@@ -193,7 +198,7 @@ describe('syncNow cycle', () => {
 
   it('household switch resets cursor and re-marks everything before pushing', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     db.update(recipes).set({ dirty: 0 }).run();
     storePullResult(db, 500, 'old-household');
     apiFetchMock
@@ -211,7 +216,7 @@ describe('syncNow cycle', () => {
 
   it('coalesces concurrent callers into the running cycle plus exactly one successful follow-up', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     let releasePush: (value: unknown) => void = () => {};
     apiFetchMock
       // Cycle 1 push: held open while the other callers pile up.
@@ -260,7 +265,7 @@ describe('syncNow cycle', () => {
 
   it('a failed pull after a successful push never advances the cursor or household id', async () => {
     const db = freshDb();
-    const recipeId = createRecipe(db, sampleRecipe());
+    const recipeId = createRecipe(db, null, sampleRecipe());
     storePullResult(db, 7, 'household-1');
     apiFetchMock
       .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 999 })
