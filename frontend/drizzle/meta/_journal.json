@@ -43,6 +43,13 @@
       "when": 1785145516697,
       "tag": "0005_household_partitions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785182111933,
+      "tag": "0006_per_household_cursors",
+      "breakpoints": true
     }
   ]
 }

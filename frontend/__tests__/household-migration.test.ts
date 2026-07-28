@@ -12,8 +12,9 @@ function applyMigration(sqlite: InstanceType<typeof Database>, tag: string): voi
 }
 
 const tags = journal.entries.map((entry) => entry.tag);
-const legacyTags = tags.filter((tag) => !tag.startsWith('0005'));
+const legacyTags = tags.filter((tag) => tag < '0005');
 const partitionTag = tags.find((tag) => tag.startsWith('0005'))!;
+const cursorTag = tags.find((tag) => tag.startsWith('0006'))!;
 
 function makeLegacyDb(): InstanceType<typeof Database> {
   const sqlite = new Database(':memory:');
@@ -87,5 +88,54 @@ describe('migration 0005 backfill', () => {
       .prepare(`SELECT value FROM settings WHERE key = 'active_household_id'`)
       .get() as { value: string } | undefined;
     expect(activeHousehold).toBeUndefined();
+  });
+});
+
+describe('migration 0006 per-household cursors', () => {
+  function makePartitionedDb(): InstanceType<typeof Database> {
+    const sqlite = makeLegacyDb();
+    applyMigration(sqlite, partitionTag);
+    return sqlite;
+  }
+
+  function settingValue(sqlite: InstanceType<typeof Database>, key: string): string | undefined {
+    const row = sqlite.prepare(`SELECT value FROM settings WHERE key = ?`).get(key) as
+      | { value: string }
+      | undefined;
+    return row?.value;
+  }
+
+  it('carries a synced device cursor forward under its household key', () => {
+    const sqlite = makePartitionedDb();
+    sqlite.prepare(`INSERT INTO settings (key, value) VALUES ('sync_cursor', '42')`).run();
+    sqlite.prepare(`INSERT INTO settings (key, value) VALUES ('sync_household_id', 'h1')`).run();
+
+    applyMigration(sqlite, cursorTag);
+
+    expect(settingValue(sqlite, 'sync_cursor.h1')).toBe('42');
+    expect(settingValue(sqlite, 'sync_cursor')).toBeUndefined();
+    expect(settingValue(sqlite, 'sync_household_id')).toBeUndefined();
+  });
+
+  it('drops an orphaned cursor from a never-completed first sync', () => {
+    const sqlite = makePartitionedDb();
+    sqlite.prepare(`INSERT INTO settings (key, value) VALUES ('sync_cursor', '0')`).run();
+
+    applyMigration(sqlite, cursorTag);
+
+    expect(settingValue(sqlite, 'sync_cursor')).toBeUndefined();
+    const rows = sqlite.prepare(`SELECT key FROM settings WHERE key LIKE 'sync_cursor%'`).all();
+    expect(rows).toHaveLength(0);
+  });
+
+  it('is a no-op on a device that never synced', () => {
+    const sqlite = makePartitionedDb();
+
+    applyMigration(sqlite, cursorTag);
+
+    const rows = sqlite
+      .prepare(`SELECT key FROM settings WHERE key IN ('sync_cursor', 'sync_household_id')`)
+      .all();
+    expect(rows).toHaveLength(0);
   });
 });
