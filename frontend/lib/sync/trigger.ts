@@ -1,6 +1,6 @@
 import { AppState } from 'react-native';
 
-import { getSession } from '../api/session';
+import { getSession, subscribeSession } from '../api/session';
 
 // The engine is imported LAZILY at fire time: repositories call
 // scheduleSync(), and a static engine import would drag lib/db/client
@@ -24,10 +24,24 @@ export function scheduleSync(): void {
   }, DEBOUNCE_MS);
 }
 
-// Foreground trigger. Returns the unsubscribe for the layout effect.
+// Foreground + household-change triggers. Returns the unsubscribe for the
+// layout effect. A household transition (sign-in, join, leave, switch)
+// syncs the newly-active household promptly; a same-household session
+// emit (token refresh) does not. Sign-out records null so signing back
+// into the SAME household still counts as a transition.
 export function initSyncTriggers(): () => void {
+  let lastHouseholdId = getSession().householdId;
+  const unsubscribeSession = subscribeSession(() => {
+    const next = getSession().householdId;
+    if (next === lastHouseholdId) return;
+    lastHouseholdId = next;
+    if (next !== null) void fireSync();
+  });
   const subscription = AppState.addEventListener('change', (state) => {
     if (state === 'active') void fireSync();
   });
-  return () => subscription.remove();
+  return () => {
+    unsubscribeSession();
+    subscription.remove();
+  };
 }
