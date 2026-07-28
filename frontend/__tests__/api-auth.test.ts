@@ -152,7 +152,14 @@ describe('auth wrappers', () => {
 describe('households API', () => {
   it('listHouseholds fetches the plural endpoint', async () => {
     const summaries = [
-      { id: 'h1', name: 'Hjemme', joinCode: 'ABC-DEF', memberCount: 2, role: 'owner', isActive: true },
+      {
+        id: 'h1',
+        name: 'Hjemme',
+        joinCode: 'ABC-DEF',
+        memberCount: 2,
+        role: 'owner',
+        isActive: true,
+      },
     ];
     apiFetchMock.mockResolvedValueOnce(summaries);
 
