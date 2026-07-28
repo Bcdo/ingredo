@@ -2,13 +2,21 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, Share, Text, View } from 'react-native';
 
-import { getHousehold, joinHousehold, leaveHousehold, signOut } from '../../lib/api/auth';
+import {
+  createHousehold,
+  getHousehold,
+  joinHousehold,
+  leaveHousehold,
+  listHouseholds,
+  signOut,
+  switchHousehold,
+} from '../../lib/api/auth';
 import { ApiError, NetworkError } from '../../lib/api/client';
 import { getApiUrlOverride, setApiUrlOverride } from '../../lib/api/config';
 import { useSession } from '../../lib/api/session';
 import { db } from '../../lib/db/client';
 import { t } from '../../lib/i18n';
-import type { HouseholdDto } from '../../lib/api/types';
+import type { HouseholdDto, HouseholdSummaryDto } from '../../lib/api/types';
 import { syncNow } from '../../lib/sync/engine';
 import { useSyncStatus } from '../../lib/sync/status';
 import { Button } from '../ui/Button';
@@ -17,6 +25,24 @@ import { Input } from '../ui/Input';
 function joinErrorMessage(caught: unknown): string {
   if (caught instanceof ApiError && caught.status === 404) return t('account.errors.joinNotFound');
   if (caught instanceof ApiError && caught.status === 409) return t('account.errors.joinConflict');
+  if (caught instanceof NetworkError) return t('account.errors.network');
+  return t('account.errors.generic');
+}
+
+function leaveErrorMessage(caught: unknown): string {
+  if (caught instanceof ApiError && caught.status === 409)
+    return t('account.errors.leaveLastHousehold');
+  if (caught instanceof NetworkError) return t('account.errors.network');
+  return t('account.errors.generic');
+}
+
+function createErrorMessage(caught: unknown): string {
+  if (caught instanceof ApiError && caught.status === 400) return t('account.errors.createInvalid');
+  if (caught instanceof NetworkError) return t('account.errors.network');
+  return t('account.errors.generic');
+}
+
+function genericErrorMessage(caught: unknown): string {
   if (caught instanceof NetworkError) return t('account.errors.network');
   return t('account.errors.generic');
 }
@@ -36,7 +62,9 @@ export function AccountSection() {
   const session = useSession();
   const syncStatus = useSyncStatus();
   const [household, setHousehold] = useState<HouseholdDto | null>(null);
+  const [households, setHouseholds] = useState<HouseholdSummaryDto[]>([]);
   const [joinCode, setJoinCode] = useState('');
+  const [createName, setCreateName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [serverOverride, setServerOverride] = useState(() => getApiUrlOverride(db) ?? '');
   const showServerField = __DEV__ || serverOverride !== '';
@@ -46,6 +74,7 @@ export function AccountSection() {
   useEffect(() => {
     if (!signedIn) {
       setHousehold(null);
+      setHouseholds([]);
       return;
     }
     let cancelled = false;
@@ -58,6 +87,13 @@ export function AccountSection() {
       })
       .catch((caught) => {
         if (!cancelled) setError(joinErrorMessage(caught));
+      });
+    listHouseholds()
+      .then((result) => {
+        if (!cancelled) setHouseholds(result);
+      })
+      .catch((caught) => {
+        if (!cancelled) setError(genericErrorMessage(caught));
       });
     return () => {
       cancelled = true;
@@ -75,6 +111,27 @@ export function AccountSection() {
     }
   };
 
+  const switchTo = (target: HouseholdSummaryDto) => {
+    if (target.isActive) return;
+    setError(null);
+    switchHousehold(target.id).catch((caught) => setError(genericErrorMessage(caught)));
+  };
+
+  const create = async () => {
+    const name = createName.trim();
+    if (name === '') {
+      setError(t('account.errors.createInvalid'));
+      return;
+    }
+    setError(null);
+    try {
+      await createHousehold(name);
+      setCreateName('');
+    } catch (caught) {
+      setError(createErrorMessage(caught));
+    }
+  };
+
   const confirmLeave = () => {
     Alert.alert(t('account.leaveConfirmTitle'), t('account.leaveConfirmBody'), [
       { text: t('account.cancel'), style: 'cancel' },
@@ -83,7 +140,7 @@ export function AccountSection() {
         style: 'destructive',
         onPress: () => {
           setError(null);
-          leaveHousehold().catch((caught) => setError(joinErrorMessage(caught)));
+          leaveHousehold().catch((caught) => setError(leaveErrorMessage(caught)));
         },
       },
     ]);
@@ -127,6 +184,42 @@ export function AccountSection() {
         <Pressable accessibilityRole="button" onPress={() => void syncNow()}>
           <Text className="font-body text-sm text-ink underline">{t('sync.now')}</Text>
         </Pressable>
+      </View>
+
+      <Text className="font-body text-sm text-ink">{t('account.householdsTitle')}</Text>
+      <View className="mb-3 mt-1 gap-1">
+        {households.map((item) => (
+          <Pressable
+            key={item.id}
+            testID={`household-row-${item.id}`}
+            accessibilityRole="button"
+            disabled={item.isActive}
+            onPress={() => switchTo(item)}
+            className="flex-row items-center justify-between py-2">
+            <View>
+              <Text className="font-body-bold text-base text-ink">{item.name}</Text>
+              <Text className="font-body text-xs text-ink opacity-70">
+                {t('account.memberCount', { count: item.memberCount })}
+              </Text>
+            </View>
+            {item.isActive ? (
+              <Text className="font-body-bold text-xs text-clay">{t('account.activeBadge')}</Text>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+
+      <Text className="font-body text-sm text-ink">{t('account.createTitle')}</Text>
+      <View className="mb-3 mt-1 flex-row items-center gap-2">
+        <View className="flex-1">
+          <Input
+            testID="create-household-input"
+            value={createName}
+            onChangeText={setCreateName}
+            placeholder={t('account.createPlaceholder')}
+          />
+        </View>
+        <Button label={t('account.createButton')} onPress={create} />
       </View>
 
       <Text className="font-body text-sm text-ink">{t('account.household')}</Text>

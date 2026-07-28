@@ -3,7 +3,16 @@ import React from 'react';
 import { Alert } from 'react-native';
 
 import { AccountSection } from '../components/settings/AccountSection';
-import { getHousehold, joinHousehold, signOut } from '../lib/api/auth';
+import {
+  createHousehold,
+  getHousehold,
+  joinHousehold,
+  leaveHousehold,
+  listHouseholds,
+  signOut,
+  switchHousehold,
+} from '../lib/api/auth';
+import { ApiError } from '../lib/api/client';
 import { useSession } from '../lib/api/session';
 import { syncNow } from '../lib/sync/engine';
 import { useSyncStatus } from '../lib/sync/status';
@@ -13,6 +22,9 @@ jest.mock('../lib/api/auth', () => ({
   getHousehold: jest.fn(),
   joinHousehold: jest.fn(),
   leaveHousehold: jest.fn(),
+  listHouseholds: jest.fn(),
+  createHousehold: jest.fn(),
+  switchHousehold: jest.fn(),
   signOut: jest.fn(),
 }));
 jest.mock('../lib/api/session', () => ({
@@ -38,6 +50,10 @@ jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 const useSessionMock = useSession as jest.Mock;
 const getHouseholdMock = getHousehold as jest.Mock;
 const joinHouseholdMock = joinHousehold as jest.Mock;
+const leaveHouseholdMock = leaveHousehold as jest.Mock;
+const listHouseholdsMock = listHouseholds as jest.Mock;
+const createHouseholdMock = createHousehold as jest.Mock;
+const switchHouseholdMock = switchHousehold as jest.Mock;
 const signOutMock = signOut as jest.Mock;
 
 const signedOut = { status: 'signedOut', user: null, householdId: null, householdName: null };
@@ -55,6 +71,24 @@ const household = {
     { userId: 'user-1', displayName: 'Kari', role: 'owner', joinedAt: '2026-07-01T00:00:00Z' },
   ],
 };
+const summaries = [
+  {
+    id: 'household-1',
+    name: 'Karis husstand',
+    joinCode: 'ABC-DEF',
+    memberCount: 2,
+    role: 'owner',
+    isActive: true,
+  },
+  {
+    id: 'household-2',
+    name: 'Hytta',
+    joinCode: 'GHI-JKL',
+    memberCount: 1,
+    role: 'member',
+    isActive: false,
+  },
+];
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -75,6 +109,7 @@ describe('AccountSection signed in', () => {
   beforeEach(() => {
     useSessionMock.mockReturnValue(signedIn);
     getHouseholdMock.mockResolvedValue(household);
+    listHouseholdsMock.mockResolvedValue(summaries);
   });
 
   it('shows email, household name, join code and members', async () => {
@@ -82,9 +117,59 @@ describe('AccountSection signed in', () => {
     await act(async () => {});
 
     expect(screen.getByText('kari@example.test')).toBeOnTheScreen();
-    expect(screen.getByText('Karis husstand')).toBeOnTheScreen();
+    expect(screen.getAllByText('Karis husstand').length).toBeGreaterThan(0);
     expect(screen.getByText('ABC-DEF')).toBeOnTheScreen();
     expect(screen.getByText('Kari')).toBeOnTheScreen();
+  });
+
+  it('lists households with the active one marked and not pressable', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+
+    expect(screen.getAllByText('Karis husstand').length).toBeGreaterThan(0);
+    expect(screen.getByText('Hytta')).toBeOnTheScreen();
+    expect(screen.getAllByText('Active')).toHaveLength(1);
+
+    fireEvent.press(screen.getByTestId('household-row-household-1'));
+    expect(switchHouseholdMock).not.toHaveBeenCalled();
+  });
+
+  it('switches on pressing a non-active household', async () => {
+    switchHouseholdMock.mockResolvedValueOnce(undefined);
+    render(<AccountSection />);
+    await act(async () => {});
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('household-row-household-2'));
+    });
+
+    expect(switchHouseholdMock).toHaveBeenCalledWith('household-2');
+  });
+
+  it('creates a household with the trimmed name and clears the input', async () => {
+    createHouseholdMock.mockResolvedValueOnce(undefined);
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.changeText(screen.getByTestId('create-household-input'), '  Hytta  ');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Create'));
+    });
+
+    expect(createHouseholdMock).toHaveBeenCalledWith('Hytta');
+    expect(screen.getByTestId('create-household-input').props.value).toBe('');
+  });
+
+  it('a blank create shows the validation message without calling the API', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Create'));
+    });
+
+    expect(createHouseholdMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Give the household a name.')).toBeOnTheScreen();
   });
 
   it('joins another household with the typed code', async () => {
@@ -108,6 +193,23 @@ describe('AccountSection signed in', () => {
     fireEvent.press(screen.getByText('Leave household'));
 
     expect(alertSpy).toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
+  it('a leave conflict shows the leave-specific message', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    leaveHouseholdMock.mockRejectedValueOnce(new ApiError(409, null));
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByText('Leave household'));
+    const buttons = alertSpy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
+
+    await act(async () => {
+      buttons[1].onPress?.();
+    });
+
+    expect(screen.getByText("You can't leave your only household.")).toBeOnTheScreen();
     alertSpy.mockRestore();
   });
 
