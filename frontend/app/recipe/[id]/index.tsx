@@ -9,10 +9,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../../components/ui/Button';
 import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Stepper } from '../../../components/ui/Stepper';
+import { listHouseholds } from '../../../lib/api/auth';
+import { NetworkError } from '../../../lib/api/client';
 import { db } from '../../../lib/db/client';
 import { inHousehold, notDeleted } from '../../../lib/db/predicates';
 import { addItems } from '../../../lib/db/shoppingList';
-import { softDeleteRecipe } from '../../../lib/db/recipes';
+import { copyRecipeToHousehold, softDeleteRecipe } from '../../../lib/db/recipes';
 import { getUnitSystem, setUnitSystem, type UnitSystem } from '../../../lib/db/settings';
 import { useActiveHouseholdId } from '../../../lib/household';
 import { usePalette } from '../../../lib/usePalette';
@@ -33,6 +35,12 @@ export default function RecipeDetailScreen() {
   const [system, setSystem] = useState<UnitSystem>(() => getUnitSystem(db));
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [listNotice, setListNotice] = useState<'none' | 'added' | 'failed'>('none');
+  const [copyFeedback, setCopyFeedback] = useState<
+    | { kind: 'copied'; name: string }
+    | { kind: 'noTargets' }
+    | { kind: 'error'; message: string }
+    | null
+  >(null);
 
   const { data: recipeRows, updatedAt } = useLiveQuery(
     db
@@ -122,6 +130,40 @@ export default function RecipeDetailScreen() {
         },
       },
     ]);
+  };
+
+  const copyToHousehold = async () => {
+    setCopyFeedback(null);
+    try {
+      const households = await listHouseholds();
+      const targets = households.filter((target) => target.id !== householdId);
+      if (targets.length === 0) {
+        setCopyFeedback({ kind: 'noTargets' });
+        return;
+      }
+      Alert.alert(t('detail.copyPickerTitle'), undefined, [
+        ...targets.map((target) => ({
+          text: target.name,
+          onPress: () => {
+            const copied = copyRecipeToHousehold(db, householdId, target.id, recipe.id);
+            setCopyFeedback(
+              copied
+                ? { kind: 'copied' as const, name: target.name }
+                : { kind: 'error' as const, message: t('account.errors.generic') }
+            );
+          },
+        })),
+        { text: t('detail.deleteCancel'), style: 'cancel' as const },
+      ]);
+    } catch (caught) {
+      setCopyFeedback({
+        kind: 'error',
+        message:
+          caught instanceof NetworkError
+            ? t('account.errors.network')
+            : t('account.errors.generic'),
+      });
+    }
   };
 
   return (
@@ -256,6 +298,31 @@ export default function RecipeDetailScreen() {
             <Text className="mt-2 font-body text-base text-ink opacity-80">{recipe.notes}</Text>
           </>
         ) : null}
+
+        {copyFeedback?.kind === 'copied' ? (
+          <View className="mt-8 rounded-card bg-sage px-4 py-3">
+            <Text className="font-body text-sm text-cream">
+              {t('detail.copiedTo', { name: copyFeedback.name })}
+            </Text>
+          </View>
+        ) : null}
+        {copyFeedback?.kind === 'noTargets' ? (
+          <View className="mt-8 rounded-card bg-butter px-4 py-3">
+            <Text className="font-body text-sm text-ink">{t('detail.copyNoTargets')}</Text>
+          </View>
+        ) : null}
+        {copyFeedback?.kind === 'error' ? (
+          <View className="mt-8 rounded-card bg-butter px-4 py-3">
+            <Text className="font-body text-sm text-ink">{copyFeedback.message}</Text>
+          </View>
+        ) : null}
+        <View className={copyFeedback ? 'mt-3' : 'mt-8'}>
+          <Button
+            label={t('detail.copyToHousehold')}
+            variant="ghost"
+            onPress={() => void copyToHousehold()}
+          />
+        </View>
       </ScrollView>
 
       <View className="px-5 pt-2" style={{ paddingBottom: insets.bottom + 8 }}>

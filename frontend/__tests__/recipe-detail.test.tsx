@@ -1,10 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { Redirect } from 'expo-router';
 import React from 'react';
+import { Alert } from 'react-native';
 
 import RecipeDetailScreen from '../app/recipe/[id]/index';
+import { listHouseholds } from '../lib/api/auth';
+import { NetworkError } from '../lib/api/client';
 import { addItems } from '../lib/db/shoppingList';
+import { copyRecipeToHousehold } from '../lib/db/recipes';
 import { getUnitSystem, setUnitSystem } from '../lib/db/settings';
 import type { RecipeRow } from '../lib/db/schema';
 
@@ -45,15 +49,30 @@ jest.mock('../lib/db/shoppingList', () => ({
   addItems: jest.fn(() => 1),
 }));
 
+jest.mock('../lib/db/recipes', () => ({
+  softDeleteRecipe: jest.fn(),
+  copyRecipeToHousehold: jest.fn(() => 'copy-1'),
+}));
+
+jest.mock('../lib/api/auth', () => ({
+  listHouseholds: jest.fn(),
+}));
+
+jest.mock('../lib/household', () => ({
+  useActiveHouseholdId: () => 'h1',
+}));
+
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const RedirectMock = Redirect as unknown as jest.Mock;
 const addItemsMock = addItems as jest.Mock;
+const listHouseholdsMock = listHouseholds as jest.Mock;
+const copyRecipeToHouseholdMock = copyRecipeToHousehold as jest.Mock;
 
 const recipeRow: RecipeRow = {
   id: 'r1',
   title: 'Tomato Soup',
   description: null,
-  householdId: null,
+  householdId: 'h1',
   servings: 4,
   notes: null,
   createdAt: 1,
@@ -239,5 +258,81 @@ describe('RecipeDetailScreen — add to shopping list', () => {
 
     fireEvent.press(screen.getByText('Add 2 ingredients to shopping list'));
     expect(screen.getByText("Couldn't save — try again.")).toBeOnTheScreen();
+  });
+});
+
+describe('RecipeDetailScreen — copy to household', () => {
+  const active = {
+    id: 'h1',
+    name: 'Home',
+    joinCode: 'ABC-DEF',
+    memberCount: 2,
+    role: 'owner',
+    isActive: true,
+  };
+  const other = {
+    id: 'h2',
+    name: 'Hytta',
+    joinCode: 'XYZ-123',
+    memberCount: 1,
+    role: 'owner',
+    isActive: false,
+  };
+  let alertSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    listHouseholdsMock.mockReset();
+    copyRecipeToHouseholdMock.mockReset().mockReturnValue('copy-1');
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    alertSpy.mockRestore();
+  });
+
+  it('copy with no other household shows the quiet notice', async () => {
+    listHouseholdsMock.mockResolvedValueOnce([active]);
+    mockQueries({ data: [recipeRow], updatedAt: new Date() });
+    render(<RecipeDetailScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Copy to another household…'));
+    });
+
+    expect(screen.getByText("You're only in one household.")).toBeOnTheScreen();
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('copy picker offers only other households and copies into the chosen one', async () => {
+    listHouseholdsMock.mockResolvedValueOnce([active, other]);
+    mockQueries({ data: [recipeRow], updatedAt: new Date() });
+    render(<RecipeDetailScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Copy to another household…'));
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('Copy to which household?', undefined, expect.any(Array));
+    const buttons = alertSpy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
+    expect(buttons.map((b) => b.text)).toEqual(['Hytta', 'Keep it']);
+
+    await act(async () => {
+      buttons[0].onPress?.();
+    });
+
+    expect(copyRecipeToHouseholdMock).toHaveBeenCalledWith(expect.anything(), 'h1', 'h2', 'r1');
+    expect(screen.getByText('Copied to Hytta')).toBeOnTheScreen();
+  });
+
+  it('a failed household fetch shows the network message', async () => {
+    listHouseholdsMock.mockRejectedValueOnce(new NetworkError('offline'));
+    mockQueries({ data: [recipeRow], updatedAt: new Date() });
+    render(<RecipeDetailScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Copy to another household…'));
+    });
+
+    expect(screen.getByText('Cannot reach the server.')).toBeOnTheScreen();
   });
 });

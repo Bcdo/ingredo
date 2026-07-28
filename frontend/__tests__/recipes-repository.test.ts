@@ -4,6 +4,7 @@ import {
   updateRecipe,
   softDeleteRecipe,
   getRecipe,
+  copyRecipeToHousehold,
   type RecipeInput,
 } from '../lib/db/recipes';
 import { recipes, recipeIngredients } from '../lib/db/schema';
@@ -100,6 +101,44 @@ describe('recipes repository', () => {
     });
     const details = getRecipe(db, null, id);
     expect(details?.ingredients.map((i) => i.scaling)).toEqual(['linear', 'fixed']);
+  });
+});
+
+describe('copyRecipeToHousehold', () => {
+  it('re-mints the recipe and children into the target partition, dirty, source untouched', () => {
+    const db = makeTestDb();
+    const sourceId = createRecipe(db, 'h1', input());
+    db.update(recipes).set({ dirty: 0 }).run();
+
+    const copyId = copyRecipeToHousehold(db, 'h1', 'h2', sourceId);
+
+    expect(copyId).not.toBeNull();
+    expect(copyId).not.toBe(sourceId);
+    const copy = getRecipe(db, 'h2', copyId!)!;
+    expect(copy.recipe.householdId).toBe('h2');
+    expect(copy.recipe.dirty).toBe(1);
+    expect(copy.recipe.title).toBe(input().title);
+    expect(copy.ingredients).toHaveLength(input().ingredients.length);
+    expect(copy.ingredients.every((ing) => ing.recipeId === copyId)).toBe(true);
+    const source = getRecipe(db, 'h1', sourceId)!;
+    expect(source.recipe.dirty).toBe(0); // untouched
+    expect(source.ingredients.map((ing) => ing.id)).not.toEqual(
+      copy.ingredients.map((ing) => ing.id)
+    ); // fresh child ids
+  });
+
+  it('returns null for a source outside the caller partition', () => {
+    const db = makeTestDb();
+    const sourceId = createRecipe(db, 'h1', input());
+    expect(copyRecipeToHousehold(db, 'h2', 'h3', sourceId)).toBeNull();
+    expect(copyRecipeToHousehold(db, null, 'h3', sourceId)).toBeNull();
+  });
+
+  it('returns null for a tombstoned source', () => {
+    const db = makeTestDb();
+    const sourceId = createRecipe(db, 'h1', input());
+    softDeleteRecipe(db, 'h1', sourceId);
+    expect(copyRecipeToHousehold(db, 'h1', 'h2', sourceId)).toBeNull();
   });
 });
 

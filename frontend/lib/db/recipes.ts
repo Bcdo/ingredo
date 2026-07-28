@@ -151,3 +151,68 @@ export function getRecipe(
 
   return { recipe, ingredients, instructions };
 }
+
+// Explicit cross-household copy (umbrella decision 5): a re-minted local
+// duplicate — fresh ids for the recipe and every child — tagged for the
+// target household, dirty. Returns the fresh id, or null when the source
+// is not visible in the caller's partition (stale screen, tombstone).
+// Deliberately NO scheduleSync(): the copy is out-of-partition for the
+// current cycle and uploads when the target household is next active
+// (the sync engine collects only the active household's dirty rows).
+export function copyRecipeToHousehold(
+  db: DB,
+  householdId: string | null,
+  targetHouseholdId: string,
+  recipeId: string
+): string | null {
+  let freshId: string | null = null;
+  db.transaction((tx) => {
+    const txDb = tx as unknown as DB;
+    const source = txDb
+      .select()
+      .from(recipes)
+      .where(and(eq(recipes.id, recipeId), notDeleted(recipes), inHousehold(recipes, householdId)))
+      .get();
+    if (!source) return;
+
+    const now = Date.now();
+    const id = newId();
+    txDb
+      .insert(recipes)
+      .values({
+        ...source,
+        id,
+        householdId: targetHouseholdId,
+        createdAt: now,
+        updatedAt: now,
+        dirty: 1,
+      })
+      .run();
+    const ingredients = txDb
+      .select()
+      .from(recipeIngredients)
+      .where(eq(recipeIngredients.recipeId, recipeId))
+      .orderBy(asc(recipeIngredients.sortOrder))
+      .all();
+    for (const child of ingredients) {
+      txDb
+        .insert(recipeIngredients)
+        .values({ ...child, id: newId(), recipeId: id })
+        .run();
+    }
+    const instructions = txDb
+      .select()
+      .from(recipeInstructions)
+      .where(eq(recipeInstructions.recipeId, recipeId))
+      .orderBy(asc(recipeInstructions.sortOrder))
+      .all();
+    for (const child of instructions) {
+      txDb
+        .insert(recipeInstructions)
+        .values({ ...child, id: newId(), recipeId: id })
+        .run();
+    }
+    freshId = id;
+  });
+  return freshId;
+}

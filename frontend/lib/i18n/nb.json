@@ -49,7 +49,11 @@
     "adjustToTaste": "smak til",
     "planIt": "Planlegg",
     "addToList": "Legg %{count} ingredienser i handlelisten",
-    "addedToList": "Lagt i handlelisten"
+    "addedToList": "Lagt i handlelisten",
+    "copyToHousehold": "Kopier til en annen husholdning …",
+    "copyPickerTitle": "Kopier til hvilken husholdning?",
+    "copyNoTargets": "Du er bare i én husholdning.",
+    "copiedTo": "Kopiert til %{name}"
   },
   "form": {
     "newTitle": "Ny oppskrift",

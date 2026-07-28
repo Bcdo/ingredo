@@ -49,7 +49,11 @@
     "adjustToTaste": "adjust to taste",
     "planIt": "Plan it",
     "addToList": "Add %{count} ingredients to shopping list",
-    "addedToList": "Added to your shopping list"
+    "addedToList": "Added to your shopping list",
+    "copyToHousehold": "Copy to another household…",
+    "copyPickerTitle": "Copy to which household?",
+    "copyNoTargets": "You're only in one household.",
+    "copiedTo": "Copied to %{name}"
   },
   "form": {
     "newTitle": "New recipe",
