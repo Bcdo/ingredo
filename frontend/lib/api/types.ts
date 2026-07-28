@@ -27,6 +27,15 @@ export type HouseholdDto = {
   members: MemberDto[];
 };
 
+export type HouseholdSummaryDto = {
+  id: string;
+  name: string;
+  joinCode: string;
+  memberCount: number;
+  role: string;
+  isActive: boolean;
+};
+
 // Sync wire DTOs (slice-② contract): epoch-ms numbers, yyyy-MM-dd date
 // strings, lowercase enum strings, sources as an opaque string.
 export type SyncIngredientRowDto = {

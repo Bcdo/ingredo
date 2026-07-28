@@ -1,11 +1,14 @@
 import {
+  createHousehold,
   getHousehold,
   joinHousehold,
   leaveHousehold,
+  listHouseholds,
   normalizeJoinCode,
   register,
   signIn,
   signOut,
+  switchHousehold,
 } from '../lib/api/auth';
 import { apiFetch, pendingRefresh } from '../lib/api/client';
 import {
@@ -143,5 +146,47 @@ describe('auth wrappers', () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/household/leave', { method: 'POST' });
     await expect(getStoredRefreshToken()).resolves.toBe('refresh-3');
+  });
+});
+
+describe('households API', () => {
+  it('listHouseholds fetches the plural endpoint', async () => {
+    const summaries = [
+      { id: 'h1', name: 'Hjemme', joinCode: 'ABC-DEF', memberCount: 2, role: 'owner', isActive: true },
+    ];
+    apiFetchMock.mockResolvedValueOnce(summaries);
+
+    await expect(listHouseholds()).resolves.toEqual(summaries);
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/households');
+  });
+
+  it('createHousehold posts the name and activates the returned household', async () => {
+    apiFetchMock.mockResolvedValueOnce({
+      ...auth,
+      user: { ...auth.user, householdId: 'h-new', householdName: 'Hytta' },
+    });
+
+    await createHousehold('Hytta');
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/households', {
+      method: 'POST',
+      body: { name: 'Hytta' },
+    });
+    expect(getSession().householdId).toBe('h-new');
+  });
+
+  it('switchHousehold posts the id and activates the returned household', async () => {
+    apiFetchMock.mockResolvedValueOnce({
+      ...auth,
+      user: { ...auth.user, householdId: 'h2', householdName: 'Hytta' },
+    });
+
+    await switchHousehold('h2');
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/households/switch', {
+      method: 'POST',
+      body: { householdId: 'h2' },
+    });
+    expect(getSession().householdId).toBe('h2');
   });
 });

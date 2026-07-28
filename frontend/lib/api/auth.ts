@@ -5,7 +5,7 @@ import {
   setSessionSignedOut,
   setStoredRefreshToken,
 } from './session';
-import type { AuthResponseDto, HouseholdDto } from './types';
+import type { AuthResponseDto, HouseholdDto, HouseholdSummaryDto } from './types';
 
 export async function register(
   email: string,
@@ -67,6 +67,26 @@ export async function joinHousehold(code: string): Promise<void> {
 export async function leaveHousehold(): Promise<void> {
   const auth = await apiFetch<AuthResponseDto>('/api/v1/household/leave', {
     method: 'POST',
+  });
+  await applyAuthResponse(auth);
+}
+
+export async function listHouseholds(): Promise<HouseholdSummaryDto[]> {
+  return apiFetch<HouseholdSummaryDto[]>('/api/v1/households');
+}
+
+export async function createHousehold(name: string): Promise<void> {
+  const auth = await apiFetch<AuthResponseDto>('/api/v1/households', {
+    method: 'POST',
+    body: { name },
+  });
+  await applyAuthResponse(auth);
+}
+
+export async function switchHousehold(householdId: string): Promise<void> {
+  const auth = await apiFetch<AuthResponseDto>('/api/v1/households/switch', {
+    method: 'POST',
+    body: { householdId },
   });
   await applyAuthResponse(auth);
 }
