@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 
+import { inHousehold } from '../db/predicates';
 import { mealPlanEntries, recipes, settings, shoppingItems } from '../db/schema';
 import type { DB } from '../db/types';
 
 // Device-local sync bookkeeping — must be excluded if settings ever sync.
-const CURSOR_KEY = 'sync_cursor';
-const HOUSEHOLD_KEY = 'sync_household_id';
+const CURSOR_KEY_PREFIX = 'sync_cursor.';
 const LAST_SYNCED_KEY = 'last_synced_at';
 
 function read(db: DB, key: string): string | null {
@@ -20,14 +20,13 @@ function write(db: DB, key: string, value: string): void {
     .run();
 }
 
-export function getSyncCursor(db: DB): number {
-  const stored = read(db, CURSOR_KEY);
+// Each household carries its own cursor: switching back resumes
+// incrementally instead of re-downloading. A missing key is a fresh
+// start for THAT household.
+export function getSyncCursor(db: DB, householdId: string): number {
+  const stored = read(db, CURSOR_KEY_PREFIX + householdId);
   const parsed = stored === null ? NaN : Number(stored);
   return Number.isFinite(parsed) ? parsed : 0;
-}
-
-export function getSyncHouseholdId(db: DB): string | null {
-  return read(db, HOUSEHOLD_KEY);
 }
 
 export function getLastSyncedAt(db: DB): number | null {
@@ -36,24 +35,25 @@ export function getLastSyncedAt(db: DB): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-// Only a successful pull moves the cursor — and the household id moves
-// with it, so a failed adoption cycle re-runs the switch reset next time.
-export function storePullResult(db: DB, cursor: number, householdId: string): void {
-  write(db, CURSOR_KEY, String(cursor));
-  write(db, HOUSEHOLD_KEY, householdId);
+// Only a successful pull moves the household's cursor.
+export function storePullResult(db: DB, householdId: string, cursor: number): void {
+  write(db, CURSOR_KEY_PREFIX + householdId, String(cursor));
   write(db, LAST_SYNCED_KEY, String(Date.now()));
 }
 
-// The adoption flow: any household change (first sign-in, join, leave,
-// account switch) restarts sync from zero with everything marked for
-// upload — tombstones included, so deletes replicate too. The whole device
-// belongs to one household until slice ③, and the re-tag states that in
-// the household_id column (adopting the NULL bucket on first sign-in).
-export function ensureHousehold(db: DB, householdId: string): boolean {
-  if (getSyncHouseholdId(db) === householdId) return false;
-  write(db, CURSOR_KEY, '0');
-  db.update(recipes).set({ dirty: 1, householdId }).run();
-  db.update(mealPlanEntries).set({ dirty: 1, householdId }).run();
-  db.update(shoppingItems).set({ dirty: 1, householdId }).run();
-  return true;
+// Adoption shrank to the NULL bucket: rows created before first sign-in
+// join the active household, dirty so they upload — tombstones included,
+// so pre-sign-in deletes replicate too. Idempotent, a no-op every cycle
+// after the bucket empties. Rows of OTHER households are never touched:
+// switching is not adoption (that machinery retired with this slice).
+export function adoptNullBucket(db: DB, householdId: string): void {
+  db.update(recipes).set({ householdId, dirty: 1 }).where(inHousehold(recipes, null)).run();
+  db.update(mealPlanEntries)
+    .set({ householdId, dirty: 1 })
+    .where(inHousehold(mealPlanEntries, null))
+    .run();
+  db.update(shoppingItems)
+    .set({ householdId, dirty: 1 })
+    .where(inHousehold(shoppingItems, null))
+    .run();
 }

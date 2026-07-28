@@ -1,5 +1,6 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
+import { inHousehold } from '../db/predicates';
 import { mealPlanEntries, recipeIngredients, recipeInstructions, recipes, shoppingItems } from '../db/schema';
 import type { DB } from '../db/types';
 import type {
@@ -18,10 +19,22 @@ export type DirtyBatch = {
   isEmpty: boolean;
 };
 
-export function collectDirty(db: DB): DirtyBatch {
-  const dirtyRecipes = db.select().from(recipes).where(eq(recipes.dirty, 1)).all();
-  const dirtyEntries = db.select().from(mealPlanEntries).where(eq(mealPlanEntries.dirty, 1)).all();
-  const dirtyItems = db.select().from(shoppingItems).where(eq(shoppingItems.dirty, 1)).all();
+export function collectDirty(db: DB, householdId: string): DirtyBatch {
+  const dirtyRecipes = db
+    .select()
+    .from(recipes)
+    .where(and(eq(recipes.dirty, 1), inHousehold(recipes, householdId)))
+    .all();
+  const dirtyEntries = db
+    .select()
+    .from(mealPlanEntries)
+    .where(and(eq(mealPlanEntries.dirty, 1), inHousehold(mealPlanEntries, householdId)))
+    .all();
+  const dirtyItems = db
+    .select()
+    .from(shoppingItems)
+    .where(and(eq(shoppingItems.dirty, 1), inHousehold(shoppingItems, householdId)))
+    .all();
 
   const recipeRows: SyncRecipeRowDto[] = dirtyRecipes.map((row) => ({
     id: row.id,

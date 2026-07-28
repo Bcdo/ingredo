@@ -3,6 +3,7 @@ import { createRecipe, softDeleteRecipe, updateRecipe } from '../lib/db/recipes'
 import { mealPlanEntries, recipes, shoppingItems } from '../lib/db/schema';
 import { addManualItem, purchaseItem } from '../lib/db/shoppingList';
 import { collectDirty } from '../lib/sync/collect';
+import { adoptNullBucket } from '../lib/sync/cursor';
 import { makeTestDb } from './helpers/testDb';
 
 const sampleRecipe = () => ({
@@ -27,9 +28,10 @@ describe('collectDirty', () => {
   it('is empty when nothing is dirty', () => {
     const db = makeTestDb();
     createRecipe(db, null, sampleRecipe());
+    adoptNullBucket(db, 'h1');
     markAllClean(db);
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     expect(batch.isEmpty).toBe(true);
     expect(batch.request.recipes).toBeNull();
@@ -40,8 +42,9 @@ describe('collectDirty', () => {
   it('maps a dirty recipe as a full aggregate with ordered children', () => {
     const db = makeTestDb();
     const id = createRecipe(db, null, sampleRecipe());
+    adoptNullBucket(db, 'h1');
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     expect(batch.isEmpty).toBe(false);
     const recipe = batch.request.recipes!.find((r) => r.id === id)!;
@@ -57,11 +60,12 @@ describe('collectDirty', () => {
     const db = makeTestDb();
     const recipeId = createRecipe(db, null, sampleRecipe());
     const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
+    adoptNullBucket(db, 'h1');
     markAllClean(db);
-    removePlanEntry(db, null, entryId);
-    softDeleteRecipe(db, null, recipeId);
+    removePlanEntry(db, 'h1', entryId);
+    softDeleteRecipe(db, 'h1', recipeId);
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     expect(batch.request.recipes!.find((r) => r.id === recipeId)!.deletedAt).not.toBeNull();
     expect(batch.request.mealPlanEntries!.find((e) => e.id === entryId)!.deletedAt).not.toBeNull();
@@ -72,10 +76,11 @@ describe('collectDirty', () => {
     const recipeId = createRecipe(db, null, sampleRecipe());
     const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
     addManualItem(db, null, 'Melk');
+    adoptNullBucket(db, 'h1');
     const item = db.select().from(shoppingItems).all()[0];
-    purchaseItem(db, null, item.id);
+    purchaseItem(db, 'h1', item.id);
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     const entry = batch.request.mealPlanEntries!.find((e) => e.id === entryId)!;
     expect(entry).toMatchObject({ date: '2026-07-20', recipeId, servings: 2, sortOrder: 0 });
@@ -93,10 +98,11 @@ describe('collectDirty', () => {
   it('only dirty rows are collected', () => {
     const db = makeTestDb();
     const keptClean = createRecipe(db, null, sampleRecipe());
+    adoptNullBucket(db, 'h1');
     markAllClean(db);
-    const dirtyOne = createRecipe(db, null, { ...sampleRecipe(), title: 'Ny' });
+    const dirtyOne = createRecipe(db, 'h1', { ...sampleRecipe(), title: 'Ny' });
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     expect(batch.request.recipes!.map((r) => r.id)).toEqual([dirtyOne]);
     expect(batch.stamps.recipes.has(keptClean)).toBe(false);
@@ -105,11 +111,58 @@ describe('collectDirty', () => {
   it('an edited recipe carries its edited state', () => {
     const db = makeTestDb();
     const id = createRecipe(db, null, sampleRecipe());
+    adoptNullBucket(db, 'h1');
     markAllClean(db);
-    updateRecipe(db, null, id, { ...sampleRecipe(), title: 'Taco 2.0' });
+    updateRecipe(db, 'h1', id, { ...sampleRecipe(), title: 'Taco 2.0' });
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, 'h1');
 
     expect(batch.request.recipes![0].title).toBe('Taco 2.0');
+  });
+
+  it('collects only the active household — other partitions and the NULL bucket stay home', () => {
+    const db = makeTestDb();
+    const insertRecipe = (id: string, householdId: string | null) =>
+      db
+        .insert(recipes)
+        .values({ id, title: id, servings: 2, householdId, createdAt: 1, updatedAt: 1, dirty: 1 })
+        .run();
+    insertRecipe('r-h1', 'h1');
+    insertRecipe('r-h2', 'h2');
+    insertRecipe('r-null', null);
+    db.insert(shoppingItems)
+      .values({
+        id: 's-h1',
+        name: 'Melk',
+        normalizedName: 'melk',
+        sources: '[]',
+        status: 'active',
+        householdId: 'h1',
+        createdAt: 1,
+        updatedAt: 1,
+        dirty: 1,
+      })
+      .run();
+    db.insert(mealPlanEntries)
+      .values({
+        id: 'e-h2',
+        date: '2026-07-27',
+        recipeId: 'r-h2',
+        servings: 2,
+        sortOrder: 0,
+        householdId: 'h2',
+        createdAt: 1,
+        updatedAt: 1,
+        dirty: 1,
+      })
+      .run();
+
+    const batch = collectDirty(db, 'h1');
+    expect(batch.isEmpty).toBe(false);
+    expect(batch.request.recipes?.map((row) => row.id)).toEqual(['r-h1']);
+    expect(batch.request.shoppingItems?.map((row) => row.id)).toEqual(['s-h1']);
+    expect(batch.request.mealPlanEntries).toBeNull();
+
+    expect(collectDirty(db, 'h3').isEmpty).toBe(true);
   });
 });

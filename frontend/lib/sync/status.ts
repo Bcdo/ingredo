@@ -43,6 +43,14 @@ export function markError(): void {
   emit();
 }
 
+// An aborted cycle (mid-flight household switch or sign-out) returns to
+// idle without pretending a sync completed — lastSyncedAt and the
+// conflict count stay as they were.
+export function markSkipped(): void {
+  status = { ...status, state: 'idle' };
+  emit();
+}
+
 // Seeds the persisted last_synced_at into memory at startup.
 export function initLastSyncedAt(value: number | null): void {
   status = { ...status, lastSyncedAt: value };

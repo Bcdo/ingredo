@@ -1,126 +1,125 @@
-import { eq } from 'drizzle-orm';
-
-import { addPlanEntry, removePlanEntry } from '../lib/db/mealPlan';
-import { createRecipe } from '../lib/db/recipes';
+import { newId } from '../lib/db/id';
 import { mealPlanEntries, recipes, shoppingItems } from '../lib/db/schema';
-import { addManualItem } from '../lib/db/shoppingList';
 import {
-  ensureHousehold,
+  adoptNullBucket,
   getLastSyncedAt,
   getSyncCursor,
-  getSyncHouseholdId,
   storePullResult,
 } from '../lib/sync/cursor';
 import { makeTestDb } from './helpers/testDb';
+import type { DB } from '../lib/db/types';
 
-const sampleRecipe = () => ({
-  title: 'Taco',
-  description: null,
-  servings: 4,
-  notes: null,
-  ingredients: [{ name: 'Mel', quantity: 400, unit: 'g' }],
-  instructions: [{ text: 'Bland.' }],
-});
+function seedRows(
+  db: DB,
+  householdId: string | null,
+  options: { dirty: 0 | 1; deletedAt?: number | null } = { dirty: 0 }
+): void {
+  const deletedAt = options.deletedAt ?? null;
+  const recipeId = newId();
+  db.insert(recipes)
+    .values({
+      id: recipeId,
+      title: 'Suppe',
+      servings: 2,
+      householdId,
+      createdAt: 1,
+      updatedAt: 1,
+      deletedAt,
+      dirty: options.dirty,
+    })
+    .run();
+  db.insert(mealPlanEntries)
+    .values({
+      id: newId(),
+      date: '2026-07-27',
+      recipeId,
+      servings: 2,
+      sortOrder: 0,
+      householdId,
+      createdAt: 1,
+      updatedAt: 1,
+      deletedAt,
+      dirty: options.dirty,
+    })
+    .run();
+  db.insert(shoppingItems)
+    .values({
+      id: newId(),
+      name: 'Melk',
+      normalizedName: 'melk',
+      sources: '[]',
+      status: 'active',
+      householdId,
+      createdAt: 1,
+      updatedAt: 1,
+      deletedAt,
+      dirty: options.dirty,
+    })
+    .run();
+}
+
+const contentTables = [recipes, mealPlanEntries, shoppingItems] as const;
 
 describe('sync cursor store', () => {
-  it('starts at cursor 0 with no household and no lastSyncedAt', () => {
+  it('starts at cursor 0 per household with no lastSyncedAt', () => {
     const db = makeTestDb();
-    expect(getSyncCursor(db)).toBe(0);
-    expect(getSyncHouseholdId(db)).toBeNull();
+    expect(getSyncCursor(db, 'h1')).toBe(0);
     expect(getLastSyncedAt(db)).toBeNull();
   });
 
-  it('storePullResult persists cursor, household and lastSyncedAt together', () => {
+  it('storePullResult persists the household cursor and lastSyncedAt, independently per household', () => {
     const db = makeTestDb();
-    storePullResult(db, 1042, 'household-1');
-    expect(getSyncCursor(db)).toBe(1042);
-    expect(getSyncHouseholdId(db)).toBe('household-1');
+    storePullResult(db, 'h1', 7);
+    expect(getSyncCursor(db, 'h1')).toBe(7);
+    expect(getSyncCursor(db, 'h2')).toBe(0);
+    storePullResult(db, 'h2', 3);
+    expect(getSyncCursor(db, 'h1')).toBe(7);
+    expect(getSyncCursor(db, 'h2')).toBe(3);
     expect(getLastSyncedAt(db)).toBeGreaterThan(0);
   });
+});
 
-  it('ensureHousehold is a no-op when the household matches', () => {
+describe('adoptNullBucket', () => {
+  it('adopts NULL rows with dirty set, tombstones included', () => {
     const db = makeTestDb();
-    storePullResult(db, 1042, 'household-1');
-    expect(ensureHousehold(db, 'household-1')).toBe(false);
-    expect(getSyncCursor(db)).toBe(1042);
+    seedRows(db, null, { dirty: 0 });
+    seedRows(db, null, { dirty: 0, deletedAt: 5 });
+
+    adoptNullBucket(db, 'h1');
+
+    for (const table of contentTables) {
+      const rows = db.select().from(table).all();
+      expect(rows).toHaveLength(2);
+      expect(rows.every((row) => row.householdId === 'h1')).toBe(true);
+      expect(rows.every((row) => row.dirty === 1)).toBe(true);
+    }
   });
 
-  it('ensureHousehold on a switch resets the cursor and marks everything dirty, tombstones included', () => {
+  it('is idempotent — a second run adopts nothing', () => {
     const db = makeTestDb();
-    const recipeId = createRecipe(db, null, sampleRecipe());
-    const entryId = addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
-    removePlanEntry(db, null, entryId);
-    addManualItem(db, null, 'Melk');
-    // Simulate a completed sync: everything clean, cursor advanced.
-    db.update(recipes).set({ dirty: 0 }).run();
-    db.update(mealPlanEntries).set({ dirty: 0 }).run();
-    db.update(shoppingItems).set({ dirty: 0 }).run();
-    storePullResult(db, 500, 'household-1');
+    seedRows(db, null, { dirty: 0 });
+    adoptNullBucket(db, 'h1');
+    for (const table of contentTables) db.update(table).set({ dirty: 0 }).run();
 
-    expect(ensureHousehold(db, 'household-2')).toBe(true);
+    adoptNullBucket(db, 'h1');
 
-    expect(getSyncCursor(db)).toBe(0);
-    expect(db.select().from(recipes).where(eq(recipes.dirty, 0)).all()).toHaveLength(0);
-    expect(
-      db.select().from(mealPlanEntries).where(eq(mealPlanEntries.dirty, 0)).all()
-    ).toHaveLength(0);
-    expect(db.select().from(shoppingItems).where(eq(shoppingItems.dirty, 0)).all()).toHaveLength(0);
-    // The stored household id is NOT updated by the reset — only a
-    // successful pull writes it.
-    expect(getSyncHouseholdId(db)).toBe('household-1');
+    for (const table of contentTables) {
+      const rows = db.select().from(table).all();
+      expect(rows.every((row) => row.householdId === 'h1')).toBe(true);
+      expect(rows.every((row) => row.dirty === 0)).toBe(true);
+    }
   });
 
-  it('ensureHousehold with no stored household treats first sign-in as a switch', () => {
+  it('never touches other households rows', () => {
     const db = makeTestDb();
-    expect(ensureHousehold(db, 'household-1')).toBe(true);
-    expect(getSyncCursor(db)).toBe(0);
-  });
+    seedRows(db, 'h2', { dirty: 0 });
 
-  it('re-tags every content row onto the adopted household', () => {
-    const db = makeTestDb();
-    // one row per table in the NULL bucket (repo helpers leave householdId
-    // unset), one per table already tagged to a foreign household.
-    const recipeId = createRecipe(db, null, sampleRecipe());
-    addPlanEntry(db, null, { date: '2026-07-20', recipeId, servings: 2 });
-    addManualItem(db, null, 'Melk');
+    adoptNullBucket(db, 'h1');
 
-    db.insert(recipes)
-      .values({
-        id: 'foreign-recipe',
-        title: 'Foreign',
-        createdAt: 1000,
-        updatedAt: 1000,
-        householdId: 'old',
-      })
-      .run();
-    db.insert(mealPlanEntries)
-      .values({
-        id: 'foreign-entry',
-        date: '2026-07-21',
-        recipeId,
-        servings: 2,
-        sortOrder: 0,
-        createdAt: 1000,
-        updatedAt: 1000,
-        householdId: 'old',
-      })
-      .run();
-    db.insert(shoppingItems)
-      .values({
-        id: 'foreign-item',
-        name: 'Egg',
-        normalizedName: 'egg',
-        createdAt: 1000,
-        updatedAt: 1000,
-        householdId: 'old',
-      })
-      .run();
-
-    ensureHousehold(db, 'h2');
-    for (const table of [recipes, mealPlanEntries, shoppingItems]) {
+    for (const table of contentTables) {
       const rows = db.select().from(table).all();
       expect(rows.every((row) => row.householdId === 'h2')).toBe(true);
-      expect(rows.every((row) => row.dirty === 1)).toBe(true);
+      expect(rows.every((row) => row.dirty === 0)).toBe(true);
     }
   });
 });

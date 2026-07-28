@@ -5,7 +5,7 @@ import { getSession } from '../lib/api/session';
 import { createRecipe, updateRecipe } from '../lib/db/recipes';
 import { recipes } from '../lib/db/schema';
 import { resetEngineForTests, syncNow } from '../lib/sync/engine';
-import { getSyncCursor, getSyncHouseholdId, storePullResult } from '../lib/sync/cursor';
+import { getSyncCursor, storePullResult } from '../lib/sync/cursor';
 import { getSyncStatus, resetSyncStatusForTests } from '../lib/sync/status';
 import { makeTestDb } from './helpers/testDb';
 
@@ -90,8 +90,7 @@ describe('syncNow cycle', () => {
 
     expect(apiFetchMock.mock.calls[0][0]).toBe('/api/v1/sync/push');
     expect(apiFetchMock.mock.calls[1][0]).toBe('/api/v1/sync/changes?since=0');
-    expect(getSyncCursor(db)).toBe(7); // pull cursor, never the push's 999
-    expect(getSyncHouseholdId(db)).toBe('household-1');
+    expect(getSyncCursor(db, 'household-1')).toBe(7); // pull cursor, never the push's 999
     expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(0);
     expect(getSyncStatus().state).toBe('idle');
     expect(getSyncStatus().lastSyncedAt).toBeGreaterThan(0);
@@ -99,9 +98,12 @@ describe('syncNow cycle', () => {
 
   it('skips the push entirely when nothing is dirty', async () => {
     const db = freshDb();
-    createRecipe(db, null, sampleRecipe());
+    // Created directly in household-1 (not the NULL bucket) so that
+    // adoptNullBucket at cycle start leaves it untouched — this fixture
+    // represents a row already synced in a prior cycle.
+    createRecipe(db, 'household-1', sampleRecipe());
     db.update(recipes).set({ dirty: 0 }).run();
-    storePullResult(db, 7, 'household-1');
+    storePullResult(db, 'household-1', 7);
     apiFetchMock.mockResolvedValueOnce({ ...emptyPull, cursor: 8 });
 
     await expect(syncNow()).resolves.toBe('synced');
@@ -116,9 +118,9 @@ describe('syncNow cycle', () => {
     apiFetchMock
       .mockImplementationOnce(async () => {
         // The user edits while the push request is on the wire. By this point
-        // ensureHousehold has already re-tagged the row onto the session's
-        // household (see lib/sync/cursor.ts), so the update must target that
-        // partition, not the NULL bucket it was created in.
+        // adoptNullBucket has already adopted the NULL-bucket fixture onto the
+        // session's household at cycle start (see lib/sync/cursor.ts), so the
+        // update must target that partition, not the NULL bucket it was created in.
         updateRecipe(db, 'household-1', recipeId, { ...sampleRecipe(), title: 'Redigert' });
         return { results: { [recipeId]: 'applied' }, cursor: 999 };
       })
@@ -180,39 +182,23 @@ describe('syncNow cycle', () => {
     expect(db.select().from(recipes).where(eq(recipes.id, oldId)).get()).toBeUndefined();
     expect(db.select().from(recipes).all()[0].dirty).toBe(0);
     expect(getSyncStatus().pendingConflicts).toBe(0);
-    expect(getSyncCursor(db)).toBe(2);
+    expect(getSyncCursor(db, 'household-1')).toBe(2);
   });
 
   it('a failed push fails the cycle without clearing or moving the cursor', async () => {
     const db = freshDb();
     const recipeId = createRecipe(db, null, sampleRecipe());
-    storePullResult(db, 7, 'household-1');
+    storePullResult(db, 'household-1', 7);
     apiFetchMock.mockRejectedValueOnce(new Error('down'));
 
     await expect(syncNow()).resolves.toBe('failed');
 
     expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(1);
-    expect(getSyncCursor(db)).toBe(7);
+    expect(getSyncCursor(db, 'household-1')).toBe(7);
     expect(getSyncStatus().state).toBe('error');
   });
 
-  it('household switch resets cursor and re-marks everything before pushing', async () => {
-    const db = freshDb();
-    const recipeId = createRecipe(db, null, sampleRecipe());
-    db.update(recipes).set({ dirty: 0 }).run();
-    storePullResult(db, 500, 'old-household');
-    apiFetchMock
-      .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 999 })
-      .mockResolvedValueOnce(emptyPull);
-
-    await syncNow();
-
-    // The push happened (row was re-marked dirty by the switch)...
-    expect(apiFetchMock.mock.calls[0][0]).toBe('/api/v1/sync/push');
-    // ...and the pull ran from zero.
-    expect(apiFetchMock.mock.calls[1][0]).toBe('/api/v1/sync/changes?since=0');
-    expect(getSyncHouseholdId(db)).toBe('household-1');
-  });
+  // switch-as-adoption retired in slice ③ — see per-household-sync.test.ts for the switch invariants.
 
   it('coalesces concurrent callers into the running cycle plus exactly one successful follow-up', async () => {
     const db = freshDb();
@@ -259,14 +245,14 @@ describe('syncNow cycle', () => {
     ]);
     // The follow-up completed successfully: row cleared, cursor from ITS pull.
     expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(0);
-    expect(getSyncCursor(db)).toBe(2);
+    expect(getSyncCursor(db, 'household-1')).toBe(2);
     expect(getSyncStatus().state).toBe('idle');
   });
 
-  it('a failed pull after a successful push never advances the cursor or household id', async () => {
+  it('a failed pull after a successful push never advances the cursor', async () => {
     const db = freshDb();
     const recipeId = createRecipe(db, null, sampleRecipe());
-    storePullResult(db, 7, 'household-1');
+    storePullResult(db, 'household-1', 7);
     apiFetchMock
       .mockResolvedValueOnce({ results: { [recipeId]: 'applied' }, cursor: 999 })
       .mockRejectedValueOnce(new Error('pull down'));
@@ -276,14 +262,13 @@ describe('syncNow cycle', () => {
     // The pushed row's dirty flag cleared (outcomes already processed) —
     // acceptable; what must NOT move is the pull bookkeeping.
     expect(db.select().from(recipes).where(eq(recipes.id, recipeId)).get()!.dirty).toBe(0);
-    expect(getSyncCursor(db)).toBe(7);
-    expect(getSyncHouseholdId(db)).toBe('household-1');
+    expect(getSyncCursor(db, 'household-1')).toBe(7);
     expect(getSyncStatus().state).toBe('error');
   });
 
   it('applies pulled rows through the merge', async () => {
     const db = freshDb();
-    storePullResult(db, 0, 'household-1');
+    storePullResult(db, 'household-1', 0);
     apiFetchMock.mockResolvedValueOnce({
       recipes: [
         {
@@ -307,6 +292,6 @@ describe('syncNow cycle', () => {
     await syncNow();
 
     expect(db.select().from(recipes).where(eq(recipes.id, 'server-1')).get()!.dirty).toBe(0);
-    expect(getSyncCursor(db)).toBe(3);
+    expect(getSyncCursor(db, 'household-1')).toBe(3);
   });
 });

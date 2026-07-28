@@ -8,9 +8,9 @@ import { mealPlanEntries, recipes, shoppingItems } from '../db/schema';
 import type { DB } from '../db/types';
 import { applyPull } from './apply';
 import { collectDirty, type DirtyBatch } from './collect';
-import { ensureHousehold, getSyncCursor, storePullResult } from './cursor';
+import { adoptNullBucket, getSyncCursor, storePullResult } from './cursor';
 import { type ConflictIds, remintConflicted } from './remint';
-import { markError, markIdle, markSyncing } from './status';
+import { markError, markIdle, markSkipped, markSyncing } from './status';
 
 export type SyncResult = 'synced' | 'failed' | 'skipped';
 
@@ -37,14 +37,31 @@ export function syncNow(): Promise<SyncResult> {
 async function runCycle(): Promise<SyncResult> {
   const session = getSession();
   if (session.status !== 'signedIn' || !session.householdId) return 'skipped';
+  const householdId = session.householdId;
+
+  // The cycle is pinned to the household captured above. Requests carry
+  // whatever token is CURRENT, so a rotation mid-cycle (switch, join,
+  // leave, sign-out) would push this partition's rows into the new
+  // claim's household or store a cursor under the wrong key — re-verify
+  // at every await boundary and abort instead. The queued follow-up
+  // syncs whatever household is active by then. The pre-push check also
+  // guards the synchronous collect window against future refactors that
+  // introduce earlier awaits.
+  const stillCurrent = () => getSession().householdId === householdId;
+  const abort = (): SyncResult => {
+    queued = true;
+    markSkipped();
+    return 'skipped';
+  };
 
   markSyncing();
   try {
-    ensureHousehold(db, session.householdId);
+    adoptNullBucket(db, householdId);
 
-    const batch = collectDirty(db);
+    const batch = collectDirty(db, householdId);
     let pendingConflicts = 0;
     if (!batch.isEmpty) {
+      if (!stillCurrent()) return abort();
       const response = await apiFetch<SyncPushResponseDto>('/api/v1/sync/push', {
         method: 'POST',
         body: batch.request,
@@ -59,10 +76,12 @@ async function runCycle(): Promise<SyncResult> {
       pendingConflicts = conflicts - reminted;
     }
 
-    const since = getSyncCursor(db);
+    if (!stillCurrent()) return abort();
+    const since = getSyncCursor(db, householdId);
     const pull = await apiFetch<SyncPullResponseDto>(`/api/v1/sync/changes?since=${since}`);
-    applyPull(db, pull, session.householdId);
-    storePullResult(db, pull.cursor, session.householdId);
+    if (!stillCurrent()) return abort();
+    applyPull(db, pull, householdId);
+    storePullResult(db, householdId, pull.cursor);
 
     markIdle(Date.now(), pendingConflicts);
     return 'synced';
