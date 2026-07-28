@@ -3,6 +3,7 @@ import { getApiBaseUrl } from './config';
 import {
   applyAuthResponse,
   getAccessToken,
+  getSession,
   getSessionEpoch,
   getStoredRefreshToken,
   setSessionRestoring,
@@ -24,10 +25,24 @@ export class ApiError extends Error {
 
 export class NetworkError extends Error {}
 
+// Thrown instead of retrying a 401 when the caller pinned an
+// expectedHouseholdId and the refresh that just ran landed the session on a
+// DIFFERENT household. The refresh itself is legitimate (the backend 401s
+// dead-membership tokens on purpose so clients refresh) — but replaying the
+// original request body under the new household's token would silently
+// write one household's data into another's partition. Callers that care
+// about this (the sync engine) detect it with instanceof and abort instead
+// of failing.
+export class HouseholdRotatedError extends Error {}
+
 export type ApiInit = {
   method?: string;
   body?: unknown;
   skipAuth?: boolean;
+  // When set, a 401-triggered refresh that lands the session on a household
+  // other than this one aborts the retry (see HouseholdRotatedError) instead
+  // of replaying the request under the new household's token.
+  expectedHouseholdId?: string;
 };
 
 async function parseBody(response: Response): Promise<unknown> {
@@ -59,6 +74,12 @@ export async function apiFetch<T = unknown>(path: string, init: ApiInit = {}): P
   if (response.status === 401 && !init.skipAuth && token) {
     const refreshed = await refreshSession();
     if (refreshed) {
+      if (
+        init.expectedHouseholdId !== undefined &&
+        getSession().householdId !== init.expectedHouseholdId
+      ) {
+        throw new HouseholdRotatedError();
+      }
       response = await rawFetch(path, init, getAccessToken());
     }
   }

@@ -11,6 +11,9 @@ import { makeTestDb } from './helpers/testDb';
 
 jest.mock('../lib/api/client', () => ({
   apiFetch: jest.fn(),
+  // Real class (not a jest.fn()) so engine.ts's `instanceof` check against
+  // the same mocked module's export works exactly as it does in prod.
+  HouseholdRotatedError: class HouseholdRotatedError extends Error {},
 }));
 
 jest.mock('../lib/api/session', () => ({

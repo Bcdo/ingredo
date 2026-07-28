@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import { apiFetch } from '../lib/api/client';
+import { apiFetch, HouseholdRotatedError } from '../lib/api/client';
 import { getSession } from '../lib/api/session';
 import { createRecipe } from '../lib/db/recipes';
 import { recipes } from '../lib/db/schema';
@@ -11,6 +11,9 @@ import { makeTestDb } from './helpers/testDb';
 
 jest.mock('../lib/api/client', () => ({
   apiFetch: jest.fn(),
+  // Real class (not a jest.fn()) so engine.ts's `instanceof` check against
+  // the same mocked module's export works exactly as it does in prod.
+  HouseholdRotatedError: class HouseholdRotatedError extends Error {},
 }));
 
 jest.mock('../lib/api/session', () => ({
@@ -178,6 +181,35 @@ describe('per-household sync invariants', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
+    expect(resolvedFollowUp).toBe(true);
+    expect(apiFetchMock.mock.calls[1][0]).toBe('/api/v1/sync/changes?since=0');
+    expect(getSyncCursor(db, 'h1')).toBe(0); // nothing stored under h1
+    expect(getSyncCursor(db, 'h2')).toBe(4); // follow-up synced h2
+  });
+
+  it('a HouseholdRotatedError from the push (refresh landed on a different household) aborts to skipped, not failed, and the follow-up syncs the new household', async () => {
+    const db = freshDb();
+    createRecipe(db, 'h1', sampleRecipe());
+    getSessionMock.mockReturnValue(asHousehold('h1'));
+    let resolvedFollowUp = false;
+    apiFetchMock
+      .mockImplementationOnce(async () => {
+        // client.ts detects the rotation and throws instead of retrying;
+        // by the time it does, the session already claims h2.
+        getSessionMock.mockReturnValue(asHousehold('h2'));
+        throw new HouseholdRotatedError();
+      })
+      // the queued follow-up cycle runs as h2: pull only
+      .mockImplementationOnce(async () => {
+        resolvedFollowUp = true;
+        return { recipes: [], mealPlanEntries: [], shoppingItems: [], cursor: 4 };
+      });
+
+    await expect(syncNow()).resolves.toBe('skipped');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(getSyncStatus().state).not.toBe('error');
     expect(resolvedFollowUp).toBe(true);
     expect(apiFetchMock.mock.calls[1][0]).toBe('/api/v1/sync/changes?since=0');
     expect(getSyncCursor(db, 'h1')).toBe(0); // nothing stored under h1

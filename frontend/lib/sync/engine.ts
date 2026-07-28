@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
-import { apiFetch } from '../api/client';
+import { apiFetch, HouseholdRotatedError } from '../api/client';
 import { getSession } from '../api/session';
 import type { SyncPullResponseDto, SyncPushResponseDto } from '../api/types';
 import { db } from '../db/client';
@@ -65,12 +65,16 @@ async function runCycle(): Promise<SyncResult> {
       const response = await apiFetch<SyncPushResponseDto>('/api/v1/sync/push', {
         method: 'POST',
         body: batch.request,
+        expectedHouseholdId: householdId,
       });
       const { conflicts, conflictIds } = clearPushed(db, batch, response.results);
       const reminted = remintConflicted(db, conflictIds);
       if (reminted > 0) {
-        // Re-minted rows are fresh inserts for the current household —
-        // deliver them in an immediate follow-up cycle.
+        // Re-minted rows are fresh inserts, dirty under the pinned
+        // household above. They are only delivered once a cycle runs for
+        // THAT household again — the immediate follow-up queued here syncs
+        // whatever household is active by then, which may be a different
+        // one (see abort()); it does not guarantee these rows go out next.
         queued = true;
       }
       pendingConflicts = conflicts - reminted;
@@ -78,14 +82,17 @@ async function runCycle(): Promise<SyncResult> {
 
     if (!stillCurrent()) return abort();
     const since = getSyncCursor(db, householdId);
-    const pull = await apiFetch<SyncPullResponseDto>(`/api/v1/sync/changes?since=${since}`);
+    const pull = await apiFetch<SyncPullResponseDto>(`/api/v1/sync/changes?since=${since}`, {
+      expectedHouseholdId: householdId,
+    });
     if (!stillCurrent()) return abort();
     applyPull(db, pull, householdId);
     storePullResult(db, householdId, pull.cursor);
 
     markIdle(Date.now(), pendingConflicts);
     return 'synced';
-  } catch {
+  } catch (error) {
+    if (error instanceof HouseholdRotatedError) return abort();
     markError();
     return 'failed';
   }

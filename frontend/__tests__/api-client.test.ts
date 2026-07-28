@@ -1,6 +1,7 @@
 import {
   ApiError,
   apiFetch,
+  HouseholdRotatedError,
   NetworkError,
   pendingRefresh,
   refreshSession,
@@ -106,6 +107,43 @@ describe('apiFetch', () => {
     const retryInit = fetchMock.mock.calls[2][1];
     expect((retryInit?.headers as Record<string, string>).Authorization).toBe('Bearer access-2');
     await expect(getStoredRefreshToken()).resolves.toBe('refresh-2');
+  });
+
+  it('on 401 with expectedHouseholdId: retries normally when refresh lands on the same household', async () => {
+    await applyAuthResponse(auth);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(
+        jsonResponse(200, { ...auth, accessToken: 'access-2', refreshToken: 'refresh-2' })
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { fine: true }));
+
+    const result = await apiFetch<{ fine: boolean }>('/api/v1/household', {
+      expectedHouseholdId: 'household-1',
+    });
+
+    expect(result).toEqual({ fine: true });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const retryInit = fetchMock.mock.calls[2][1];
+    expect((retryInit?.headers as Record<string, string>).Authorization).toBe('Bearer access-2');
+  });
+
+  it('on 401 with expectedHouseholdId: refresh landing on a different household throws HouseholdRotatedError and never retries', async () => {
+    await applyAuthResponse(auth);
+    const rotatedAuth: AuthResponseDto = {
+      accessToken: 'access-2',
+      refreshToken: 'refresh-2',
+      user: { ...auth.user, householdId: 'household-2', householdName: 'Annen husstand' },
+    };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, {}))
+      .mockResolvedValueOnce(jsonResponse(200, rotatedAuth));
+
+    await expect(
+      apiFetch('/api/v1/household', { expectedHouseholdId: 'household-1' })
+    ).rejects.toBeInstanceOf(HouseholdRotatedError);
+    // Original request + refresh only — no retry sent under the new household.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('when refresh returns 401: clears stored token, signs out, original error propagates', async () => {
