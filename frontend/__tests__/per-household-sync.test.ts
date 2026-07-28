@@ -6,7 +6,7 @@ import { createRecipe } from '../lib/db/recipes';
 import { recipes } from '../lib/db/schema';
 import { getSyncCursor } from '../lib/sync/cursor';
 import { resetEngineForTests, syncNow } from '../lib/sync/engine';
-import { resetSyncStatusForTests } from '../lib/sync/status';
+import { getSyncStatus, resetSyncStatusForTests } from '../lib/sync/status';
 import { makeTestDb } from './helpers/testDb';
 
 jest.mock('../lib/api/client', () => ({
@@ -213,5 +213,30 @@ describe('per-household sync invariants', () => {
     expect(db.select().from(recipes).all()).toHaveLength(0); // response discarded
     expect(getSyncCursor(db, 'h1')).toBe(0);
     expect(getSyncCursor(db, 'h2')).toBe(2); // follow-up synced h2 cleanly
+  });
+
+  it('a sign-out during the pull aborts to idle without a follow-up', async () => {
+    const db = freshDb();
+    getSessionMock.mockReturnValue(asHousehold('h1'));
+    apiFetchMock.mockImplementationOnce(async () => {
+      getSessionMock.mockReturnValue({
+        status: 'signedOut',
+        user: null,
+        householdId: null,
+        householdName: null,
+      });
+      return { recipes: [], mealPlanEntries: [], shoppingItems: [], cursor: 8 };
+    });
+
+    await expect(syncNow()).resolves.toBe('skipped');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // The queued follow-up gate-skips signed out, BEFORE markSyncing —
+    // so only the abort's markSkipped stands between this cycle and a
+    // status stuck on 'syncing' forever.
+    expect(getSyncStatus().state).toBe('idle');
+    expect(getSyncStatus().lastSyncedAt).toBeNull(); // no sync completed
+    expect(apiFetchMock).toHaveBeenCalledTimes(1);
+    expect(getSyncCursor(db, 'h1')).toBe(0);
   });
 });
