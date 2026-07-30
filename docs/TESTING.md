@@ -209,10 +209,10 @@ Backend running via `docker compose up` in `backend/` first. On a physical devic
 - Settings → Account → Sign in → create account: lands back in Settings showing your email and a personal household with a join code.
 - Kill + relaunch the app: still signed in (silent restore), no visible flicker signed out.
 - Second device (or emulator + device): register another user, join with the first user's code → both see the same member list.
-- Leave household: confirm dialog, then you get a fresh personal household; the old household still shows its content to remaining members (server-side).
+- Leave household: confirm dialog, then you land in your oldest other membership (leaving your only household is refused); the old household still shows its content to remaining members (server-side).
 - Sign out: Account section returns to signed-out state; local recipes/plans untouched.
 - Wrong password shows the inline error; joining with a bogus code shows "no household with that code".
-- NOTE until slice ④: signing in does NOT upload local content yet — the server-side household looks empty. That is expected.
+- Signing in with local content uploads it on the first sync cycle — the pre-sign-in rows are adopted into your active household (see the sync engine pass).
 
 ## Sync engine (manual pass)
 
@@ -223,7 +223,7 @@ Backend running (`docker compose up -d` in `backend/`). Two devices (or emulator
 - Delete a recipe on A → disappears from B. Re-add-style flows (shelf re-add) sync as new items.
 - Edit the SAME recipe on both devices while B is backgrounded → the later edit wins everywhere, silently.
 - Airplane mode on A, make edits → "Sync failed — will retry" after a trigger; disable airplane mode, foreground → edits flow, status recovers.
-- Join a household with local content → your content appears in the joined household on both devices; leave → your device re-populates your fresh personal household.
+- Join another household → additive: your existing content stays in your own household; switch to the joined one and only its rows appear. Leave it → you land back in your oldest other membership, content intact (switching never moves or duplicates content).
 - Sign out → status line gone, app fully local; sign back in → converges again without duplicates.
 - Purchased-shelf history, plan entries and shopping items all travel, including their tombstones (deleted things stay deleted on both sides).
 
