@@ -49,7 +49,8 @@ builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Single-instance deployment: the API migrates its own schema on startup
+// in every environment — this IS the production migration mechanism.
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
