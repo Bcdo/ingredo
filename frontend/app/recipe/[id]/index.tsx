@@ -153,7 +153,7 @@ export default function RecipeDetailScreen() {
             );
           },
         })),
-        { text: t('detail.deleteCancel'), style: 'cancel' as const },
+        { text: t('account.cancel'), style: 'cancel' as const },
       ]);
     } catch (caught) {
       setCopyFeedback({

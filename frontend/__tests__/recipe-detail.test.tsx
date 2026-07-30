@@ -314,7 +314,7 @@ describe('RecipeDetailScreen — copy to household', () => {
 
     expect(alertSpy).toHaveBeenCalledWith('Copy to which household?', undefined, expect.any(Array));
     const buttons = alertSpy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
-    expect(buttons.map((b) => b.text)).toEqual(['Hytta', 'Keep it']);
+    expect(buttons.map((b) => b.text)).toEqual(['Hytta', 'Cancel']);
 
     await act(async () => {
       buttons[0].onPress?.();
