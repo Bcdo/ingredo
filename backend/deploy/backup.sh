@@ -7,7 +7,9 @@ BACKUP_DIR="${BACKUP_DIR:-$HOME/srv/ingredo/backups}"
 KEEP=30
 
 mkdir -p "$BACKUP_DIR"
+dump="$BACKUP_DIR/ingredo-$(date +%F).dump"
 docker exec ingredo-prod-postgres-1 \
   pg_dump -Fc -U ingredo ingredo \
-  > "$BACKUP_DIR/ingredo-$(date +%F).dump"
+  > "$dump.partial"
+mv -- "$dump.partial" "$dump"
 ls -1t "$BACKUP_DIR"/ingredo-*.dump | tail -n +$((KEEP + 1)) | xargs -r rm --
