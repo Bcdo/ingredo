@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ingredo}
       POSTGRES_USER: ${POSTGRES_USER:-ingredo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in backend/.env}
-    ports:
-      - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,13 +16,10 @@ services:
   api:
     build: ./Ingredo.Api
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
       Jwt__Key: ${JWT_KEY:?set in backend/.env}
       Jwt__Issuer: ingredo-api
       Jwt__Audience: ingredo-app
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ingredo};Username=${POSTGRES_USER:-ingredo};Password=${POSTGRES_PASSWORD}
-    ports:
-      - '8080:8080'
     depends_on:
       postgres:
         condition: service_healthy

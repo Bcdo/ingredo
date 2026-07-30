@@ -1,0 +1,10 @@
+services:
+  postgres:
+    ports:
+      - '5432:5432'
+
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    ports:
+      - '8080:8080'
