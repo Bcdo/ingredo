@@ -46,14 +46,23 @@ export function storePullResult(db: DB, householdId: string, cursor: number): vo
 // so pre-sign-in deletes replicate too. Idempotent, a no-op every cycle
 // after the bucket empties. Rows of OTHER households are never touched:
 // switching is not adoption (that machinery retired with this slice).
+// One transaction: a process kill between the tables must not leave the
+// bucket half-adopted — a later cycle pinned to a DIFFERENT household
+// would otherwise adopt the remainder, splitting a plan entry from its
+// recipe across partitions.
 export function adoptNullBucket(db: DB, householdId: string): void {
-  db.update(recipes).set({ householdId, dirty: 1 }).where(inHousehold(recipes, null)).run();
-  db.update(mealPlanEntries)
-    .set({ householdId, dirty: 1 })
-    .where(inHousehold(mealPlanEntries, null))
-    .run();
-  db.update(shoppingItems)
-    .set({ householdId, dirty: 1 })
-    .where(inHousehold(shoppingItems, null))
-    .run();
+  db.transaction((tx) => {
+    const txDb = tx as unknown as DB;
+    txDb.update(recipes).set({ householdId, dirty: 1 }).where(inHousehold(recipes, null)).run();
+    txDb
+      .update(mealPlanEntries)
+      .set({ householdId, dirty: 1 })
+      .where(inHousehold(mealPlanEntries, null))
+      .run();
+    txDb
+      .update(shoppingItems)
+      .set({ householdId, dirty: 1 })
+      .where(inHousehold(shoppingItems, null))
+      .run();
+  });
 }

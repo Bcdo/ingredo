@@ -1,3 +1,5 @@
+import { sql } from 'drizzle-orm';
+
 import { newId } from '../lib/db/id';
 import { mealPlanEntries, recipes, shoppingItems } from '../lib/db/schema';
 import {
@@ -106,6 +108,25 @@ describe('adoptNullBucket', () => {
     for (const table of contentTables) {
       const rows = db.select().from(table).all();
       expect(rows.every((row) => row.householdId === 'h1')).toBe(true);
+      expect(rows.every((row) => row.dirty === 0)).toBe(true);
+    }
+  });
+
+  it('rolls back all tables when adoption fails part-way through', () => {
+    const db = makeTestDb();
+    seedRows(db, null, { dirty: 0 });
+    // shopping_items is the LAST table adoptNullBucket updates, so failing
+    // there proves the earlier recipe/plan updates roll back too.
+    db.run(
+      sql`CREATE TRIGGER block_adoption BEFORE UPDATE ON shopping_items BEGIN SELECT RAISE(ABORT, 'adoption blocked'); END`
+    );
+
+    expect(() => adoptNullBucket(db, 'h1')).toThrow();
+
+    for (const table of contentTables) {
+      const rows = db.select().from(table).all();
+      expect(rows).toHaveLength(1);
+      expect(rows.every((row) => row.householdId === null)).toBe(true);
       expect(rows.every((row) => row.dirty === 0)).toBe(true);
     }
   });
