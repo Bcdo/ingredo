@@ -1,0 +1,6 @@
+[Unit]
+Description=Nightly Ingredo production database dump
+
+[Service]
+Type=oneshot
+ExecStart=%h/srv/ingredo/backend/deploy/backup.sh
