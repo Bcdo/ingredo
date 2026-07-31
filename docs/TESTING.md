@@ -292,3 +292,18 @@ Via Scalar (or curl) against the compose stack — the app UI arrives in a later
 - Old tokens for a household you left get 401 everywhere; refresh recovers.
 - The CURRENT app still works signed into one household throughout (create/switch only via API for now).
 - Multi-household (app UI): in Settings → Account, create a second household ("Hytta") — it becomes active and the tabs go empty (fresh partition). Add a recipe there; switch back via the household list — your original content is intact and re-syncs incrementally (watch: no full re-download, no duplicates, no re-upload wave). On a recipe, "Copy to another household…" → pick the other household → switch to it: the copy is there (fresh identity, original untouched) and syncs up on that household's next cycle. Leave flows: leaving a shared household lands you in your oldest other membership; with only one household, leave is refused with "You can't leave your only household." Switching back and forth NEVER moves or duplicates content — that machinery is gone.
+
+## Deployment (manual pass)
+
+One-time production verification; gates the switch-over from LAN/dev to
+`api.kodesmien.no`. Prod stack on the desktop (`~/srv/ingredo`, see
+`backend/README.md` → Production). Phones on MOBILE DATA, not home Wi-Fi —
+off-LAN is what actually proves the tunnel.
+
+- `deploy.sh` brings the stack up; `docker compose -p ingredo-prod -f docker-compose.yml -f docker-compose.prod.yml ps` shows api, postgres and cloudflared running.
+- `https://api.kodesmien.no/health` returns Healthy from a phone browser on mobile data.
+- Register both real accounts against production (sign out of the dev server first; each device's local content uploads on its first signed-in sync — watch it appear on the other phone).
+- Recipe edit on one phone appears on the other after foregrounding; realtime: check off a shopping item and watch it flip on the other phone within seconds, still off-LAN.
+- `npm run publish:beta`, then relaunch the installed APK (Android) and reopen the project in Expo Go (iPhone) → both pick up the change.
+- Run `backend/deploy/backup.sh`, restore the dump into a scratch container (commands in `backend/README.md` → Restore) and see row counts.
+- `systemctl --user list-timers` shows `ingredo-backup.timer` scheduled.
