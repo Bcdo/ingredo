@@ -102,3 +102,75 @@ docker compose up --build     # api on http://localhost:8080
 ```bash
 dotnet test   # integration tests need Docker running (Testcontainers pulls postgres:17-alpine)
 ```
+
+## Production
+
+The production stack runs on the home desktop from a dedicated checkout at
+`~/srv/ingredo`, tracking `master`. It is the same compose stack as dev plus
+`docker-compose.prod.yml`: `ASPNETCORE_ENVIRONMENT=Production`, no host ports,
+and a `cloudflared` service that publishes the API as
+`https://api.kodesmien.no`. TLS terminates at Cloudflare's edge; WebSockets
+(SignalR) are proxied. The API migrates its own schema on startup — there is
+no manual migration step.
+
+### One-time setup
+
+1. **Tunnel:** Cloudflare dashboard → Zero Trust → Networks → Tunnels →
+   Create tunnel, name `ingredo`. Add a public hostname:
+   `api.kodesmien.no` → service `http://api:8080`. Copy the tunnel token.
+2. **Checkout:** `git clone <repo> ~/srv/ingredo && cd ~/srv/ingredo && git checkout master`
+3. **Secrets:** `cp backend/.env.example backend/.env` and fill in a fresh
+   `POSTGRES_PASSWORD`, a fresh `JWT_KEY` (`openssl rand -base64 48`), and the
+   `TUNNEL_TOKEN`. Production secrets are separate from dev ones by design.
+4. **Deploy:** `~/srv/ingredo/backend/deploy.sh`, then
+   `curl -fsS https://api.kodesmien.no/health` → `Healthy`.
+5. **Backups:**
+
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   ln -s ~/srv/ingredo/backend/deploy/ingredo-backup.{service,timer} ~/.config/systemd/user/
+   systemctl --user daemon-reload
+   systemctl --user enable --now ingredo-backup.timer
+   loginctl enable-linger "$USER"   # timers fire without an open session
+   ```
+
+### Deploying a change
+
+Merge to `master`, then run `~/srv/ingredo/backend/deploy.sh`. It pulls
+fast-forward-only, rebuilds, and restarts the `ingredo-prod` stack. Logs:
+`docker logs ingredo-prod-api-1`. A failed startup migration leaves the old
+data intact — the new container exits and logs the reason; redeploy the
+previous ref.
+
+### Restore
+
+Nightly dumps land in `~/srv/ingredo/backups/` (newest 30 kept, 03:30, `pg_dump -Fc`).
+To restore into the running stack (DESTRUCTIVE — replaces current data):
+
+```bash
+docker exec -i ingredo-prod-postgres-1 pg_restore -U ingredo -d ingredo --clean --if-exists \
+  < ~/srv/ingredo/backups/ingredo-<date>.dump
+```
+
+To inspect a dump without touching production, restore it into a scratch
+container instead:
+
+```bash
+docker run -d --name pg-scratch -e POSTGRES_PASSWORD=scratch postgres:17-alpine
+docker exec -i pg-scratch pg_restore -U postgres -d postgres --no-owner \
+  < ~/srv/ingredo/backups/ingredo-<date>.dump
+docker exec pg-scratch psql -U postgres -c 'SELECT count(*) FROM "Recipes";'
+docker rm -f pg-scratch
+```
+
+### Ops notes
+
+- Disable desktop suspend (the stack dies with the machine). Downtime is
+  benign: the app is offline-first — phones queue edits and converge on the
+  next sync after the stack returns.
+- Backup status: `systemctl --user status ingredo-backup.timer` /
+  `journalctl --user -u ingredo-backup.service`. No alerting at this scale;
+  check after reboots.
+- The dev stack (`docker compose up` in this directory) and the prod stack
+  (`-p ingredo-prod` from `~/srv/ingredo`) share nothing: separate project
+  names, containers, volumes, and `.env` files.
