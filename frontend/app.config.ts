@@ -2,7 +2,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Filled by `eas init` (see eas.json task) — used for both the EAS project
 // link and the expo-updates URL.
-const EAS_PROJECT_ID = '';
+const EAS_PROJECT_ID = '3b3e2eab-750e-4779-b257-3e1b187d373d';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,

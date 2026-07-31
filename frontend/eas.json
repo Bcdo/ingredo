@@ -1,0 +1,21 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "beta",
+      "env": {
+        "INGREDO_API_URL": "https://api.kodesmien.no"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}
