@@ -4,8 +4,8 @@ using Testcontainers.PostgreSql;
 
 namespace Ingredo.Api.Tests.Integration;
 
-// One real PostgreSQL container per test class (IClassFixture). The app
-// starts in Development, so startup migrations build the schema in the
+// One real PostgreSQL container per test class (IClassFixture). Startup
+// migrations (which run in every environment) build the schema in the
 // container automatically.
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {

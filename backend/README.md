@@ -145,11 +145,13 @@ previous ref.
 ### Restore
 
 Nightly dumps land in `~/srv/ingredo/backups/` (newest 30 kept, 03:30, `pg_dump -Fc`).
-To restore into the running stack (DESTRUCTIVE — replaces current data):
+To restore into the running stack (DESTRUCTIVE — replaces current data), stop the API container first to prevent concurrent connections from blocking drops, then restart after the restore:
 
 ```bash
+docker compose -p ingredo-prod -f docker-compose.yml -f docker-compose.prod.yml stop api
 docker exec -i ingredo-prod-postgres-1 pg_restore -U ingredo -d ingredo --clean --if-exists \
   < ~/srv/ingredo/backups/ingredo-<date>.dump
+docker compose -p ingredo-prod -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 To inspect a dump without touching production, restore it into a scratch
@@ -157,6 +159,7 @@ container instead:
 
 ```bash
 docker run -d --name pg-scratch -e POSTGRES_PASSWORD=scratch postgres:17-alpine
+until docker exec pg-scratch pg_isready -U postgres -q; do sleep 1; done
 docker exec -i pg-scratch pg_restore -U postgres -d postgres --no-owner \
   < ~/srv/ingredo/backups/ingredo-<date>.dump
 docker exec pg-scratch psql -U postgres -c 'SELECT count(*) FROM "Recipes";'
