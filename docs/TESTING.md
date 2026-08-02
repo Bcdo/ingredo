@@ -304,7 +304,7 @@ off-LAN is what actually proves the tunnel.
 - `https://api.kodesmien.no/health` returns Healthy from a phone browser on mobile data.
 - Register both real accounts against production (sign out of the dev server first; each device's local content uploads on its first signed-in sync — watch it appear on the other phone).
 - Recipe edit on one phone appears on the other after foregrounding; realtime: check off a shopping item and watch it flip on the other phone within seconds, still off-LAN.
-- `npm run publish:beta`, then relaunch the installed APK (Android) and reopen the project in Expo Go (iPhone) → both pick up the change.
+- `npm run publish:beta`, then on Android force-close the APK from recents and cold-start it TWICE (first launch downloads in the background, second applies — resuming from recents does not check); on iPhone reopen the project in Expo Go → both pick up the change.
 - Run `backend/deploy/backup.sh`, restore the dump into a scratch container (commands in `backend/README.md` → Restore) and see row counts.
 - `systemctl --user list-timers` shows `ingredo-backup.timer` scheduled.
 
