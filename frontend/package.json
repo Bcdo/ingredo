@@ -12,7 +12,7 @@
     "web": "expo start --web",
     "test": "jest",
     "build:beta": "eas build --profile preview --platform android",
-    "publish:beta": "INGREDO_API_URL=https://api.kodesmien.no eas update --branch beta"
+    "publish:beta": "INGREDO_API_URL=https://api.kodesmien.no eas update --branch beta --auto"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",
