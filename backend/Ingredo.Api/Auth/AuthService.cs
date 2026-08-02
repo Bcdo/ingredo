@@ -35,12 +35,15 @@ public sealed class AuthService(
         };
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
-        // Personal household: named after the person (no baked-in language),
-        // renameable when Phase 4 brings sharing.
+        // First household: the client sends a localized default ("Hjem"/
+        // "Home"); older clients omit it and keep the person's name.
+        // Renameable via PUT /household either way.
         var household = new Household
         {
             Id = Guid.NewGuid(),
-            Name = user.DisplayName,
+            Name = string.IsNullOrWhiteSpace(request.HouseholdName)
+                ? user.DisplayName
+                : request.HouseholdName.Trim(),
             JoinCode = await joinCodes.NewUniqueCodeAsync(cancellationToken),
             CreatedAt = now,
             UpdatedAt = now,

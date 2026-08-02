@@ -13,6 +13,13 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
             .Must(name => !string.IsNullOrWhiteSpace(name))
             .WithMessage("Display name must not be empty.")
             .MaximumLength(100);
+        When(r => r.HouseholdName is not null, () =>
+        {
+            RuleFor(r => r.HouseholdName!)
+                .Must(name => !string.IsNullOrWhiteSpace(name))
+                .WithMessage("Household name must not be empty.")
+                .MaximumLength(200);
+        });
     }
 }
 

@@ -1,6 +1,6 @@
 namespace Ingredo.Api.Auth;
 
-public sealed record RegisterRequest(string Email, string Password, string DisplayName);
+public sealed record RegisterRequest(string Email, string Password, string DisplayName, string? HouseholdName = null);
 
 public sealed record LoginRequest(string Email, string Password);
 

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Ingredo.Api.Auth;
+using Ingredo.Api.Households;
 
 namespace Ingredo.Api.Tests.Integration;
 
@@ -126,5 +127,55 @@ public class AuthApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var anonymous = await _client.GetAsync("/api/v1/auth/me");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+    }
+
+    [Fact]
+    public async Task Register_WithHouseholdName_NamesTheFirstHousehold()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            email = $"hjem-{Guid.NewGuid():N}@example.test",
+            password = "passord123",
+            displayName = "Kari",
+            householdName = "Hjem",
+        });
+        response.EnsureSuccessStatusCode();
+        var auth = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        var authed = factory.CreateClient();
+        authed.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        var household = (await authed.GetFromJsonAsync<HouseholdResponse>("/api/v1/household"))!;
+        Assert.Equal("Hjem", household.Name);
+    }
+
+    [Fact]
+    public async Task Register_WithoutHouseholdName_FallsBackToDisplayName()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            email = $"fallback-{Guid.NewGuid():N}@example.test",
+            password = "passord123",
+            displayName = "Ola Fallback",
+        });
+        response.EnsureSuccessStatusCode();
+        var auth = (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        var authed = factory.CreateClient();
+        authed.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        var household = (await authed.GetFromJsonAsync<HouseholdResponse>("/api/v1/household"))!;
+        Assert.Equal("Ola Fallback", household.Name);
+    }
+
+    [Fact]
+    public async Task Register_WithWhitespaceHouseholdName_IsRejected()
+    {
+        var response = await _client.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            email = $"blank-{Guid.NewGuid():N}@example.test",
+            password = "passord123",
+            displayName = "Kari",
+            householdName = "   ",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
