@@ -26,8 +26,15 @@ describe('app.config', () => {
     expect(cfg.name).toBe('Ingredo');
     expect(cfg.slug).toBe('ingredo');
     expect(cfg.android?.package).toBe('no.kodesmien.ingredo');
-    expect(cfg.android?.versionCode).toBe(1);
+    expect(cfg.android?.versionCode).toBe(2);
     expect(cfg.ios?.bundleIdentifier).toBe('no.kodesmien.ingredo');
     expect(cfg.runtimeVersion).toEqual({ policy: 'sdkVersion' });
+  });
+
+  it('uses the cream ground for splash and adaptive icon', () => {
+    const cfg = appConfig(ctx);
+    expect(cfg.splash?.backgroundColor).toBe('#FBF7F1');
+    expect(cfg.android?.adaptiveIcon?.backgroundColor).toBe('#FBF7F1');
+    expect(cfg.android?.adaptiveIcon?.foregroundImage).toBe('./assets/adaptive-icon.png');
   });
 });

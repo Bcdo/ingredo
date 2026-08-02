@@ -16,7 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FBF7F1',
   },
   assetBundlePatterns: ['**/*'],
   platforms: ['ios', 'android'],
@@ -31,10 +31,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'no.kodesmien.ingredo',
-    versionCode: 1,
+    versionCode: 2,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#FBF7F1',
     },
   },
   runtimeVersion: { policy: 'sdkVersion' },
