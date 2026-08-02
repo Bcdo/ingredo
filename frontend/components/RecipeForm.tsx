@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Input } from './ui/Input';
@@ -171,201 +171,205 @@ export function RecipeForm({
 
   return (
     <View className="flex-1 bg-cream" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <Pressable
-          accessibilityRole="button"
-          onPress={handleCancel}
-          className="min-h-14 justify-center pr-4">
-          <Text className="font-body-bold text-base text-ink">{t('form.cancel')}</Text>
-        </Pressable>
-        <Text className="font-display text-xl text-ink">{heading}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSave }}
-          disabled={!canSave}
-          onPress={handleSave}
-          className={`min-h-14 justify-center pl-4 ${canSave ? '' : 'opacity-40'}`}>
-          <Text className="font-body-bold text-base text-clay">{t('form.save')}</Text>
-        </Pressable>
-      </View>
-
-      {saveFailed ? (
-        <View className="mx-4 mb-2 rounded-card bg-butter px-4 py-3">
-          <Text className="font-body text-sm text-ink">{t('form.saveError')}</Text>
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
+        <View className="flex-row items-center justify-between px-4 py-3">
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleCancel}
+            className="min-h-14 justify-center pr-4">
+            <Text className="font-body-bold text-base text-ink">{t('form.cancel')}</Text>
+          </Pressable>
+          <Text className="font-display text-xl text-ink">{heading}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSave }}
+            disabled={!canSave}
+            onPress={handleSave}
+            className={`min-h-14 justify-center pl-4 ${canSave ? '' : 'opacity-40'}`}>
+            <Text className="font-body-bold text-base text-clay">{t('form.save')}</Text>
+          </Pressable>
         </View>
-      ) : null}
 
-      <ScrollView
-        className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32, gap: 16 }}
-        keyboardShouldPersistTaps="handled">
-        {allowImport ? (
-          <View className="gap-2">
-            <View className="flex-row gap-2">
-              <Input
-                value={importUrl}
-                onChangeText={(next) => {
-                  setImportUrl(next);
-                  setImportFailed(false);
-                }}
-                placeholder={t('import.placeholder')}
-                className="flex-1"
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: !canImport }}
-                disabled={!canImport}
-                onPress={runImport}
-                className={`min-h-14 items-center justify-center rounded-card bg-clay px-4 ${
-                  canImport ? '' : 'opacity-40'
-                } active:opacity-80`}>
-                <Text className="font-body-bold text-base text-cream">
-                  {importing ? t('import.importing') : t('import.button')}
-                </Text>
-              </Pressable>
-            </View>
-            {importFailed ? (
-              <View className="rounded-card bg-butter px-4 py-3">
-                <Text className="font-body text-sm text-ink">{t('import.failed')}</Text>
-              </View>
-            ) : null}
+        {saveFailed ? (
+          <View className="mx-4 mb-2 rounded-card bg-butter px-4 py-3">
+            <Text className="font-body text-sm text-ink">{t('form.saveError')}</Text>
           </View>
         ) : null}
-        <View>
-          <Input
-            label={t('form.titleLabel')}
-            value={state.title}
-            onChangeText={(title) => patch({ title })}
-            placeholder={t('form.titlePlaceholder')}
-            maxLength={FIELD_LIMITS.recipeTitle}
-          />
-          {!canSave ? (
-            <Text className="mt-1 font-body text-xs text-ink opacity-60">
-              {t('form.titleHint')}
-            </Text>
-          ) : null}
-        </View>
 
-        <Input
-          label={t('form.descriptionLabel')}
-          value={state.description}
-          onChangeText={(description) => patch({ description })}
-          multiline
-        />
-
-        <View>
-          <Text className="mb-1 font-body-bold text-sm text-ink">{t('form.servingsLabel')}</Text>
-          <Stepper value={state.servings} onChange={(servings) => patch({ servings })} />
-        </View>
-
-        <View className="gap-3">
-          <Text className="font-body-bold text-sm text-ink">{t('form.ingredientsLabel')}</Text>
-          {state.ingredients.map((ing) => (
-            <View key={ing.key} className="gap-2 rounded-card bg-linen p-3">
+        <ScrollView
+          className="flex-1 px-4"
+          contentContainerStyle={{ paddingBottom: insets.bottom + 32, gap: 16 }}
+          keyboardShouldPersistTaps="handled">
+          {allowImport ? (
+            <View className="gap-2">
               <View className="flex-row gap-2">
                 <Input
-                  value={ing.quantity}
-                  onChangeText={(quantity) => patchIngredient(ing.key, { quantity })}
-                  placeholder={t('form.quantityPlaceholder')}
-                  keyboardType="numeric"
-                  className="w-24"
-                />
-                <Input
-                  value={ing.name}
-                  onChangeText={(name) => patchIngredient(ing.key, { name })}
-                  placeholder={t('form.namePlaceholder')}
+                  value={importUrl}
+                  onChangeText={(next) => {
+                    setImportUrl(next);
+                    setImportFailed(false);
+                  }}
+                  placeholder={t('import.placeholder')}
                   className="flex-1"
-                  maxLength={FIELD_LIMITS.ingredientName}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !canImport }}
+                  disabled={!canImport}
+                  onPress={runImport}
+                  className={`min-h-14 items-center justify-center rounded-card bg-clay px-4 ${
+                    canImport ? '' : 'opacity-40'
+                  } active:opacity-80`}>
+                  <Text className="font-body-bold text-base text-cream">
+                    {importing ? t('import.importing') : t('import.button')}
+                  </Text>
+                </Pressable>
+              </View>
+              {importFailed ? (
+                <View className="rounded-card bg-butter px-4 py-3">
+                  <Text className="font-body text-sm text-ink">{t('import.failed')}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          <View>
+            <Input
+              label={t('form.titleLabel')}
+              value={state.title}
+              onChangeText={(title) => patch({ title })}
+              placeholder={t('form.titlePlaceholder')}
+              maxLength={FIELD_LIMITS.recipeTitle}
+            />
+            {!canSave ? (
+              <Text className="mt-1 font-body text-xs text-ink opacity-60">
+                {t('form.titleHint')}
+              </Text>
+            ) : null}
+          </View>
+
+          <Input
+            label={t('form.descriptionLabel')}
+            value={state.description}
+            onChangeText={(description) => patch({ description })}
+            multiline
+          />
+
+          <View>
+            <Text className="mb-1 font-body-bold text-sm text-ink">{t('form.servingsLabel')}</Text>
+            <Stepper value={state.servings} onChange={(servings) => patch({ servings })} />
+          </View>
+
+          <View className="gap-3">
+            <Text className="font-body-bold text-sm text-ink">{t('form.ingredientsLabel')}</Text>
+            {state.ingredients.map((ing) => (
+              <View key={ing.key} className="gap-2 rounded-card bg-linen p-3">
+                <View className="flex-row gap-2">
+                  <Input
+                    value={ing.quantity}
+                    onChangeText={(quantity) => patchIngredient(ing.key, { quantity })}
+                    placeholder={t('form.quantityPlaceholder')}
+                    keyboardType="numeric"
+                    className="w-24"
+                  />
+                  <Input
+                    value={ing.name}
+                    onChangeText={(name) => patchIngredient(ing.key, { name })}
+                    placeholder={t('form.namePlaceholder')}
+                    className="flex-1"
+                    maxLength={FIELD_LIMITS.ingredientName}
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('form.removeRow')}
+                    onPress={() =>
+                      patch({ ingredients: state.ingredients.filter((i) => i.key !== ing.key) })
+                    }
+                    className="h-14 w-10 items-center justify-center">
+                    <Ionicons name="close" size={20} color={palette.ink} />
+                  </Pressable>
+                </View>
+                <UnitPicker
+                  ingredient={ing}
+                  onChange={(unit) => patchIngredient(ing.key, { unit: unit === '' ? null : unit })}
+                />
+                <View className="flex-row gap-2">
+                  <UnitChip
+                    label={t('form.scalingLinear')}
+                    selected={ing.scaling === 'linear'}
+                    onPress={() => patchIngredient(ing.key, { scaling: 'linear' })}
+                  />
+                  <UnitChip
+                    label={t('form.scalingFixed')}
+                    selected={ing.scaling === 'fixed'}
+                    onPress={() => patchIngredient(ing.key, { scaling: 'fixed' })}
+                  />
+                </View>
+              </View>
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                patch({
+                  ingredients: [
+                    ...state.ingredients,
+                    { key: draftKey(), quantity: '', unit: null, name: '', scaling: 'linear' },
+                  ],
+                })
+              }
+              className="min-h-14 items-center justify-center rounded-card bg-linen active:opacity-80">
+              <Text className="font-body-bold text-base text-clay">
+                + {t('form.addIngredient')}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View className="gap-3">
+            <Text className="font-body-bold text-sm text-ink">{t('form.instructionsLabel')}</Text>
+            {state.instructions.map((step, index) => (
+              <View key={step.key} className="flex-row items-start gap-3">
+                <Text className="pt-3 font-display text-xl text-clay">{index + 1}</Text>
+                <Input
+                  value={step.text}
+                  onChangeText={(text) =>
+                    patch({
+                      instructions: state.instructions.map((s) =>
+                        s.key === step.key ? { ...s, text } : s
+                      ),
+                    })
+                  }
+                  placeholder={t('form.stepPlaceholder')}
+                  multiline
+                  className="flex-1"
                 />
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t('form.removeRow')}
                   onPress={() =>
-                    patch({ ingredients: state.ingredients.filter((i) => i.key !== ing.key) })
+                    patch({ instructions: state.instructions.filter((s) => s.key !== step.key) })
                   }
                   className="h-14 w-10 items-center justify-center">
                   <Ionicons name="close" size={20} color={palette.ink} />
                 </Pressable>
               </View>
-              <UnitPicker
-                ingredient={ing}
-                onChange={(unit) => patchIngredient(ing.key, { unit: unit === '' ? null : unit })}
-              />
-              <View className="flex-row gap-2">
-                <UnitChip
-                  label={t('form.scalingLinear')}
-                  selected={ing.scaling === 'linear'}
-                  onPress={() => patchIngredient(ing.key, { scaling: 'linear' })}
-                />
-                <UnitChip
-                  label={t('form.scalingFixed')}
-                  selected={ing.scaling === 'fixed'}
-                  onPress={() => patchIngredient(ing.key, { scaling: 'fixed' })}
-                />
-              </View>
-            </View>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              patch({
-                ingredients: [
-                  ...state.ingredients,
-                  { key: draftKey(), quantity: '', unit: null, name: '', scaling: 'linear' },
-                ],
-              })
-            }
-            className="min-h-14 items-center justify-center rounded-card bg-linen active:opacity-80">
-            <Text className="font-body-bold text-base text-clay">+ {t('form.addIngredient')}</Text>
-          </Pressable>
-        </View>
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                patch({ instructions: [...state.instructions, { key: draftKey(), text: '' }] })
+              }
+              className="min-h-14 items-center justify-center rounded-card bg-linen active:opacity-80">
+              <Text className="font-body-bold text-base text-clay">+ {t('form.addStep')}</Text>
+            </Pressable>
+          </View>
 
-        <View className="gap-3">
-          <Text className="font-body-bold text-sm text-ink">{t('form.instructionsLabel')}</Text>
-          {state.instructions.map((step, index) => (
-            <View key={step.key} className="flex-row items-start gap-3">
-              <Text className="pt-3 font-display text-xl text-clay">{index + 1}</Text>
-              <Input
-                value={step.text}
-                onChangeText={(text) =>
-                  patch({
-                    instructions: state.instructions.map((s) =>
-                      s.key === step.key ? { ...s, text } : s
-                    ),
-                  })
-                }
-                placeholder={t('form.stepPlaceholder')}
-                multiline
-                className="flex-1"
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('form.removeRow')}
-                onPress={() =>
-                  patch({ instructions: state.instructions.filter((s) => s.key !== step.key) })
-                }
-                className="h-14 w-10 items-center justify-center">
-                <Ionicons name="close" size={20} color={palette.ink} />
-              </Pressable>
-            </View>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              patch({ instructions: [...state.instructions, { key: draftKey(), text: '' }] })
-            }
-            className="min-h-14 items-center justify-center rounded-card bg-linen active:opacity-80">
-            <Text className="font-body-bold text-base text-clay">+ {t('form.addStep')}</Text>
-          </Pressable>
-        </View>
-
-        <Input
-          label={t('form.notesLabel')}
-          value={state.notes}
-          onChangeText={(notes) => patch({ notes })}
-          multiline
-        />
-      </ScrollView>
+          <Input
+            label={t('form.notesLabel')}
+            value={state.notes}
+            onChangeText={(notes) => patch({ notes })}
+            multiline
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import React from 'react';
+import { KeyboardAvoidingView } from 'react-native';
 
 import SettingsScreen from '../app/settings';
 import { applyColorMode } from '../lib/colorMode';
@@ -122,5 +123,11 @@ describe('SettingsScreen', () => {
     fireEvent.press(screen.getByText('Habits'));
 
     expect(router.push).toHaveBeenCalledWith('/habits');
+  });
+
+  it('avoids the keyboard so bottom fields stay visible', () => {
+    render(<SettingsScreen />);
+
+    expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
   });
 });

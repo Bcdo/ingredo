@@ -307,3 +307,13 @@ off-LAN is what actually proves the tunnel.
 - `npm run publish:beta`, then relaunch the installed APK (Android) and reopen the project in Expo Go (iPhone) → both pick up the change.
 - Run `backend/deploy/backup.sh`, restore the dump into a scratch container (commands in `backend/README.md` → Restore) and see row counts.
 - `systemctl --user list-timers` shows `ingredo-backup.timer` scheduled.
+
+## Beta polish (manual pass)
+
+- Recipe form: tap into "Notater" at the bottom — the field scrolls up above
+  the keyboard and the text stays visible while typing (Android APK and
+  iPhone Expo Go).
+- Settings: reveal "Bli med med kode" and tap the input — same behavior.
+- App icon: after installing the versionCode-2 APK, the home screen shows the
+  lettermark (clay "ı" with the sage leaf), not the Expo placeholder; the
+  splash screen shows the mark on cream.

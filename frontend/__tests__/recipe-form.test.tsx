@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, KeyboardAvoidingView } from 'react-native';
 
 import { RecipeForm } from '../components/RecipeForm';
 import { emptyFormState, type RecipeFormState } from '../lib/form';
@@ -125,5 +125,12 @@ describe('RecipeForm', () => {
         ingredients: [expect.objectContaining({ scaling: 'fixed' })],
       })
     );
+  });
+
+  it('avoids the keyboard so bottom fields stay visible', () => {
+    const onSave = jest.fn();
+    render(<RecipeForm heading="New" initialState={emptyFormState()} onSave={onSave} />);
+
+    expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
   });
 });
