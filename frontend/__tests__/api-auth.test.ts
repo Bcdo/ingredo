@@ -6,6 +6,7 @@ import {
   listHouseholds,
   normalizeJoinCode,
   register,
+  renameHousehold,
   signIn,
   signOut,
   switchHousehold,
@@ -61,15 +62,33 @@ describe('auth wrappers', () => {
   it('register posts and applies the auth response', async () => {
     apiFetchMock.mockResolvedValueOnce(auth);
 
-    await register('kari@example.test', 'passord123', 'Kari');
+    await register('kari@example.test', 'passord123', 'Kari', 'Hjem');
 
     expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/auth/register', {
       method: 'POST',
-      body: { email: 'kari@example.test', password: 'passord123', displayName: 'Kari' },
+      body: {
+        email: 'kari@example.test',
+        password: 'passord123',
+        displayName: 'Kari',
+        householdName: 'Hjem',
+      },
       skipAuth: true,
     });
     expect(getSession().status).toBe('signedIn');
     await expect(getStoredRefreshToken()).resolves.toBe('refresh-1');
+  });
+
+  it('renameHousehold PUTs the new name and returns the household', async () => {
+    const renamed = { id: 'household-1', name: 'Hjem', joinCode: 'ABC-DEF', members: [] };
+    apiFetchMock.mockResolvedValueOnce(renamed);
+
+    const result = await renameHousehold('Hjem');
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/household', {
+      method: 'PUT',
+      body: { name: 'Hjem' },
+    });
+    expect(result).toEqual(renamed);
   });
 
   it('signIn posts to login and applies the auth response', async () => {

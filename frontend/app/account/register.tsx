@@ -27,7 +27,7 @@ export default function RegisterScreen() {
     setBusy(true);
     setError(null);
     try {
-      await register(email.trim(), password, displayName.trim());
+      await register(email.trim(), password, displayName.trim(), t('account.defaultHouseholdName'));
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 409) {
         setError(t('account.errors.emailTaken'));

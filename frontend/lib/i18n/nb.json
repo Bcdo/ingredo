@@ -176,6 +176,7 @@
     "signOut": "Logg ut",
     "server": "Server",
     "loading": "Laster…",
+    "defaultHouseholdName": "Hjem",
     "errors": {
       "wrongCredentials": "Feil e-post eller passord.",
       "emailTaken": "E-posten er allerede registrert.",

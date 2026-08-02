@@ -10,11 +10,12 @@ import type { AuthResponseDto, HouseholdDto, HouseholdSummaryDto } from './types
 export async function register(
   email: string,
   password: string,
-  displayName: string
+  displayName: string,
+  householdName: string
 ): Promise<void> {
   const auth = await apiFetch<AuthResponseDto>('/api/v1/auth/register', {
     method: 'POST',
-    body: { email, password, displayName },
+    body: { email, password, displayName, householdName },
     skipAuth: true,
   });
   await applyAuthResponse(auth);
@@ -54,6 +55,13 @@ export function normalizeJoinCode(input: string): string {
 
 export async function getHousehold(): Promise<HouseholdDto> {
   return apiFetch<HouseholdDto>('/api/v1/household');
+}
+
+export async function renameHousehold(name: string): Promise<HouseholdDto> {
+  return apiFetch<HouseholdDto>('/api/v1/household', {
+    method: 'PUT',
+    body: { name },
+  });
 }
 
 export async function joinHousehold(code: string): Promise<void> {

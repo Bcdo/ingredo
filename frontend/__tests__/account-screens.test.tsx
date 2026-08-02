@@ -25,7 +25,10 @@ jest.mock('../lib/db/client', () => ({ db: {} }));
 const mockBack = jest.fn();
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  router: { back: (...args: unknown[]) => mockBack(...args), push: (...args: unknown[]) => mockPush(...args) },
+  router: {
+    back: (...args: unknown[]) => mockBack(...args),
+    push: (...args: unknown[]) => mockPush(...args),
+  },
 }));
 
 jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
@@ -97,7 +100,7 @@ describe('RegisterScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
 
-    expect(registerMock).toHaveBeenCalledWith('kari@example.test', 'passord123', 'Kari');
+    expect(registerMock).toHaveBeenCalledWith('kari@example.test', 'passord123', 'Kari', 'Home');
   });
 
   it('shows email-taken error on 409', async () => {

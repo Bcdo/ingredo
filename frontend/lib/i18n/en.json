@@ -176,6 +176,7 @@
     "signOut": "Sign out",
     "server": "Server",
     "loading": "Loading…",
+    "defaultHouseholdName": "Home",
     "errors": {
       "wrongCredentials": "Wrong email or password.",
       "emailTaken": "That email is already registered.",
