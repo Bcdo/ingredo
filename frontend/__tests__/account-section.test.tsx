@@ -9,6 +9,7 @@ import {
   joinHousehold,
   leaveHousehold,
   listHouseholds,
+  renameHousehold,
   signOut,
   switchHousehold,
 } from '../lib/api/auth';
@@ -25,6 +26,7 @@ jest.mock('../lib/api/auth', () => ({
   listHouseholds: jest.fn(),
   createHousehold: jest.fn(),
   switchHousehold: jest.fn(),
+  renameHousehold: jest.fn(),
   signOut: jest.fn(),
 }));
 jest.mock('../lib/api/session', () => ({
@@ -54,6 +56,7 @@ const leaveHouseholdMock = leaveHousehold as jest.Mock;
 const listHouseholdsMock = listHouseholds as jest.Mock;
 const createHouseholdMock = createHousehold as jest.Mock;
 const switchHouseholdMock = switchHousehold as jest.Mock;
+const renameHouseholdMock = renameHousehold as jest.Mock;
 const signOutMock = signOut as jest.Mock;
 
 const signedOut = { status: 'signedOut', user: null, householdId: null, householdName: null };
@@ -112,26 +115,23 @@ describe('AccountSection signed in', () => {
     listHouseholdsMock.mockResolvedValue(summaries);
   });
 
-  it('shows email, household name, join code and members', async () => {
+  it('shows email, and the expanded active row with code and members', async () => {
     render(<AccountSection />);
     await act(async () => {});
 
     expect(screen.getByText('kari@example.test')).toBeOnTheScreen();
     expect(screen.getAllByText('Karis husstand').length).toBeGreaterThan(0);
-    expect(screen.getByText('ABC-DEF')).toBeOnTheScreen();
+    expect(screen.getByText('Code: ABC-DEF')).toBeOnTheScreen();
     expect(screen.getByText('Kari')).toBeOnTheScreen();
+    expect(screen.getAllByText('Active')).toHaveLength(1);
   });
 
-  it('lists households with the active one marked and not pressable', async () => {
+  it('does not repeat the active household as a separate block', async () => {
     render(<AccountSection />);
     await act(async () => {});
 
-    expect(screen.getAllByText('Karis husstand').length).toBeGreaterThan(0);
-    expect(screen.getByText('Hytta')).toBeOnTheScreen();
-    expect(screen.getAllByText('Active')).toHaveLength(1);
-
-    fireEvent.press(screen.getByTestId('household-row-household-1'));
-    expect(switchHouseholdMock).not.toHaveBeenCalled();
+    // One list: the active name renders exactly once.
+    expect(screen.getAllByText('Karis husstand')).toHaveLength(1);
   });
 
   it('switches on pressing a non-active household', async () => {
@@ -146,24 +146,59 @@ describe('AccountSection signed in', () => {
     expect(switchHouseholdMock).toHaveBeenCalledWith('household-2');
   });
 
-  it('creates a household with the trimmed name and clears the input', async () => {
+  it('renames the active household inline', async () => {
+    renameHouseholdMock.mockResolvedValueOnce({ ...household, name: 'Hjem' });
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Rename'));
+    const input = screen.getByTestId('rename-input');
+    expect(input.props.value).toBe('Karis husstand');
+    fireEvent.changeText(input, '  Hjem  ');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Save'));
+    });
+
+    expect(renameHouseholdMock).toHaveBeenCalledWith('Hjem');
+    expect(screen.getByText('Hjem')).toBeOnTheScreen();
+    expect(screen.queryByTestId('rename-input')).toBeNull();
+  });
+
+  it('an empty rename shows the validation message without calling the API', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Rename'));
+    fireEvent.changeText(screen.getByTestId('rename-input'), '   ');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Save'));
+    });
+
+    expect(renameHouseholdMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Give the household a name.')).toBeOnTheScreen();
+  });
+
+  it('create is collapsed until revealed, then creates and collapses again', async () => {
     createHouseholdMock.mockResolvedValueOnce(undefined);
     render(<AccountSection />);
     await act(async () => {});
 
+    expect(screen.queryByTestId('create-household-input')).toBeNull();
+    fireEvent.press(screen.getByText('+ New household'));
     fireEvent.changeText(screen.getByTestId('create-household-input'), '  Hytta  ');
     await act(async () => {
       fireEvent.press(screen.getByText('Create'));
     });
 
     expect(createHouseholdMock).toHaveBeenCalledWith('Hytta');
-    expect(screen.getByTestId('create-household-input').props.value).toBe('');
+    expect(screen.queryByTestId('create-household-input')).toBeNull();
   });
 
   it('a blank create shows the validation message without calling the API', async () => {
     render(<AccountSection />);
     await act(async () => {});
 
+    fireEvent.press(screen.getByText('+ New household'));
     await act(async () => {
       fireEvent.press(screen.getByText('Create'));
     });
@@ -172,17 +207,20 @@ describe('AccountSection signed in', () => {
     expect(screen.getByText('Give the household a name.')).toBeOnTheScreen();
   });
 
-  it('joins another household with the typed code', async () => {
+  it('join is collapsed until revealed, then joins with the typed code', async () => {
     joinHouseholdMock.mockResolvedValueOnce(undefined);
     render(<AccountSection />);
     await act(async () => {});
 
+    expect(screen.queryByTestId('join-code-input')).toBeNull();
+    fireEvent.press(screen.getByText('Join with code'));
     fireEvent.changeText(screen.getByTestId('join-code-input'), 'xyz 234');
     await act(async () => {
       fireEvent.press(screen.getByText('Join'));
     });
 
     expect(joinHouseholdMock).toHaveBeenCalledWith('xyz 234');
+    expect(screen.queryByTestId('join-code-input')).toBeNull();
   });
 
   it('asks for confirmation before leaving', async () => {
@@ -213,7 +251,7 @@ describe('AccountSection signed in', () => {
     alertSpy.mockRestore();
   });
 
-  it('signs out', async () => {
+  it('signs out from the header link', async () => {
     signOutMock.mockResolvedValueOnce(undefined);
     render(<AccountSection />);
     await act(async () => {});

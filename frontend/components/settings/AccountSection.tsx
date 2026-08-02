@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, Share, Text, View } from 'react-native';
@@ -8,6 +9,7 @@ import {
   joinHousehold,
   leaveHousehold,
   listHouseholds,
+  renameHousehold,
   signOut,
   switchHousehold,
 } from '../../lib/api/auth';
@@ -19,6 +21,7 @@ import { t } from '../../lib/i18n';
 import type { HouseholdDto, HouseholdSummaryDto } from '../../lib/api/types';
 import { syncNow } from '../../lib/sync/engine';
 import { useSyncStatus } from '../../lib/sync/status';
+import { usePalette } from '../../lib/usePalette';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -67,7 +70,12 @@ export function AccountSection() {
   const [createName, setCreateName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [serverOverride, setServerOverride] = useState(() => getApiUrlOverride(db) ?? '');
+  const [revealCreate, setRevealCreate] = useState(false);
+  const [revealJoin, setRevealJoin] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   const showServerField = __DEV__ || serverOverride !== '';
+  const palette = usePalette();
 
   const signedIn = session.status === 'signedIn';
 
@@ -106,6 +114,7 @@ export function AccountSection() {
     try {
       await joinHousehold(joinCode);
       setJoinCode('');
+      setRevealJoin(false);
     } catch (caught) {
       setError(joinErrorMessage(caught));
     }
@@ -127,6 +136,32 @@ export function AccountSection() {
     try {
       await createHousehold(name);
       setCreateName('');
+      setRevealCreate(false);
+    } catch (caught) {
+      setError(createErrorMessage(caught));
+    }
+  };
+
+  const startRename = (currentName: string) => {
+    setError(null);
+    setRenameValue(currentName);
+    setRenaming(true);
+  };
+
+  const saveRename = async () => {
+    const name = renameValue.trim();
+    if (name === '') {
+      setError(t('account.errors.createInvalid'));
+      return;
+    }
+    setError(null);
+    try {
+      const renamed = await renameHousehold(name);
+      setHousehold(renamed);
+      setHouseholds((prev) =>
+        prev.map((item) => (item.id === renamed.id ? { ...item, name: renamed.name } : item))
+      );
+      setRenaming(false);
     } catch (caught) {
       setError(createErrorMessage(caught));
     }
@@ -174,10 +209,18 @@ export function AccountSection() {
   return (
     <View testID="account-section" className="px-4 pt-2">
       <Text className="mb-2 font-body-bold text-sm text-ink">{t('account.title')}</Text>
-      <Text className="font-body text-sm text-ink">{t('account.signedInAs')}</Text>
-      <Text className="mb-3 font-body-bold text-base text-ink">{session.user?.email}</Text>
+      <View className="flex-row items-center justify-between">
+        <Text className="font-body-bold text-base text-ink">{session.user?.email}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            void signOut();
+          }}>
+          <Text className="font-body text-sm text-ink underline">{t('account.signOut')}</Text>
+        </Pressable>
+      </View>
 
-      <View className="mb-3 flex-row items-center gap-3">
+      <View className="mb-3 mt-1 flex-row items-center gap-3">
         <Text testID="sync-status-line" className="font-body text-sm text-ink">
           {syncStatusLine(syncStatus)}
         </Text>
@@ -188,91 +231,128 @@ export function AccountSection() {
 
       <Text className="font-body text-sm text-ink">{t('account.householdsTitle')}</Text>
       <View className="mb-3 mt-1 gap-1">
-        {households.map((item) => (
-          <Pressable
-            key={item.id}
-            testID={`household-row-${item.id}`}
-            accessibilityRole="button"
-            disabled={item.isActive}
-            onPress={() => switchTo(item)}
-            className="flex-row items-center justify-between py-2">
-            <View>
-              <Text className="font-body-bold text-base text-ink">{item.name}</Text>
-              <Text className="font-body text-xs text-ink opacity-70">
-                {t('account.memberCount', { count: item.memberCount })}
-              </Text>
+        {households.map((item) =>
+          item.isActive ? (
+            <View
+              key={item.id}
+              testID={`household-row-${item.id}`}
+              className="rounded-card border border-clay bg-linen px-3 py-2">
+              {renaming ? (
+                <View className="flex-row items-center gap-2">
+                  <View className="flex-1">
+                    <Input
+                      testID="rename-input"
+                      value={renameValue}
+                      onChangeText={setRenameValue}
+                    />
+                  </View>
+                  <Button label={t('account.renameSave')} onPress={() => void saveRename()} />
+                  <Pressable accessibilityRole="button" onPress={() => setRenaming(false)}>
+                    <Text className="font-body text-sm text-ink underline">
+                      {t('account.cancel')}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-body-bold text-base text-ink">{item.name}</Text>
+                  <View className="flex-row items-center gap-3">
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('account.rename')}
+                      onPress={() => startRename(item.name)}>
+                      <Ionicons name="pencil" size={16} color={palette.ink} />
+                    </Pressable>
+                    <Text className="font-body-bold text-xs text-clay">
+                      {t('account.activeBadge')}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              <View className="mt-1 flex-row items-center gap-3">
+                <Text className="font-body text-sm text-ink">
+                  {t('account.codeLine', { code: household?.joinCode ?? '…' })}
+                </Text>
+                {household ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => Share.share({ message: household.joinCode })}>
+                    <Text className="font-body text-sm text-ink underline">
+                      {t('account.shareCode')}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {household ? (
+                <Text className="mt-1 font-body text-sm text-ink">
+                  {household.members.map((member) => member.displayName).join(', ')}
+                </Text>
+              ) : null}
+              <View className="mt-2">
+                <Button label={t('account.leave')} onPress={confirmLeave} variant="ghost" />
+              </View>
             </View>
-            {item.isActive ? (
-              <Text className="font-body-bold text-xs text-clay">{t('account.activeBadge')}</Text>
-            ) : null}
-          </Pressable>
-        ))}
-      </View>
-
-      <Text className="font-body text-sm text-ink">{t('account.createTitle')}</Text>
-      <View className="mb-3 mt-1 flex-row items-center gap-2">
-        <View className="flex-1">
-          <Input
-            testID="create-household-input"
-            value={createName}
-            onChangeText={setCreateName}
-            placeholder={t('account.createPlaceholder')}
-          />
-        </View>
-        <Button label={t('account.createButton')} onPress={create} />
-      </View>
-
-      <Text className="font-body text-sm text-ink">{t('account.household')}</Text>
-      <Text className="font-body-bold text-base text-ink">
-        {household?.name ?? session.householdName ?? t('account.loading')}
-      </Text>
-      {household ? (
-        <View className="mb-3">
-          <View className="flex-row items-center gap-3">
-            <Text className="font-body-bold text-lg text-ink">{household.joinCode}</Text>
+          ) : (
             <Pressable
+              key={item.id}
+              testID={`household-row-${item.id}`}
               accessibilityRole="button"
-              onPress={() => Share.share({ message: household.joinCode })}>
-              <Text className="font-body text-sm text-ink underline">
-                {t('account.shareCode')}
-              </Text>
+              onPress={() => switchTo(item)}
+              className="flex-row items-center justify-between px-3 py-2">
+              <View>
+                <Text className="font-body-bold text-base text-ink">{item.name}</Text>
+                <Text className="font-body text-xs text-ink opacity-70">
+                  {t('account.memberCount', { count: item.memberCount })}
+                </Text>
+              </View>
             </Pressable>
-          </View>
-          <Text className="mt-2 font-body text-sm text-ink">{t('account.members')}</Text>
-          {household.members.map((member) => (
-            <Text key={member.userId} className="font-body text-base text-ink">
-              {member.displayName}
-            </Text>
-          ))}
-        </View>
-      ) : null}
+          )
+        )}
+      </View>
 
-      <Text className="mt-2 font-body text-sm text-ink">{t('account.joinTitle')}</Text>
-      <View className="mt-1 flex-row items-center gap-2">
-        <View className="flex-1">
-          <Input
-            testID="join-code-input"
-            value={joinCode}
-            onChangeText={setJoinCode}
-            placeholder={t('account.joinPlaceholder')}
-            autoCapitalize="characters"
-          />
+      {revealCreate ? (
+        <View className="mb-2 flex-row items-center gap-2">
+          <View className="flex-1">
+            <Input
+              testID="create-household-input"
+              value={createName}
+              onChangeText={setCreateName}
+              placeholder={t('account.createPlaceholder')}
+            />
+          </View>
+          <Button label={t('account.createButton')} onPress={create} />
         </View>
-        <Button label={t('account.joinButton')} onPress={join} />
+      ) : (
+        <Button
+          label={t('account.createReveal')}
+          onPress={() => setRevealCreate(true)}
+          variant="ghost"
+        />
+      )}
+      <View className="mt-2">
+        {revealJoin ? (
+          <View className="flex-row items-center gap-2">
+            <View className="flex-1">
+              <Input
+                testID="join-code-input"
+                value={joinCode}
+                onChangeText={setJoinCode}
+                placeholder={t('account.joinPlaceholder')}
+                autoCapitalize="characters"
+              />
+            </View>
+            <Button label={t('account.joinButton')} onPress={join} />
+          </View>
+        ) : (
+          <Button
+            label={t('account.joinReveal')}
+            onPress={() => setRevealJoin(true)}
+            variant="ghost"
+          />
+        )}
       </View>
 
       {error ? <Text className="mt-2 font-body text-sm text-clay">{error}</Text> : null}
-
-      <View className="mt-4 gap-2">
-        <Button label={t('account.leave')} onPress={confirmLeave} variant="ghost" />
-        <Button
-          label={t('account.signOut')}
-          onPress={() => {
-            void signOut();
-          }}
-          variant="ghost"
-        />
-      </View>
       {serverField}
     </View>
   );
