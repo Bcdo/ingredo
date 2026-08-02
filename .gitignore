@@ -45,3 +45,4 @@ out/
 # --- Backend-specific ---
 backend/.env
 backend/Ingredo.Api/logs/
+.superpowers/
