@@ -345,4 +345,33 @@ describe('AccountSection signed in', () => {
     expect(screen.getByTestId('join-code-input')).toBeOnTheScreen();
     expect(screen.getByText('No household with that code.')).toBeOnTheScreen();
   });
+
+  it('a household switch closes in-progress create and join', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByText('+ New household'));
+    fireEvent.changeText(screen.getByTestId('create-household-input'), 'Hytta');
+    fireEvent.press(screen.getByText('Join with code'));
+    fireEvent.changeText(screen.getByTestId('join-code-input'), 'ABC');
+    expect(screen.getByTestId('create-household-input')).toBeOnTheScreen();
+    expect(screen.getByTestId('join-code-input')).toBeOnTheScreen();
+
+    useSessionMock.mockReturnValue({ ...signedIn, householdId: 'household-2' });
+    getHouseholdMock.mockResolvedValue({
+      id: 'household-2',
+      name: 'Hytta',
+      joinCode: 'GHI-JKL',
+      members: [],
+    });
+    listHouseholdsMock.mockResolvedValue([
+      { ...summaries[0], isActive: false },
+      { ...summaries[1], isActive: true },
+    ]);
+    screen.rerender(<AccountSection />);
+    await act(async () => {});
+
+    expect(screen.queryByTestId('create-household-input')).toBeNull();
+    expect(screen.queryByTestId('join-code-input')).toBeNull();
+  });
 });
