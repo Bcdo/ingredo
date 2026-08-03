@@ -155,6 +155,8 @@
     "submitSignIn": "Logg inn",
     "submitRegister": "Opprett konto",
     "noAccount": "Ny her? Opprett en konto",
+    "showPassword": "Vis passord",
+    "hidePassword": "Skjul passord",
     "householdsTitle": "Husholdninger",
     "activeBadge": "Aktiv",
     "memberCount": "%{count} medlemmer",

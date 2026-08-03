@@ -155,6 +155,8 @@
     "submitSignIn": "Sign in",
     "submitRegister": "Create account",
     "noAccount": "New here? Create an account",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "householdsTitle": "Households",
     "activeBadge": "Active",
     "memberCount": "%{count} members",

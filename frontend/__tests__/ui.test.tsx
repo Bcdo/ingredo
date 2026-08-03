@@ -2,8 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Stepper } from '../components/ui/Stepper';
+
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 
 describe('Button', () => {
   it('fires onPress', () => {
@@ -75,5 +78,30 @@ describe('SegmentedControl', () => {
     );
     fireEvent.press(screen.getByLabelText('US'));
     expect(onSelect).toHaveBeenCalledWith('us');
+  });
+});
+
+describe('Input', () => {
+  it('secure toggle reveals and re-hides the password', () => {
+    render(
+      <Input value="hemmelig" onChangeText={() => {}} secureTextEntry secureToggle testID="pw" />
+    );
+    expect(screen.getByTestId('pw').props.secureTextEntry).toBe(true);
+
+    fireEvent.press(screen.getByLabelText('Show password'));
+    expect(screen.getByTestId('pw').props.secureTextEntry).toBe(false);
+
+    fireEvent.press(screen.getByLabelText('Hide password'));
+    expect(screen.getByTestId('pw').props.secureTextEntry).toBe(true);
+  });
+
+  it('renders no toggle without secureToggle', () => {
+    render(<Input value="x" onChangeText={() => {}} secureTextEntry testID="pw" />);
+    expect(screen.queryByLabelText('Show password')).toBeNull();
+  });
+
+  it('passes autoFocus through to the native input', () => {
+    render(<Input value="x" onChangeText={() => {}} autoFocus testID="field" />);
+    expect(screen.getByTestId('field').props.autoFocus).toBe(true);
   });
 });
