@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Ingredo.Api.Auth;
@@ -53,7 +54,14 @@ public static class AuthSetupExtensions
                     },
                 };
             });
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            // Authenticated-by-default: an endpoint that forgets [Authorize]
+            // is closed, not open. Anonymous endpoints opt out explicitly.
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
         return services;
     }
 }

@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
@@ -10,6 +11,7 @@ using Ingredo.Api.Recipes;
 using Ingredo.Api.Shopping;
 using Ingredo.Api.Sync;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -47,6 +49,52 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
+builder.Services.AddRateLimiter(options =>
+{
+    var authLimit = builder.Configuration.GetValue("RateLimiting:Auth:PermitLimit", 10);
+    var globalLimit = builder.Configuration.GetValue("RateLimiting:Global:PermitLimit", 300);
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, _) =>
+    {
+        context.HttpContext.Response.Headers.RetryAfter = "60";
+        return ValueTask.CompletedTask;
+    };
+
+    // Behind the tunnel every socket peer is cloudflared; the real client
+    // is CF-Connecting-IP, and the origin is reachable ONLY through the
+    // tunnel, so the header cannot be spoofed from outside.
+    static string ClientKey(HttpContext context) =>
+        context.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+        ?? context.Connection.RemoteIpAddress?.ToString()
+        ?? "unknown";
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var path = context.Request.Path;
+        if (path.StartsWithSegments("/health") || path.StartsWithSegments("/hubs"))
+        {
+            return RateLimitPartition.GetNoLimiter("exempt");
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(ClientKey(context),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = globalLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+    });
+
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(ClientKey(context),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+});
+
 var app = builder.Build();
 
 // Single-instance deployment: the API migrates its own schema on startup
@@ -58,17 +106,18 @@ var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseSerilogRequestLogging();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<HouseholdGuardMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapOpenApi().AllowAnonymous();
+    app.MapScalarApiReference().AllowAnonymous();
 }
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 app.MapHub<SyncHub>("/hubs/sync");
 

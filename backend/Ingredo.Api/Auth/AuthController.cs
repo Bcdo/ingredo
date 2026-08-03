@@ -3,6 +3,7 @@ using FluentValidation;
 using Ingredo.Api.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Ingredo.Api.Auth;
 
@@ -16,6 +17,7 @@ public sealed class AuthController(
 {
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var validation = await registerValidator.ValidateAsync(request, cancellationToken);
@@ -36,6 +38,7 @@ public sealed class AuthController(
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var validation = await loginValidator.ValidateAsync(request, cancellationToken);

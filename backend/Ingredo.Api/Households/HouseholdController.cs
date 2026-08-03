@@ -4,6 +4,7 @@ using Ingredo.Api.Auth;
 using Ingredo.Api.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Ingredo.Api.Households;
 
@@ -40,6 +41,7 @@ public sealed class HouseholdController(
         await service.RegenerateCodeAsync(HouseholdId, cancellationToken);
 
     [HttpPost("join")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Join(JoinRequest request, CancellationToken cancellationToken)
     {
         var validation = await joinValidator.ValidateAsync(request, cancellationToken);
@@ -59,6 +61,7 @@ public sealed class HouseholdController(
     }
 
     [HttpPost("leave")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Leave(CancellationToken cancellationToken)
     {
         var result = await service.LeaveAsync(UserId, HouseholdId, cancellationToken);

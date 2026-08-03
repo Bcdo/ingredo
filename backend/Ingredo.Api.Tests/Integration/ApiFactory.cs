@@ -19,6 +19,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseSetting("ConnectionStrings:Default", _postgres.GetConnectionString());
         builder.UseSetting("Jwt:Key", "integration-test-signing-key-0123456789abcdef");
+        builder.UseSetting("RateLimiting:Auth:PermitLimit", "100000");
+        builder.UseSetting("RateLimiting:Global:PermitLimit", "100000");
     }
 
     async Task IAsyncLifetime.DisposeAsync()
