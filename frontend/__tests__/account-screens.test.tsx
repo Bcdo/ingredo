@@ -2,14 +2,16 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import RegisterScreen from '../app/account/register';
+import ResetScreen from '../app/account/reset';
 import SignInScreen from '../app/account/sign-in';
-import { register, signIn } from '../lib/api/auth';
+import { register, resetPassword, signIn } from '../lib/api/auth';
 import { ApiError } from '../lib/api/client';
 import { useSession } from '../lib/api/session';
 
 jest.mock('../lib/api/auth', () => ({
   signIn: jest.fn(),
   register: jest.fn(),
+  resetPassword: jest.fn(),
 }));
 
 jest.mock('../lib/api/session', () => ({
@@ -24,11 +26,15 @@ jest.mock('../lib/db/client', () => ({ db: {} }));
 
 const mockBack = jest.fn();
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+let mockSearchParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   router: {
     back: (...args: unknown[]) => mockBack(...args),
     push: (...args: unknown[]) => mockPush(...args),
+    replace: (...args: unknown[]) => mockReplace(...args),
   },
+  useLocalSearchParams: () => mockSearchParams,
 }));
 
 jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
@@ -39,6 +45,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 const signInMock = signIn as jest.Mock;
 const registerMock = register as jest.Mock;
+const resetPasswordMock = resetPassword as jest.Mock;
 const useSessionMock = useSession as jest.Mock;
 
 const signedOut = { status: 'signedOut', user: null, householdId: null, householdName: null };
@@ -46,6 +53,7 @@ const signedOut = { status: 'signedOut', user: null, householdId: null, househol
 beforeEach(() => {
   jest.clearAllMocks();
   useSessionMock.mockReturnValue(signedOut);
+  mockSearchParams = {};
 });
 
 describe('SignInScreen', () => {
@@ -93,6 +101,18 @@ describe('SignInScreen', () => {
 
     fireEvent.press(screen.getByLabelText('Show password'));
     expect(screen.getByTestId('sign-in-password').props.secureTextEntry).toBe(false);
+  });
+
+  it('links to the reset screen', () => {
+    render(<SignInScreen />);
+    fireEvent.press(screen.getByText('Forgot password?'));
+    expect(mockPush).toHaveBeenCalledWith('/account/reset');
+  });
+
+  it('shows the reset-done notice when arriving from a reset', () => {
+    mockSearchParams = { reset: 'done' };
+    render(<SignInScreen />);
+    expect(screen.getByText('Password changed — sign in.')).toBeOnTheScreen();
   });
 });
 
@@ -192,5 +212,59 @@ describe('RegisterScreen', () => {
     fireEvent.press(screen.getAllByLabelText('Show password')[0]);
     expect(screen.getByTestId('register-password').props.secureTextEntry).toBe(false);
     expect(screen.getByTestId('register-confirm').props.secureTextEntry).toBe(true);
+  });
+});
+
+describe('ResetScreen', () => {
+  const fillValid = () => {
+    fireEvent.changeText(screen.getByTestId('reset-email'), 'kari@example.test');
+    fireEvent.changeText(screen.getByTestId('reset-code'), 'ABC-DEF');
+    fireEvent.changeText(screen.getByTestId('reset-password'), 'nyttpassord123');
+    fireEvent.changeText(screen.getByTestId('reset-confirm'), 'nyttpassord123');
+  };
+
+  it('submits and lands back on sign-in with the done flag', async () => {
+    resetPasswordMock.mockResolvedValueOnce(undefined);
+    render(<ResetScreen />);
+
+    fillValid();
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Set new password' }));
+    });
+
+    expect(resetPasswordMock).toHaveBeenCalledWith(
+      'kari@example.test',
+      'ABC-DEF',
+      'nyttpassord123'
+    );
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/account/sign-in',
+      params: { reset: 'done' },
+    });
+  });
+
+  it('blocks mismatched passwords without calling the API', async () => {
+    render(<ResetScreen />);
+
+    fillValid();
+    fireEvent.changeText(screen.getByTestId('reset-confirm'), 'noe-annet-1');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Set new password' }));
+    });
+
+    expect(resetPasswordMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Passwords don't match.")).toBeOnTheScreen();
+  });
+
+  it('maps a rejected code to its own error', async () => {
+    resetPasswordMock.mockRejectedValueOnce(new ApiError(403, null));
+    render(<ResetScreen />);
+
+    fillValid();
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Set new password' }));
+    });
+
+    expect(screen.getByText('Invalid or expired code.')).toBeOnTheScreen();
   });
 });

@@ -7,6 +7,7 @@ import {
   normalizeJoinCode,
   register,
   renameHousehold,
+  resetPassword,
   signIn,
   signOut,
   switchHousehold,
@@ -90,6 +91,18 @@ describe('auth wrappers', () => {
       body: { name: 'Hjem' },
     });
     expect(result).toEqual(renamed);
+  });
+
+  it('resetPassword posts the reset body without auth', async () => {
+    apiFetchMock.mockResolvedValueOnce(undefined);
+
+    await resetPassword('kari@example.test', 'abc-def', 'nyttpassord123');
+
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: { email: 'kari@example.test', code: 'abc-def', newPassword: 'nyttpassord123' },
+      skipAuth: true,
+    });
   });
 
   it('signIn posts to login and applies the auth response', async () => {

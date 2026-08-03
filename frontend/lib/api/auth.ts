@@ -31,6 +31,18 @@ export async function signIn(email: string, password: string): Promise<void> {
   await applyAuthResponse(auth);
 }
 
+export async function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<void> {
+  await apiFetch('/api/v1/auth/reset-password', {
+    method: 'POST',
+    body: { email, code, newPassword },
+    skipAuth: true,
+  });
+}
+
 export async function signOut(): Promise<void> {
   await pendingRefresh();
   const refreshToken = await getStoredRefreshToken();

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { t } from '../../lib/i18n';
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
   const session = useSession();
+  const params = useLocalSearchParams<{ reset?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,11 @@ export default function SignInScreen() {
         autoCapitalize="none"
         className="mb-4"
       />
+      {params.reset === 'done' ? (
+        <View className="mb-3 rounded-card bg-sage px-4 py-3">
+          <Text className="font-body text-sm text-cream">{t('account.resetDone')}</Text>
+        </View>
+      ) : null}
       {error ? <Text className="mb-3 font-body text-sm text-clay">{error}</Text> : null}
       <Button label={t('account.submitSignIn')} onPress={submit} disabled={busy} />
       <Pressable
@@ -69,6 +75,12 @@ export default function SignInScreen() {
         onPress={() => router.push('/account/register')}
         className="mt-6 items-center">
         <Text className="font-body text-base text-ink underline">{t('account.noAccount')}</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/account/reset')}
+        className="mt-3 items-center">
+        <Text className="font-body text-sm text-ink underline">{t('account.forgotPassword')}</Text>
       </Pressable>
     </View>
   );

@@ -335,3 +335,15 @@ off-LAN is what actually proves the tunnel.
 - Existing accounts sign in exactly as before; sync and realtime unaffected.
 - Hammer sign-in with a wrong password 10+ times inside a minute → the
   generic error (429 behind it); a minute later it works again.
+
+## Password reset (manual pass)
+
+- Sign-in → "Glemt passord?" → the reset screen renders with email, code and
+  two password fields.
+- Mint a code for a test account (`mint-reset.sh <email>`), enter it with a
+  new password → back on sign-in with "Passordet er endret — logg inn."; the
+  old password fails, the new one signs in.
+- The other signed-in device for that account stops syncing (sessions
+  revoked) and must sign in again.
+- Reusing the same code → "Ugyldig eller utløpt kode."; a code older than an
+  hour behaves the same.
