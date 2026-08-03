@@ -40,8 +40,9 @@ public class HouseholdApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         const string password = "passord123";
         var email = $"user-{Guid.NewGuid():N}@test.local";
         var client = factory.CreateClient();
+        var invite = await factory.MintInviteCodeAsync();
         var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/register", new RegisterRequest(email, password, displayName));
+            "/api/v1/auth/register", new RegisterRequest(email, password, displayName, InviteCode: invite));
         response.EnsureSuccessStatusCode();
         client.UseTokens((await response.Content.ReadFromJsonAsync<AuthResponse>())!);
         return (client, email, password);

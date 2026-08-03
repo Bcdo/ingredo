@@ -7,6 +7,7 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
     public RegisterRequestValidator()
     {
         RuleFor(r => r.Email).NotEmpty().EmailAddress().MaximumLength(320);
+        RuleFor(r => r.InviteCode).NotEmpty();
         // Length only — no composition rules (NIST-style guidance).
         RuleFor(r => r.Password).NotEmpty().MinimumLength(8).MaximumLength(128);
         RuleFor(r => r.DisplayName)

@@ -17,6 +17,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<MealPlanEntry> MealPlanEntries => Set<MealPlanEntry>();
     public DbSet<ShoppingItem> ShoppingItems => Set<ShoppingItem>();
 
+    public DbSet<InviteCode> InviteCodes => Set<InviteCode>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Recipe>(recipe =>
@@ -154,6 +156,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasDefaultValueSql("nextval('sync_seq')")
                 .ValueGeneratedOnAddOrUpdate();
             item.HasIndex(i => new { i.HouseholdId, i.SyncSeq });
+        });
+
+        modelBuilder.Entity<InviteCode>(invite =>
+        {
+            invite.Property(i => i.Code).HasMaxLength(16);
+            invite.HasIndex(i => i.Code).IsUnique();
+            invite.Property(i => i.UsedAt).IsConcurrencyToken();
         });
     }
 }

@@ -7,6 +7,7 @@ public enum ServiceStatus
     Conflict,
     Unauthorized,
     Invalid,
+    Forbidden,
 }
 
 // Expected outcomes travel as values, not exceptions; controllers translate
@@ -18,4 +19,5 @@ public sealed record ServiceResult<T>(ServiceStatus Status, T? Value)
     public static ServiceResult<T> Conflict() => new(ServiceStatus.Conflict, default);
     public static ServiceResult<T> Unauthorized() => new(ServiceStatus.Unauthorized, default);
     public static ServiceResult<T> Invalid() => new(ServiceStatus.Invalid, default);
+    public static ServiceResult<T> Forbidden() => new(ServiceStatus.Forbidden, default);
 }

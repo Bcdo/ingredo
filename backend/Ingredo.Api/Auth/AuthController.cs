@@ -26,9 +26,12 @@ public sealed class AuthController(
         }
 
         var result = await service.RegisterAsync(request, cancellationToken);
-        return result.Status == ServiceStatus.Conflict
-            ? Conflict()
-            : StatusCode(StatusCodes.Status201Created, result.Value);
+        return result.Status switch
+        {
+            ServiceStatus.Conflict => Conflict(),
+            ServiceStatus.Forbidden => Forbid(),
+            _ => StatusCode(StatusCodes.Status201Created, result.Value),
+        };
     }
 
     [HttpPost("login")]

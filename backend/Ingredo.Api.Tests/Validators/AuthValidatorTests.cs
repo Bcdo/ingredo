@@ -9,7 +9,8 @@ public class AuthValidatorTests
     private readonly LoginRequestValidator _login = new();
     private readonly RefreshRequestValidator _refresh = new();
 
-    private static RegisterRequest ValidRegister() => new("kari@example.no", "passord123", "Kari");
+    private static RegisterRequest ValidRegister() =>
+        new("kari@example.no", "passord123", "Kari", InviteCode: "ABCDEF");
 
     [Fact]
     public void Accepts_a_valid_registration()

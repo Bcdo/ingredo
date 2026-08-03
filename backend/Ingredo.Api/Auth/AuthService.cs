@@ -18,6 +18,14 @@ public sealed class AuthService(
     public async Task<ServiceResult<AuthResponse>> RegisterAsync(
         RegisterRequest request, CancellationToken cancellationToken)
     {
+        // Invite-first ordering is deliberate: without a live code you
+        // cannot probe which emails exist.
+        var canonicalInvite = JoinCodeGenerator.Canonicalize(request.InviteCode ?? string.Empty);
+        if (canonicalInvite is null) return ServiceResult<AuthResponse>.Forbidden();
+        var invite = await db.InviteCodes.FirstOrDefaultAsync(
+            i => i.Code == canonicalInvite && i.UsedAt == null, cancellationToken);
+        if (invite is null) return ServiceResult<AuthResponse>.Forbidden();
+
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var exists = await db.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
         if (exists) return ServiceResult<AuthResponse>.Conflict();
@@ -57,11 +65,22 @@ public sealed class AuthService(
             CreatedAt = now,
         };
 
+        invite.UsedAt = now;
+        invite.UsedByUserId = user.Id;
+
         db.Users.Add(user);
         db.Households.Add(household);
         db.HouseholdMembers.Add(membership);
         var refreshValue = IssueRefreshToken(user.Id, familyId: Guid.NewGuid(), household.Id, now);
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Two registrations raced one code; the other one won.
+            return ServiceResult<AuthResponse>.Forbidden();
+        }
 
         return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user, household, refreshValue));
     }
