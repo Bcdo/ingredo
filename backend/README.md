@@ -134,6 +134,19 @@ no manual migration step.
    loginctl enable-linger "$USER"   # timers fire without an open session
    ```
 
+### Invite codes
+
+Registration requires a single-use invite code. Mint a batch on the host:
+
+```bash
+~/srv/ingredo/backend/deploy/mint-invites.sh 10   # prints codes like ABC-DEF
+```
+
+Hand out one code per tester; a code dies on use. The script prints how many
+unused codes remain and the query for a usage overview. Sensitive endpoints
+are rate-limited (10/min per client on login/register/join; 429 + Retry-After
+beyond that) — a locked-out tester just waits a minute.
+
 ### Deploying a change
 
 Merge to `master`, then run `~/srv/ingredo/backend/deploy.sh`. It pulls
