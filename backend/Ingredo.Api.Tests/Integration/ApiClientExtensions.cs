@@ -63,4 +63,24 @@ public static class ApiClientExtensions
     public static void UseTokens(this HttpClient client, AuthResponse auth) =>
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+
+    // Inserts a hashed reset code for the user — the operator mint step,
+    // minus the shell script. Returns the canonical code.
+    public static async Task<string> MintResetCodeAsync(
+        this ApiFactory factory, Guid userId, TimeSpan? ttl = null)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var code = JoinCodeGenerator.NewCode();
+        db.PasswordResetCodes.Add(new PasswordResetCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CodeHash = PasswordResetCode.HashCode(code),
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.Add(ttl ?? TimeSpan.FromMinutes(60)),
+        });
+        await db.SaveChangesAsync();
+        return code;
+    }
 }

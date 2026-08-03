@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ShoppingItem> ShoppingItems => Set<ShoppingItem>();
 
     public DbSet<InviteCode> InviteCodes => Set<InviteCode>();
+    public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -163,6 +164,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             invite.Property(i => i.Code).HasMaxLength(16);
             invite.HasIndex(i => i.Code).IsUnique();
             invite.Property(i => i.UsedAt).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<PasswordResetCode>(reset =>
+        {
+            reset.Property(r => r.CodeHash).HasMaxLength(64);
+            reset.HasIndex(r => r.CodeHash).IsUnique();
+            reset.HasIndex(r => r.UserId);
+            reset.Property(r => r.UsedAt).IsConcurrencyToken();
         });
     }
 }

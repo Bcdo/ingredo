@@ -205,6 +205,56 @@ public sealed class AuthService(
         return BuildAuthResponse(user, household, refreshValue);
     }
 
+    public async Task<ServiceResult<bool>> ResetPasswordAsync(
+        ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        // Every failure below returns the same bare Forbidden: wrong email,
+        // wrong/expired/used/raced code must be indistinguishable from
+        // outside — no oracle for account existence or code state.
+        var canonical = JoinCodeGenerator.Canonicalize(request.Code);
+        if (canonical is null) return ServiceResult<bool>.Forbidden();
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await db.Users.FirstOrDefaultAsync(
+            u => u.NormalizedEmail == normalizedEmail, cancellationToken);
+        if (user is null) return ServiceResult<bool>.Forbidden();
+
+        var now = DateTimeOffset.UtcNow;
+        var hash = PasswordResetCode.HashCode(canonical);
+        var reset = await db.PasswordResetCodes.FirstOrDefaultAsync(
+            r => r.UserId == user.Id && r.CodeHash == hash
+                && r.UsedAt == null && r.ExpiresAt > now,
+            cancellationToken);
+        if (reset is null) return ServiceResult<bool>.Forbidden();
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        user.UpdatedAt = now;
+        reset.UsedAt = now;
+
+        // A reset means the old credential may be compromised: sign the
+        // account out everywhere. Tracked updates (not ExecuteUpdate) so the
+        // revocation commits atomically with the code consumption.
+        var liveTokens = await db.RefreshTokens
+            .Where(t => t.UserId == user.Id && t.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in liveTokens)
+        {
+            token.RevokedAt = now;
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Two resets raced one code; the other one won.
+            return ServiceResult<bool>.Forbidden();
+        }
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
     private string IssueRefreshToken(Guid userId, Guid familyId, Guid householdId, DateTimeOffset now)
     {
         var value = tokens.CreateRefreshTokenValue();

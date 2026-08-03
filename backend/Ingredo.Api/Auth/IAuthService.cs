@@ -10,4 +10,5 @@ public interface IAuthService
     Task LogoutAsync(string refreshToken, CancellationToken cancellationToken);
     Task<ServiceResult<UserResponse>> MeAsync(Guid userId, CancellationToken cancellationToken);
     Task<AuthResponse> IssueTokensAsync(Guid userId, Guid householdId, CancellationToken cancellationToken);
+    Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken);
 }

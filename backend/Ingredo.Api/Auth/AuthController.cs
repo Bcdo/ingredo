@@ -13,7 +13,8 @@ public sealed class AuthController(
     IAuthService service,
     IValidator<RegisterRequest> registerValidator,
     IValidator<LoginRequest> loginValidator,
-    IValidator<RefreshRequest> refreshValidator) : ControllerBase
+    IValidator<RefreshRequest> refreshValidator,
+    IValidator<ResetPasswordRequest> resetValidator) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
@@ -74,6 +75,22 @@ public sealed class AuthController(
         // Idempotent by design: unknown or already-revoked tokens still 204.
         await service.LogoutAsync(request.RefreshToken ?? string.Empty, cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var validation = await resetValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+        {
+            validation.Errors.ForEach(e => ModelState.AddModelError(e.PropertyName, e.ErrorMessage));
+            return ValidationProblem(ModelState);
+        }
+
+        var result = await service.ResetPasswordAsync(request, cancellationToken);
+        return result.Status == ServiceStatus.Forbidden ? Forbid() : NoContent();
     }
 
     [HttpGet("me")]

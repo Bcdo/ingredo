@@ -40,3 +40,14 @@ public sealed class RefreshRequestValidator : AbstractValidator<RefreshRequest>
         RuleFor(r => r.RefreshToken).NotEmpty();
     }
 }
+
+public sealed class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
+{
+    public ResetPasswordRequestValidator()
+    {
+        RuleFor(r => r.Email).NotEmpty();
+        RuleFor(r => r.Code).NotEmpty();
+        // Same length-only policy as registration (NIST-style guidance).
+        RuleFor(r => r.NewPassword).NotEmpty().MinimumLength(8).MaximumLength(128);
+    }
+}
