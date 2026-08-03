@@ -13,20 +13,30 @@ function buildPalette(colors) {
   return { ...colors, inkMuted: `${colors.ink}99`, inkFaint: `${colors.ink}66` };
 }
 
+// Experiment: Skjærgård — summer coast. Warm sand ground, clear
+// sea-blue primary, seagrass secondary, driftwood ink. The warm
+// counterpart to Nord's wintry blue.
 const light = buildPalette({
-  cream: '#FBF7F1', // app background; also text on clay/sage surfaces
-  linen: '#F3ECE1', // secondary surfaces, ghost buttons, borders
-  clay: '#C96B45', // primary actions, active nav, quantities
-  sage: '#7D9474', // confirmation, presence, plan→shop bridge
-  sageDeep: '#50664A',
-  butter: '#F3E2BE', // gentle status (offline, pending sync); ink text on top
-  ink: '#3A322B', // text
+  cream: '#FAF6ED', // app background; also text on clay/sage surfaces
+  linen: '#F0E7D6', // secondary surfaces, ghost buttons, borders
+  clay: '#2E7DA0', // primary actions, active nav, quantities
+  sage: '#6F9884', // confirmation, presence, plan→shop bridge
+  sageDeep: '#47685A',
+  butter: '#F2E3C0', // gentle status (offline, pending sync); ink text on top
+  ink: '#3B3A34', // text
 });
 
-// Dark mirrors light on this branch: the default theme has no dark look
-// yet, so dark-scheme devices keep today's appearance. Theme experiment
-// branches override this palette.
-const dark = light;
+// Dark counterpart: dusk over water. Blues and greens lighten for the
+// navy ground; butter darkens so light ink stays readable on it.
+const dark = buildPalette({
+  cream: '#16222D',
+  linen: '#20303D',
+  clay: '#63AECF',
+  sage: '#8CB8A2',
+  sageDeep: '#A6CDB9',
+  butter: '#6B5F38',
+  ink: '#E9E4D6',
+});
 
 const palettes = { light, dark };
 
