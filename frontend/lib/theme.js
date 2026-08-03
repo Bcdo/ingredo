@@ -42,11 +42,14 @@ function cssVars(palette) {
   };
 }
 
+// Experiment: font isolation for the poll — Baloo 2 over Nunito Sans
+// (rabarbra's typefaces) on the default palette, so the font vote is
+// not confounded with colours. Loaded in app/_layout.tsx.
 const fontFamilies = {
-  display: 'Fraunces_600SemiBold',
-  displayBold: 'Fraunces_700Bold',
-  body: 'Karla_400Regular',
-  bodyBold: 'Karla_700Bold',
+  display: 'Baloo2_600SemiBold',
+  displayBold: 'Baloo2_700Bold',
+  body: 'NunitoSans_400Regular',
+  bodyBold: 'NunitoSans_700Bold',
 };
 
 module.exports = { palettes, cssVars, fontFamilies };
