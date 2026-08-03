@@ -42,11 +42,14 @@ function cssVars(palette) {
   };
 }
 
+// Experiment: Grotesk — default colours, new voice. Bricolage Grotesque
+// display over Schibsted Grotesk body (a Norwegian typeface).
+// Loaded in app/_layout.tsx.
 const fontFamilies = {
-  display: 'Fraunces_600SemiBold',
-  displayBold: 'Fraunces_700Bold',
-  body: 'Karla_400Regular',
-  bodyBold: 'Karla_700Bold',
+  display: 'BricolageGrotesque_600SemiBold',
+  displayBold: 'BricolageGrotesque_700Bold',
+  body: 'SchibstedGrotesk_400Regular',
+  bodyBold: 'SchibstedGrotesk_700Bold',
 };
 
 module.exports = { palettes, cssVars, fontFamilies };
