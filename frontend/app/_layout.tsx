@@ -132,6 +132,10 @@ export default function RootLayout() {
             name="account/register"
             options={{ presentation: 'modal', headerShown: false }}
           />
+          <Stack.Screen
+            name="account/reset"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
         </Stack>
       </View>
     </SafeAreaProvider>
