@@ -13,13 +13,13 @@ function buildPalette(colors) {
   return { ...colors, inkMuted: `${colors.ink}99`, inkFaint: `${colors.ink}66` };
 }
 
-// Experiment: Rabarbra — Nordic summer instead of Nordic winter. Celery-
-// white ground, raspberry/rhubarb primary (pink enough to never read as
-// an error color), bright herb green, spruce-cast ink.
+// Experiment: Tyttebær — Rabarbra's summer ground with the primary
+// shifted from raspberry pink to deep lingonberry red. Tests whether
+// the round-1 favourite works better without the pink buttons.
 const light = buildPalette({
   cream: '#F6F8F2', // app background; also text on clay/sage surfaces
   linen: '#E9EFE0', // secondary surfaces, ghost buttons, borders
-  clay: '#C2497B', // primary actions, active nav, quantities
+  clay: '#AC3B4E', // primary actions, active nav, quantities
   sage: '#6FA05C', // confirmation, presence, plan→shop bridge
   sageDeep: '#45703A',
   butter: '#F6E3AD', // gentle status (offline, pending sync); ink text on top
@@ -32,7 +32,7 @@ const light = buildPalette({
 const dark = buildPalette({
   cream: '#1E2620',
   linen: '#2A342C',
-  clay: '#D9739E',
+  clay: '#D2686F',
   sage: '#85B573',
   sageDeep: '#A9CB97',
   butter: '#7A6C3B',
