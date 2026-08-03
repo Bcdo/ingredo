@@ -147,6 +147,18 @@ unused codes remain and the query for a usage overview. Sensitive endpoints
 are rate-limited (10/min per client on login/register/join; 429 + Retry-After
 beyond that) — a locked-out tester just waits a minute.
 
+### Password resets
+
+A locked-out tester messages the operator; mint them a code:
+
+```bash
+~/srv/ingredo/backend/deploy/mint-reset.sh tester@example.com   # prints ABC-DEF
+```
+
+The code is single-use, dies after 60 minutes, and only its hash is stored.
+The tester enters it under "Glemt passord?" on the sign-in screen with their
+new password. A successful reset signs their account out of every device.
+
 ### Deploying a change
 
 Merge to `master`, then run `~/srv/ingredo/backend/deploy.sh`. It pulls
