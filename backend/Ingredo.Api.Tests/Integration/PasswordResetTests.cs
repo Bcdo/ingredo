@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Ingredo.Api.Auth;
 using Ingredo.Api.Households;
 
 namespace Ingredo.Api.Tests.Integration;
@@ -12,6 +13,15 @@ public class PasswordResetTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var (_, auth) = await factory.RegisterUserAsync("Kari");
         var email = auth.User.Email;
+
+        // A second, independent session (its own refresh-token family) —
+        // revocation must reach every live session, not just the one that
+        // happens to be first in some limited query.
+        var secondLogin = await factory.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
+            new { email, password = "passord123" });
+        secondLogin.EnsureSuccessStatusCode();
+        var secondAuth = (await secondLogin.Content.ReadFromJsonAsync<AuthResponse>())!;
+
         var code = await factory.MintResetCodeAsync(auth.User.Id);
         using var client = factory.CreateClient();
 
@@ -34,6 +44,10 @@ public class PasswordResetTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var refresh = await client.PostAsJsonAsync("/api/v1/auth/refresh",
             new { refreshToken = auth.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+
+        var secondRefresh = await client.PostAsJsonAsync("/api/v1/auth/refresh",
+            new { refreshToken = secondAuth.RefreshToken });
+        Assert.Equal(HttpStatusCode.Unauthorized, secondRefresh.StatusCode);
     }
 
     [Fact]
@@ -87,17 +101,32 @@ public class PasswordResetTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var (_, auth) = await factory.RegisterUserAsync("Racer");
         var code = await factory.MintResetCodeAsync(auth.User.Id);
 
-        async Task<HttpStatusCode> Attempt(string password)
+        async Task<(HttpStatusCode Status, string Password)> Attempt(string password)
         {
             using var client = factory.CreateClient();
             var response = await client.PostAsJsonAsync("/api/v1/auth/reset-password",
                 new { email = auth.User.Email, code, newPassword = password });
-            return response.StatusCode;
+            return (response.StatusCode, password);
         }
 
         var results = await Task.WhenAll(Attempt("racerpassordA1"), Attempt("racerpassordB2"));
-        Assert.Single(results, s => s == HttpStatusCode.NoContent);
-        Assert.Single(results, s => s == HttpStatusCode.Forbidden);
+        Assert.Single(results, r => r.Status == HttpStatusCode.NoContent);
+        Assert.Single(results, r => r.Status == HttpStatusCode.Forbidden);
+
+        // Not just "one 204 and one 403" — the 204 must be the one that
+        // actually took effect. A split-transaction bug can let the loser's
+        // password become live while it still gets 403.
+        var winnerPassword = results.Single(r => r.Status == HttpStatusCode.NoContent).Password;
+        var loserPassword = results.Single(r => r.Status == HttpStatusCode.Forbidden).Password;
+
+        using var loginClient = factory.CreateClient();
+        var winnerLogin = await loginClient.PostAsJsonAsync("/api/v1/auth/login",
+            new { email = auth.User.Email, password = winnerPassword });
+        Assert.Equal(HttpStatusCode.OK, winnerLogin.StatusCode);
+
+        var loserLogin = await loginClient.PostAsJsonAsync("/api/v1/auth/login",
+            new { email = auth.User.Email, password = loserPassword });
+        Assert.Equal(HttpStatusCode.Unauthorized, loserLogin.StatusCode);
     }
 
     [Fact]

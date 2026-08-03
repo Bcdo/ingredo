@@ -2,10 +2,16 @@ using System.Security.Cryptography;
 
 namespace Ingredo.Api.Households;
 
-// Join codes get read aloud across a kitchen — I/L/O/0/1 are excluded so a
-// code survives handwriting and shouting. Codes gate joining only, never
-// authentication; the 31^6 space behind an authenticated endpoint is not
-// practically enumerable.
+// Codes get read aloud across a kitchen — I/L/O/0/1 are excluded so a code
+// survives handwriting and shouting. This format now backs three code
+// kinds: household join codes, single-use invite codes, and single-use
+// password-reset codes. The first two only gate joining/registration, but a
+// live reset code is an account-takeover secret on an ANONYMOUS endpoint —
+// it is authentication-equivalent. The 31^6 space alone would not be safe
+// to expose anonymously at guessing speed; what actually defends it is the
+// "auth" rate limit (10/min, keyed on CF-Connecting-IP — trustworthy only
+// because the origin is tunnel-only, so that header can't be spoofed by an
+// external caller), single-use consumption, and the 60-minute TTL.
 public static class JoinCodeGenerator
 {
     public const string Alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
