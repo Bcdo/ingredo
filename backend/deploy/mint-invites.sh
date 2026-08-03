@@ -5,6 +5,10 @@
 set -euo pipefail
 
 N="${1:-10}"
+if ! [[ "$N" =~ ^[1-9][0-9]*$ ]]; then
+  echo "usage: mint-invites.sh [N]  (N must be a positive integer)" >&2
+  exit 1
+fi
 CONTAINER="${CONTAINER:-ingredo-prod-postgres-1}"
 ALPHABET='ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 
