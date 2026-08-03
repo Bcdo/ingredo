@@ -80,6 +80,14 @@ export function AccountSection() {
   const signedIn = session.status === 'signedIn';
 
   useEffect(() => {
+    // Any session/household transition invalidates in-progress edits: a
+    // rename left open across a switch would rename the WRONG household.
+    setRenaming(false);
+    setRenameValue('');
+    setRevealCreate(false);
+    setRevealJoin(false);
+    setCreateName('');
+    setJoinCode('');
     if (!signedIn) {
       setHousehold(null);
       setHouseholds([]);
@@ -244,6 +252,8 @@ export function AccountSection() {
                       testID="rename-input"
                       value={renameValue}
                       onChangeText={setRenameValue}
+                      autoFocus
+                      tone="cream"
                     />
                   </View>
                   <Button label={t('account.renameSave')} onPress={() => void saveRename()} />

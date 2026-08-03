@@ -317,3 +317,11 @@ off-LAN is what actually proves the tunnel.
 - App icon: after installing the versionCode-2 APK, the home screen shows the
   lettermark (clay "ı" with the sage leaf), not the Expo placeholder; the
   splash screen shows the mark on cream.
+- Register: the eye toggles visibility on both password fields; mismatched
+  passwords show "Passordene er ikke like." and no account is created; the
+  sign-in password field has the eye too.
+- Rename: tapping ✎ opens the keyboard with the cursor at the end of the
+  name, and the field is visibly distinct (cream with a clay border) from
+  the linen card behind it.
+- Start a rename, then switch household — the editor closes and nothing is
+  renamed.

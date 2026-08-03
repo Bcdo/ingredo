@@ -290,4 +290,59 @@ describe('AccountSection signed in', () => {
 
     expect(screen.getByText('Sync failed — will retry')).toBeOnTheScreen();
   });
+
+  it('the rename input auto-focuses', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByLabelText('Rename'));
+    expect(screen.getByTestId('rename-input').props.autoFocus).toBe(true);
+  });
+
+  it('a household switch closes an in-progress rename', async () => {
+    render(<AccountSection />);
+    await act(async () => {});
+    fireEvent.press(screen.getByLabelText('Rename'));
+    expect(screen.getByTestId('rename-input')).toBeOnTheScreen();
+
+    useSessionMock.mockReturnValue({ ...signedIn, householdId: 'household-2' });
+    getHouseholdMock.mockResolvedValue({
+      id: 'household-2',
+      name: 'Hytta',
+      joinCode: 'GHI-JKL',
+      members: [],
+    });
+    listHouseholdsMock.mockResolvedValue([
+      { ...summaries[0], isActive: false },
+      { ...summaries[1], isActive: true },
+    ]);
+    screen.rerender(<AccountSection />);
+    await act(async () => {});
+
+    expect(screen.queryByTestId('rename-input')).toBeNull();
+    expect(renameHouseholdMock).not.toHaveBeenCalled();
+  });
+
+  it('create and join stay revealed when the API fails', async () => {
+    createHouseholdMock.mockRejectedValueOnce(new ApiError(400, null));
+    joinHouseholdMock.mockRejectedValueOnce(new ApiError(404, null));
+    render(<AccountSection />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByText('+ New household'));
+    fireEvent.changeText(screen.getByTestId('create-household-input'), 'Hytta');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Create'));
+    });
+    expect(screen.getByTestId('create-household-input')).toBeOnTheScreen();
+    expect(screen.getByText('Give the household a name.')).toBeOnTheScreen();
+
+    fireEvent.press(screen.getByText('Join with code'));
+    fireEvent.changeText(screen.getByTestId('join-code-input'), 'ABC-DEF');
+    await act(async () => {
+      fireEvent.press(screen.getByText('Join'));
+    });
+    expect(screen.getByTestId('join-code-input')).toBeOnTheScreen();
+    expect(screen.getByText('No household with that code.')).toBeOnTheScreen();
+  });
 });
