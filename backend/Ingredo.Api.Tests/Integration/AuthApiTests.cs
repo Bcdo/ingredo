@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -270,6 +269,24 @@ public class AuthApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Register_ExistingEmail_WithDeadInviteCode_Is403NotConflict()
+    {
+        var (_, existing) = await factory.RegisterUserAsync("Kari");
+        using var client = factory.CreateClient();
+
+        // Invite-first: a dead code must not reveal that this email is taken.
+        var response = await client.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            email = existing.User.Email,
+            password = "passord123",
+            displayName = "Kari",
+            inviteCode = "ZZZ-ZZZ",
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_RacingTheSameCode_AdmitsExactlyOne()
     {
         var code = await factory.MintInviteCodeAsync();
@@ -288,7 +305,7 @@ public class AuthApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         }
 
         var results = await Task.WhenAll(Attempt("a"), Attempt("b"));
-        Assert.Single(results.Where(s => s == HttpStatusCode.Created));
-        Assert.Single(results.Where(s => s == HttpStatusCode.Forbidden));
+        Assert.Single(results, s => s == HttpStatusCode.Created);
+        Assert.Single(results, s => s == HttpStatusCode.Forbidden);
     }
 }
