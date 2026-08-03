@@ -42,11 +42,14 @@ function cssVars(palette) {
   };
 }
 
+// Experiment: font isolation for the poll — Alegreya over Alegreya Sans
+// (rosemaling's typefaces) on the default palette, so the font vote is
+// not confounded with colours. Loaded in app/_layout.tsx.
 const fontFamilies = {
-  display: 'Fraunces_600SemiBold',
-  displayBold: 'Fraunces_700Bold',
-  body: 'Karla_400Regular',
-  bodyBold: 'Karla_700Bold',
+  display: 'Alegreya_600SemiBold',
+  displayBold: 'Alegreya_700Bold',
+  body: 'AlegreyaSans_400Regular',
+  bodyBold: 'AlegreyaSans_700Bold',
 };
 
 module.exports = { palettes, cssVars, fontFamilies };

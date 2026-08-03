@@ -15,8 +15,8 @@
     "publish:beta": "INGREDO_API_URL=https://api.kodesmien.no eas update --branch beta --auto"
   },
   "dependencies": {
-    "@expo-google-fonts/fraunces": "^0.4.1",
-    "@expo-google-fonts/karla": "^0.4.2",
+    "@expo-google-fonts/alegreya": "^0.4.2",
+    "@expo-google-fonts/alegreya-sans": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@microsoft/signalr": "^10.0.0",
     "@react-navigation/native": "^7.1.6",
