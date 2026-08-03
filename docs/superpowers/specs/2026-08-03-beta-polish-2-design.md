@@ -48,7 +48,7 @@ Mismatch is purely client-side and clears on the next submit attempt like the sc
 
 ## Testing
 
-- `Input`: eye toggle flips the rendered `secureTextEntry` prop and its accessibility label both ways; `tone="cream"` reflected in the TextInput's classes; plain `secureTextEntry` without `secureToggle` renders no icon (existing call sites unaffected).
+- `Input`: eye toggle flips the rendered `secureTextEntry` prop and its accessibility label both ways; plain `secureTextEntry` without `secureToggle` renders no icon (existing call sites unaffected). The cream tone is verified by review + the manual pass (NativeWind class strings are not reliably assertable in this test setup).
 - Register screen: mismatched passwords → error text shown, `register` NOT called; matching passwords → called as today (existing 4-arg assertion). Confirm field present with its label.
 - AccountSection: rename input carries `autoFocus` and the cream tone; NEW kill-proof reset test — start a rename, then simulate a household switch (change the mocked session's `householdId` and re-render), assert the rename input is no longer rendered and `renameHousehold` was never called; create/join reveal stay OPEN on failure (rejected promise) — closing the deferred coverage gap.
 - i18n parity test covers the new keys.
