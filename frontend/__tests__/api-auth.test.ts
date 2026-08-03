@@ -62,7 +62,7 @@ describe('auth wrappers', () => {
   it('register posts and applies the auth response', async () => {
     apiFetchMock.mockResolvedValueOnce(auth);
 
-    await register('kari@example.test', 'passord123', 'Kari', 'Hjem');
+    await register('kari@example.test', 'passord123', 'Kari', 'Hjem', 'abc-def');
 
     expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/auth/register', {
       method: 'POST',
@@ -71,6 +71,7 @@ describe('auth wrappers', () => {
         password: 'passord123',
         displayName: 'Kari',
         householdName: 'Hjem',
+        inviteCode: 'abc-def',
       },
       skipAuth: true,
     });

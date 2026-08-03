@@ -13,6 +13,7 @@ import { t } from '../../lib/i18n';
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const session = useSession();
+  const [invite, setInvite] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,9 +33,17 @@ export default function RegisterScreen() {
     setBusy(true);
     setError(null);
     try {
-      await register(email.trim(), password, displayName.trim(), t('account.defaultHouseholdName'));
+      await register(
+        email.trim(),
+        password,
+        displayName.trim(),
+        t('account.defaultHouseholdName'),
+        invite.trim()
+      );
     } catch (caught) {
-      if (caught instanceof ApiError && caught.status === 409) {
+      if (caught instanceof ApiError && caught.status === 403) {
+        setError(t('account.errors.inviteInvalid'));
+      } else if (caught instanceof ApiError && caught.status === 409) {
         setError(t('account.errors.emailTaken'));
       } else if (caught instanceof ApiError && caught.status === 400) {
         setError(t('account.errors.invalidRegistration'));
@@ -51,6 +60,15 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1 bg-cream px-4" style={{ paddingTop: insets.top + 12 }}>
       <Text className="mb-6 font-display text-xl text-ink">{t('account.registerTitle')}</Text>
+      <Input
+        testID="register-invite"
+        label={t('account.inviteCode')}
+        value={invite}
+        onChangeText={setInvite}
+        placeholder="ABC-DEF"
+        autoCapitalize="characters"
+        className="mb-4"
+      />
       <Input
         testID="register-name"
         label={t('account.displayName')}

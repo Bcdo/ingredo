@@ -325,3 +325,13 @@ off-LAN is what actually proves the tunnel.
   the linen card behind it.
 - Start a rename, then switch household — the editor closes and nothing is
   renamed.
+
+## Hardening (manual pass)
+
+- Register with no invite code → friendly validation error; with a made-up
+  code ("ZZZ-ZZZ") → "Ugyldig invitasjonskode."; with a code from
+  `mint-invites.sh` → account created.
+- The same code a second time → "Ugyldig invitasjonskode." (single-use).
+- Existing accounts sign in exactly as before; sync and realtime unaffected.
+- Hammer sign-in with a wrong password 10+ times inside a minute → the
+  generic error (429 behind it); a minute later it works again.

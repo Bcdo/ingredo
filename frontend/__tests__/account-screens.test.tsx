@@ -101,6 +101,7 @@ describe('RegisterScreen', () => {
     registerMock.mockResolvedValueOnce(undefined);
     render(<RegisterScreen />);
 
+    fireEvent.changeText(screen.getByTestId('register-invite'), 'ABC-DEF');
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
@@ -109,13 +110,20 @@ describe('RegisterScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
 
-    expect(registerMock).toHaveBeenCalledWith('kari@example.test', 'passord123', 'Kari', 'Home');
+    expect(registerMock).toHaveBeenCalledWith(
+      'kari@example.test',
+      'passord123',
+      'Kari',
+      'Home',
+      'ABC-DEF'
+    );
   });
 
   it('shows email-taken error on 409', async () => {
     registerMock.mockRejectedValueOnce(new ApiError(409, null));
     render(<RegisterScreen />);
 
+    fireEvent.changeText(screen.getByTestId('register-invite'), 'ABC-DEF');
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
@@ -131,6 +139,7 @@ describe('RegisterScreen', () => {
     registerMock.mockRejectedValueOnce(new ApiError(400, null));
     render(<RegisterScreen />);
 
+    fireEvent.changeText(screen.getByTestId('register-invite'), 'ABC-DEF');
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'kort');
@@ -147,6 +156,7 @@ describe('RegisterScreen', () => {
   it('blocks mismatched passwords without calling the API', async () => {
     render(<RegisterScreen />);
 
+    fireEvent.changeText(screen.getByTestId('register-invite'), 'ABC-DEF');
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
@@ -157,6 +167,22 @@ describe('RegisterScreen', () => {
 
     expect(registerMock).not.toHaveBeenCalled();
     expect(screen.getByText("Passwords don't match.")).toBeOnTheScreen();
+  });
+
+  it('maps a rejected invite code to its own error', async () => {
+    registerMock.mockRejectedValueOnce(new ApiError(403, null));
+    render(<RegisterScreen />);
+
+    fireEvent.changeText(screen.getByTestId('register-invite'), 'ZZZ-ZZZ');
+    fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
+    fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
+    fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
+    fireEvent.changeText(screen.getByTestId('register-confirm'), 'passord123');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    });
+
+    expect(screen.getByText("That invite code isn't valid.")).toBeOnTheScreen();
   });
 
   it('the eye reveals the password', () => {

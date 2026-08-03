@@ -11,11 +11,12 @@ export async function register(
   email: string,
   password: string,
   displayName: string,
-  householdName: string
+  householdName: string,
+  inviteCode: string
 ): Promise<void> {
   const auth = await apiFetch<AuthResponseDto>('/api/v1/auth/register', {
     method: 'POST',
-    body: { email, password, displayName, householdName },
+    body: { email, password, displayName, householdName, inviteCode },
     skipAuth: true,
   });
   await applyAuthResponse(auth);
