@@ -16,6 +16,7 @@ export default function RegisterScreen() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -24,6 +25,10 @@ export default function RegisterScreen() {
   }, [session.status]);
 
   const submit = async () => {
+    if (password !== confirm) {
+      setError(t('account.errors.passwordMismatch'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -68,6 +73,17 @@ export default function RegisterScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        secureToggle
+        autoCapitalize="none"
+        className="mb-4"
+      />
+      <Input
+        testID="register-confirm"
+        label={t('account.confirmPassword')}
+        value={confirm}
+        onChangeText={setConfirm}
+        secureTextEntry
+        secureToggle
         autoCapitalize="none"
         className="mb-4"
       />

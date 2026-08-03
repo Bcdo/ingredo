@@ -58,6 +58,7 @@ export default function SignInScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        secureToggle
         autoCapitalize="none"
         className="mb-4"
       />

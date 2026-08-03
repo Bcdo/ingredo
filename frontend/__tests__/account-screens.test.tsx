@@ -86,6 +86,14 @@ describe('SignInScreen', () => {
     fireEvent.press(screen.getByText('New here? Create an account'));
     expect(mockPush).toHaveBeenCalledWith('/account/register');
   });
+
+  it('the eye reveals the password', () => {
+    render(<SignInScreen />);
+    expect(screen.getByTestId('sign-in-password').props.secureTextEntry).toBe(true);
+
+    fireEvent.press(screen.getByLabelText('Show password'));
+    expect(screen.getByTestId('sign-in-password').props.secureTextEntry).toBe(false);
+  });
 });
 
 describe('RegisterScreen', () => {
@@ -96,6 +104,7 @@ describe('RegisterScreen', () => {
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
+    fireEvent.changeText(screen.getByTestId('register-confirm'), 'passord123');
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
@@ -110,6 +119,7 @@ describe('RegisterScreen', () => {
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
+    fireEvent.changeText(screen.getByTestId('register-confirm'), 'passord123');
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
@@ -124,6 +134,7 @@ describe('RegisterScreen', () => {
     fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
     fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
     fireEvent.changeText(screen.getByTestId('register-password'), 'kort');
+    fireEvent.changeText(screen.getByTestId('register-confirm'), 'kort');
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     });
@@ -131,5 +142,29 @@ describe('RegisterScreen', () => {
     expect(
       screen.getByText('Check the fields — the password needs at least 8 characters.')
     ).toBeOnTheScreen();
+  });
+
+  it('blocks mismatched passwords without calling the API', async () => {
+    render(<RegisterScreen />);
+
+    fireEvent.changeText(screen.getByTestId('register-name'), 'Kari');
+    fireEvent.changeText(screen.getByTestId('register-email'), 'kari@example.test');
+    fireEvent.changeText(screen.getByTestId('register-password'), 'passord123');
+    fireEvent.changeText(screen.getByTestId('register-confirm'), 'passord124');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    });
+
+    expect(registerMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Passwords don't match.")).toBeOnTheScreen();
+  });
+
+  it('the eye reveals the password', () => {
+    render(<RegisterScreen />);
+    expect(screen.getByTestId('register-password').props.secureTextEntry).toBe(true);
+
+    fireEvent.press(screen.getAllByLabelText('Show password')[0]);
+    expect(screen.getByTestId('register-password').props.secureTextEntry).toBe(false);
+    expect(screen.getByTestId('register-confirm').props.secureTextEntry).toBe(true);
   });
 });
