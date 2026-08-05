@@ -37,4 +37,14 @@ describe('app.config', () => {
     expect(cfg.android?.adaptiveIcon?.backgroundColor).toBe('#FBF7F1');
     expect(cfg.android?.adaptiveIcon?.foregroundImage).toBe('./assets/adaptive-icon.png');
   });
+
+  it('uses pre-launch semver', () => {
+    expect(appConfig(ctx).version).toBe('0.1.0');
+  });
+
+  it('snapshots the git hash into extra.build', () => {
+    const build = appConfig(ctx).extra?.build as { gitHash: string | null };
+    // This test runs inside the repo, so the hash must resolve.
+    expect(build.gitHash).toMatch(/^[0-9a-f]{7,12}$/);
+  });
 });
