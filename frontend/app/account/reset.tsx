@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
+import { CodeInput } from '../../components/ui/CodeInput';
 import { Input } from '../../components/ui/Input';
 import { resetPassword } from '../../lib/api/auth';
 import { ApiError, NetworkError } from '../../lib/api/client';
@@ -56,13 +57,12 @@ export default function ResetScreen() {
         autoCapitalize="none"
         className="mb-4"
       />
-      <Input
+      <CodeInput
         testID="reset-code"
         label={t('account.resetCode')}
         value={code}
         onChangeText={setCode}
         placeholder="ABC-DEF"
-        autoCapitalize="characters"
         className="mb-4"
       />
       <Input

@@ -13,6 +13,7 @@ type InputProps = {
   multiline?: boolean;
   keyboardType?: 'default' | 'numeric' | 'email-address';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
   secureTextEntry?: boolean;
   // Eye button inside the field that reveals/hides a secure entry.
   secureToggle?: boolean;
@@ -32,6 +33,7 @@ export function Input({
   multiline = false,
   keyboardType = 'default',
   autoCapitalize = 'sentences',
+  autoCorrect = true,
   secureTextEntry = false,
   secureToggle = false,
   autoFocus = false,
@@ -55,6 +57,7 @@ export function Input({
           multiline={multiline}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
           secureTextEntry={secureTextEntry && !revealed}
           autoFocus={autoFocus}
           testID={testID}

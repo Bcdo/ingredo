@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
+import { CodeInput } from '../../components/ui/CodeInput';
 import { Input } from '../../components/ui/Input';
 import { register } from '../../lib/api/auth';
 import { ApiError, NetworkError } from '../../lib/api/client';
@@ -60,13 +61,12 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1 bg-cream px-4" style={{ paddingTop: insets.top + 12 }}>
       <Text className="mb-6 font-display text-xl text-ink">{t('account.registerTitle')}</Text>
-      <Input
+      <CodeInput
         testID="register-invite"
         label={t('account.inviteCode')}
         value={invite}
         onChangeText={setInvite}
         placeholder="ABC-DEF"
-        autoCapitalize="characters"
         className="mb-4"
       />
       <Input
