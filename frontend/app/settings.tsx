@@ -6,7 +6,9 @@ import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AccountSection } from '../components/settings/AccountSection';
+import { HouseholdsSection } from '../components/settings/HouseholdsSection';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { SectionHeader } from '../components/ui/SectionHeader';
 import { applyColorMode } from '../lib/colorMode';
 import { db } from '../lib/db/client';
 import {
@@ -61,8 +63,9 @@ export default function SettingsScreen() {
       <KeyboardAvoidingView className="flex-1" behavior="padding">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
           <AccountSection />
-          <View testID="appearance-section" className="px-4 pt-2">
-            <Text className="mb-2 font-body-bold text-sm text-ink">{t('settings.appearance')}</Text>
+          <HouseholdsSection />
+          <View testID="appearance-section" className="px-4 pt-8">
+            <SectionHeader title={t('settings.appearance')} />
             <SegmentedControl<ColorMode>
               segments={[
                 { key: 'light', label: t('settings.modeLight') },
@@ -73,8 +76,8 @@ export default function SettingsScreen() {
               onSelect={select}
             />
           </View>
-          <View testID="language-section" className="px-4 pt-6">
-            <Text className="mb-2 font-body-bold text-sm text-ink">{t('settings.language')}</Text>
+          <View testID="language-section" className="px-4 pt-8">
+            <SectionHeader title={t('settings.language')} />
             <SegmentedControl<LanguageMode>
               segments={[
                 { key: 'nb', label: t('settings.languageNorwegian') },
@@ -85,7 +88,7 @@ export default function SettingsScreen() {
               onSelect={selectLanguage}
             />
           </View>
-          <View className="px-4 pt-6">
+          <View className="px-4 pt-8">
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push('/habits')}
