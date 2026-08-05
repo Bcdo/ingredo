@@ -7,6 +7,7 @@ import SettingsScreen from '../app/settings';
 import { applyColorMode } from '../lib/colorMode';
 import { getColorMode, getLanguageMode, setColorMode, setLanguageMode } from '../lib/db/settings';
 import { applyLanguageMode } from '../lib/locale';
+import Constants from 'expo-constants';
 
 jest.mock('../lib/db/client', () => ({ db: {} }));
 
@@ -42,6 +43,13 @@ jest.mock('../lib/db/settings', () => ({
   setLanguageMode: jest.fn(),
 }));
 
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { version: '0.1.0', extra: { build: { gitHash: 'abc1234' } } },
+  },
+}));
+
 const getColorModeMock = getColorMode as jest.Mock;
 const setColorModeMock = setColorMode as jest.Mock;
 const applyColorModeMock = applyColorMode as jest.Mock;
@@ -55,6 +63,8 @@ describe('SettingsScreen', () => {
     jest.clearAllMocks();
     getColorModeMock.mockReturnValue('system');
     getLanguageModeMock.mockReturnValue('system');
+    (Constants.expoConfig!.extra as { build: { gitHash: string | null } }).build.gitHash =
+      'abc1234';
   });
 
   it('renders the three modes with the stored one selected', () => {
@@ -129,5 +139,16 @@ describe('SettingsScreen', () => {
     render(<SettingsScreen />);
 
     expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
+  });
+
+  it('shows the version footer with the build hash', () => {
+    render(<SettingsScreen />);
+    expect(screen.getByText('Ingredo 0.1.0 · abc1234')).toBeTruthy();
+  });
+
+  it('omits the hash from the footer when unavailable', () => {
+    (Constants.expoConfig!.extra as { build: { gitHash: string | null } }).build.gitHash = null;
+    render(<SettingsScreen />);
+    expect(screen.getByText('Ingredo 0.1.0')).toBeTruthy();
   });
 });

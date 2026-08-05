@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +39,12 @@ export default function SettingsScreen() {
     setLanguage(next);
     applyLanguageMode(next);
   };
+
+  const build = (Constants.expoConfig?.extra as { build?: { gitHash: string | null } } | undefined)
+    ?.build;
+  const versionLine = [`Ingredo ${Constants.expoConfig?.version ?? '0.0.0'}`, build?.gitHash]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <View className="flex-1 bg-cream" style={{ paddingTop: insets.top }}>
@@ -87,6 +94,9 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-forward" size={20} color={palette.ink} />
             </Pressable>
           </View>
+          <Text className="pb-2 pt-8 text-center font-body text-xs text-ink opacity-50">
+            {versionLine}
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
