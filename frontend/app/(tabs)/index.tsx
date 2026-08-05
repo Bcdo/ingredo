@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { ShoppingCard } from '../../components/today/ShoppingCard';
 import { addDays, todayLocal } from '../../lib/dates';
 import { db } from '../../lib/db/client';
 import { inHousehold, notDeleted } from '../../lib/db/predicates';
@@ -111,6 +112,8 @@ export default function TodayScreen() {
           ))}
         </View>
       ) : null}
+
+      <ShoppingCard />
     </ScrollView>
   );
 }

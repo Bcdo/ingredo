@@ -28,6 +28,10 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+jest.mock('../components/today/ShoppingCard', () => ({
+  ShoppingCard: () => null,
+}));
+
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 const today = todayLocal();
 const tomorrow = addDays(today, 1);

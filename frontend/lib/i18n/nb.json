@@ -19,7 +19,12 @@
     "tonight": "I kveld",
     "tomorrow": "I morgen",
     "nothingTonight": "Ingenting planlagt i kveld.",
-    "planWeek": "Planlegg uken"
+    "planWeek": "Planlegg uken",
+    "shoppingTitle": "Handleliste",
+    "itemsToBuy": {
+      "one": "1 vare å kjøpe",
+      "other": "%{count} varer å kjøpe"
+    }
   },
   "recipes": {
     "title": "Oppskrifter",
