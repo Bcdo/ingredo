@@ -32,8 +32,11 @@ API/compat is verified against current docs before installing; see fallback.
   the new order. **No visual affordance** — no drag handle, no icon, no hint
   text. Discovery matches the tester's own expectation ("hold in on steps").
 - Long-press **inside the text input keeps native text behavior**
-  (cursor/selection). The drag gesture activates from the rest of the row:
-  step number, row padding, the delete-button column.
+  (cursor/selection). The drag gesture activates only from the step-number
+  column — an invisible touch zone (~32px wide, full row height) around the
+  number. The delete button stays a plain tap target. (Narrowed from the
+  original "rest of the row" wording during implementation; confirmed with
+  the user 2026-08-10 after final review.)
 - While lifted, the row gets the library's default lift treatment (scale/
   shadow); step numbers renumber on drop since they render from index.
 

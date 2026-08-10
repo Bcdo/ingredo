@@ -341,7 +341,7 @@ export function RecipeForm({
                   <View className="flex-row items-start gap-3">
                     <Sortable.Handle>
                       <View className="min-h-14 w-8 items-center pt-3">
-                        <Text className="font-display text-xl text-clay">{index + 1}</Text>
+                        <Text className="font-display text-xl text-clay">{index === -1 ? '' : index + 1}</Text>
                       </View>
                     </Sortable.Handle>
                     <Input
