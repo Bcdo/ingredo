@@ -296,7 +296,7 @@ describe('RecipeDetailScreen — copy to household', () => {
     render(<RecipeDetailScreen />);
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Copy to another household…'));
+      fireEvent.press(screen.getByText('Copy to another household'));
     });
 
     expect(screen.getByText("You're only in one household.")).toBeOnTheScreen();
@@ -309,7 +309,7 @@ describe('RecipeDetailScreen — copy to household', () => {
     render(<RecipeDetailScreen />);
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Copy to another household…'));
+      fireEvent.press(screen.getByText('Copy to another household'));
     });
 
     expect(alertSpy).toHaveBeenCalledWith('Copy to which household?', undefined, expect.any(Array));
@@ -330,7 +330,7 @@ describe('RecipeDetailScreen — copy to household', () => {
     render(<RecipeDetailScreen />);
 
     await act(async () => {
-      fireEvent.press(screen.getByText('Copy to another household…'));
+      fireEvent.press(screen.getByText('Copy to another household'));
     });
 
     expect(screen.getByText('Cannot reach the server.')).toBeOnTheScreen();
