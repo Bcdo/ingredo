@@ -20,3 +20,16 @@ jest.mock('expo-secure-store', () => {
     __store: store,
   };
 });
+
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      ScrollView: RN.ScrollView,
+      View: RN.View,
+      createAnimatedComponent: (component) => component,
+    },
+    useAnimatedRef: () => ({ current: null }),
+  };
+});

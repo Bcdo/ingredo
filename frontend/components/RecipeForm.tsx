@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Sortable from 'react-native-sortables';
 
 import { Input } from './ui/Input';
 import { Stepper } from './ui/Stepper';
@@ -116,6 +118,7 @@ export function RecipeForm({
 }: RecipeFormProps) {
   const insets = useSafeAreaInsets();
   const palette = usePalette();
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const [state, setState] = useState<RecipeFormState>(initialState);
   const [initial] = useState<RecipeFormState>(initialState);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -196,7 +199,8 @@ export function RecipeForm({
           </View>
         ) : null}
 
-        <ScrollView
+        <Animated.ScrollView
+          ref={scrollRef}
           className="flex-1 px-4"
           contentContainerStyle={{ paddingBottom: insets.bottom + 32, gap: 16 }}
           keyboardShouldPersistTaps="handled">
@@ -325,33 +329,49 @@ export function RecipeForm({
 
           <View className="gap-3">
             <Text className="font-body-bold text-sm text-ink">{t('form.instructionsLabel')}</Text>
-            {state.instructions.map((step, index) => (
-              <View key={step.key} className="flex-row items-start gap-3">
-                <Text className="pt-3 font-display text-xl text-clay">{index + 1}</Text>
-                <Input
-                  value={step.text}
-                  onChangeText={(text) =>
-                    patch({
-                      instructions: state.instructions.map((s) =>
-                        s.key === step.key ? { ...s, text } : s
-                      ),
-                    })
-                  }
-                  placeholder={t('form.stepPlaceholder')}
-                  multiline
-                  className="flex-1"
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('form.removeRow')}
-                  onPress={() =>
-                    patch({ instructions: state.instructions.filter((s) => s.key !== step.key) })
-                  }
-                  className="h-14 w-10 items-center justify-center">
-                  <Ionicons name="close" size={20} color={palette.ink} />
-                </Pressable>
-              </View>
-            ))}
+            <Sortable.Grid
+              data={state.instructions}
+              customHandle
+              scrollableRef={scrollRef}
+              rowGap={12}
+              onDragEnd={({ data }) => patch({ instructions: [...data] })}
+              renderItem={({ item }) => {
+                const index = state.instructions.findIndex((s) => s.key === item.key);
+                return (
+                  <View className="flex-row items-start gap-3">
+                    <Sortable.Handle>
+                      <View className="min-h-14 w-8 items-center pt-3">
+                        <Text className="font-display text-xl text-clay">{index + 1}</Text>
+                      </View>
+                    </Sortable.Handle>
+                    <Input
+                      value={item.text}
+                      onChangeText={(text) =>
+                        patch({
+                          instructions: state.instructions.map((s) =>
+                            s.key === item.key ? { ...s, text } : s
+                          ),
+                        })
+                      }
+                      placeholder={t('form.stepPlaceholder')}
+                      multiline
+                      className="flex-1"
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('form.removeRow')}
+                      onPress={() =>
+                        patch({
+                          instructions: state.instructions.filter((s) => s.key !== item.key),
+                        })
+                      }
+                      className="h-14 w-10 items-center justify-center">
+                      <Ionicons name="close" size={20} color={palette.ink} />
+                    </Pressable>
+                  </View>
+                );
+              }}
+            />
             <Pressable
               accessibilityRole="button"
               onPress={() =>
@@ -368,7 +388,7 @@ export function RecipeForm({
             onChangeText={(notes) => patch({ notes })}
             multiline
           />
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
