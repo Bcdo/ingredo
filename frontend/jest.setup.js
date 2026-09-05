@@ -20,3 +20,19 @@ jest.mock('expo-secure-store', () => {
     __store: store,
   };
 });
+
+// Intentionally minimal: only what components actually import (RecipeForm's
+// Animated.ScrollView + useAnimatedRef). Extend this mock whenever new
+// reanimated APIs are used, or every suite fails far from the cause.
+jest.mock('react-native-reanimated', () => {
+  const RN = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      ScrollView: RN.ScrollView,
+      View: RN.View,
+      createAnimatedComponent: (component) => component,
+    },
+    useAnimatedRef: () => ({ current: null }),
+  };
+});

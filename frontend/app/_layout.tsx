@@ -8,6 +8,7 @@ import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import { vars } from 'nativewind';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import migrations from '../drizzle/migrations';
@@ -103,41 +104,46 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <View key={localeVersion} style={themeVars} className="flex-1">
-        <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="recipe/new" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="recipe/[id]/index" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="recipe/[id]/edit"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen name="plan/add" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen
-            name="plan/pick-day"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="plan/entry/[id]"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="habits" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen
-            name="account/sign-in"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="account/register"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="account/reset"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-        </Stack>
-      </View>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <View key={localeVersion} style={themeVars} className="flex-1">
+          <Stack screenOptions={{ contentStyle: { backgroundColor: palette.cream } }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="recipe/new"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="recipe/[id]/index" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="recipe/[id]/edit"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="plan/add" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen
+              name="plan/pick-day"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="plan/entry/[id]"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen name="habits" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen
+              name="account/sign-in"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/register"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/reset"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+          </Stack>
+        </View>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
