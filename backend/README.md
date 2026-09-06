@@ -161,7 +161,10 @@ new password. A successful reset signs their account out of every device.
 
 ### Deploying a change
 
-Merge to `master`, then run `~/srv/ingredo/backend/deploy.sh`. It pulls
+Merge to `master`, push, then from the dev checkout run
+`backend/deploy-remote.sh`. It refuses if `master` has unpushed commits, then
+runs `~/srv/ingredo/backend/deploy.sh` on the host over SSH (`bcdo@omarchy`,
+override with `INGREDO_HOST`) and checks `/health`. `deploy.sh` itself pulls
 fast-forward-only, rebuilds, and restarts the `ingredo-prod` stack. Logs:
 `docker logs ingredo-prod-api-1`. A failed startup migration leaves the old
 data intact — the new container exits and logs the reason; redeploy the

@@ -212,7 +212,9 @@ rm -f ~/.config/systemd/user/ingredo-backup.{service,timer}; systemctl --user da
 
 The `~/srv/ingredo` checkout on the laptop can then be deleted. Development
 continues in `~/Work/Programming/ingredo` as before, and deploying becomes
-`ssh <this-machine> ~/srv/ingredo/backend/deploy.sh` after merging to master.
+`backend/deploy-remote.sh` from the dev checkout after merging to master. That
+needs the laptop's SSH key in `~/.ssh/authorized_keys` for the operator's
+user on this machine; password login is off here, so add the key locally.
 
 ## What a fresh database means for testers
 
