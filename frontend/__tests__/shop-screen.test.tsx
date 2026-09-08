@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import React from 'react';
 
@@ -19,6 +19,10 @@ jest.mock('../lib/db/client', () => {
   node.orderBy = () => node;
   return { db: node };
 });
+
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: () => null,
+}));
 
 jest.mock('drizzle-orm/expo-sqlite', () => ({
   useLiveQuery: jest.fn(),
@@ -132,12 +136,24 @@ describe('ShopScreen', () => {
   });
 
   it('purchases on card tap and undoes a this-trip shelf tap via restore', () => {
+    jest.useFakeTimers();
     activeRows = [flour];
     purchasedRows = [butter];
     render(<ShopScreen />);
 
-    fireEvent.press(screen.getByText('Mel'));
+    // The tap first shows the check-off moment; the write follows it.
+    const row = screen.getByTestId('shop-row-s1');
+    fireEvent.press(row);
+    expect(row.props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    expect(purchaseItemMock).not.toHaveBeenCalled();
+    // A second tap during the moment must not queue a second write.
+    fireEvent.press(row);
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(purchaseItemMock).toHaveBeenCalledTimes(1);
     expect(purchaseItemMock).toHaveBeenCalledWith(expect.anything(), null, 's1');
+    jest.useRealTimers();
 
     expect(screen.getByText('Recently purchased')).toBeOnTheScreen();
     expect(screen.getByText('This trip')).toBeOnTheScreen();
