@@ -176,7 +176,7 @@ export function HouseholdsSection() {
   return (
     <View testID="households-section" className="px-4 pt-8">
       <SectionHeader title={t('account.householdsTitle')} />
-      <View className="mb-3 mt-1 gap-1">
+      <View className="mb-3 mt-1 gap-2">
         {households.map((item) =>
           item.isActive ? (
             <View
