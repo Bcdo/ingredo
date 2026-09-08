@@ -25,6 +25,16 @@ the row. Same stale-closure pattern exists for ingredients (`patchIngredient`).
 
 ### B2. Steps and notes briefly missing on a recipe, then back
 
+**Resolved 2026-09-08 with server evidence: not a sync bug.** The operator had
+two independent recipes, "No plan pasta" in household Alone and a
+copy-to-household of it in Bodø made at 06:39 UTC and renamed "No time
+pasta". The steps and notes were added to the Alone original at 09:58, after
+the copy existed; copies never sync with their source by design. Seen from
+Bodø the recipe "had no steps"; from Alone it did. A fresh copy made after
+the steps existed carried them, so `copyRecipeToHousehold` is fine. The
+stale-edit guard shipped in this round stays as a general safeguard. The
+analysis below is kept for reference.
+
 Most likely a two-device last-write-wins clobber. Sync decides the winner by
 the writing device's wall clock (`recipes.ts:90`, `SyncService.cs:194`), a
 push replaces the whole aggregate (children absent = deleted server-side,
