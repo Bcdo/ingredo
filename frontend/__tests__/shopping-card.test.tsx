@@ -32,7 +32,13 @@ jest.mock('@expo/vector-icons', () => ({
 
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
 
-const item = (id: string, name: string) => ({ id, name });
+// Rows as the card's query returns them: sources is the stored JSON string of
+// recipe titles the item was added from.
+const item = (id: string, name: string, sources: string[] = []) => ({
+  id,
+  name,
+  sources: JSON.stringify(sources),
+});
 
 describe('ShoppingCard', () => {
   beforeEach(() => {
@@ -40,44 +46,70 @@ describe('ShoppingCard', () => {
     mockUseLiveQuery.mockReset();
   });
 
-  it('shows count, three-item preview with ellipsis, and navigates to shop', () => {
+  it('shows only items sourced from the planned dinners and navigates to shop', () => {
     mockUseLiveQuery.mockImplementation(() => ({
       data: [
-        item('s1', 'Milk'),
+        item('s1', 'Milk', ['Pancakes']),
         item('s2', 'Bread'),
-        item('s3', 'Tomatoes'),
-        item('s4', 'Cheese'),
-        item('s5', 'Butter'),
+        item('s3', 'Tomatoes', ['Taco']),
+        item('s4', 'Cheese', ['Taco', 'Pancakes']),
+        item('s5', 'Butter', ['Soup']),
       ],
       updatedAt: new Date(),
     }));
 
-    render(<ShoppingCard />);
+    render(<ShoppingCard dinnerTitles={['Taco', 'Pancakes']} />);
 
-    expect(screen.getByText('Shopping list')).toBeTruthy();
-    expect(screen.getByText('5 items to buy')).toBeTruthy();
-    expect(screen.getByText('Milk, Bread, Tomatoes…')).toBeTruthy();
+    expect(screen.getByText('Missing for dinner')).toBeTruthy();
+    expect(screen.getByText('3 items to buy')).toBeTruthy();
+    expect(screen.getByText('Milk, Tomatoes, Cheese')).toBeTruthy();
+    expect(screen.queryByText(/Bread/)).toBeNull();
+    expect(screen.queryByText(/Butter/)).toBeNull();
 
-    fireEvent.press(screen.getByText('Shopping list'));
+    fireEvent.press(screen.getByText('3 items to buy'));
     expect(mockPush).toHaveBeenCalledWith('/(tabs)/shop');
   });
 
-  it('uses the singular form and no ellipsis for a short list', () => {
+  it('uses the singular form for one item and an ellipsis beyond three', () => {
     mockUseLiveQuery.mockImplementation(() => ({
-      data: [item('s1', 'Milk')],
+      data: [item('s1', 'Milk', ['Taco'])],
+      updatedAt: new Date(),
+    }));
+    const { rerender } = render(<ShoppingCard dinnerTitles={['Taco']} />);
+    expect(screen.getByText('1 item to buy')).toBeTruthy();
+    expect(screen.getByText('Milk')).toBeTruthy();
+
+    mockUseLiveQuery.mockImplementation(() => ({
+      data: [
+        item('s1', 'Milk', ['Taco']),
+        item('s2', 'Bread', ['Taco']),
+        item('s3', 'Tomatoes', ['Taco']),
+        item('s4', 'Cheese', ['Taco']),
+      ],
+      updatedAt: new Date(),
+    }));
+    rerender(<ShoppingCard dinnerTitles={['Taco']} />);
+    expect(screen.getByText('4 items to buy')).toBeTruthy();
+    expect(screen.getByText('Milk, Bread, Tomatoes…')).toBeTruthy();
+  });
+
+  it('renders nothing when no active item traces back to a planned dinner', () => {
+    mockUseLiveQuery.mockImplementation(() => ({
+      data: [item('s1', 'Milk', ['Soup']), item('s2', 'Bread')],
       updatedAt: new Date(),
     }));
 
-    render(<ShoppingCard />);
-
-    expect(screen.getByText('1 item to buy')).toBeTruthy();
-    expect(screen.getByText('Milk')).toBeTruthy();
+    const { toJSON } = render(<ShoppingCard dinnerTitles={['Taco']} />);
+    expect(toJSON()).toBeNull();
   });
 
-  it('renders nothing when the list has no active items', () => {
-    mockUseLiveQuery.mockImplementation(() => ({ data: [], updatedAt: new Date() }));
+  it('renders nothing when no dinner is planned, even with items on the list', () => {
+    mockUseLiveQuery.mockImplementation(() => ({
+      data: [item('s1', 'Milk', ['Taco'])],
+      updatedAt: new Date(),
+    }));
 
-    const { toJSON } = render(<ShoppingCard />);
+    const { toJSON } = render(<ShoppingCard dinnerTitles={[]} />);
     expect(toJSON()).toBeNull();
   });
 });

@@ -113,7 +113,7 @@ export default function TodayScreen() {
         </View>
       ) : null}
 
-      <ShoppingCard />
+      <ShoppingCard dinnerTitles={items.map((row) => row.title)} />
     </ScrollView>
   );
 }

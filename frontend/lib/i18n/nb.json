@@ -20,7 +20,7 @@
     "tomorrow": "I morgen",
     "nothingTonight": "Ingenting planlagt i kveld.",
     "planWeek": "Planlegg uken",
-    "shoppingTitle": "Handleliste",
+    "missingForDinner": "Mangler til middagen",
     "itemsToBuy": {
       "one": "1 vare å kjøpe",
       "other": "%{count} varer å kjøpe"
