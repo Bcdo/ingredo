@@ -1,6 +1,6 @@
 # Beta feedback, 2026-09-08 (operator's own use, Android + iPhone)
 
-Six items, triaged with code investigation. Nothing here is fixed yet.
+Six items, triaged with code investigation. B1 fixed on develop 2026-09-08 (commit e385746); the rest are open.
 
 ## Bugs
 
