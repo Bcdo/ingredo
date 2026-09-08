@@ -122,6 +122,19 @@ describe('HouseholdsSection households', () => {
     expect(screen.getAllByText('Karis husstand')).toHaveLength(1);
   });
 
+  it('labels a non-active household as switchable and marks selection state', async () => {
+    render(<HouseholdsSection />);
+    await act(async () => {});
+
+    // The inactive row must read as an action, not as static text.
+    const inactive = screen.getByTestId('household-row-household-2');
+    expect(screen.getByText('Switch to')).toBeOnTheScreen();
+    expect(inactive.props.accessibilityState).toEqual(expect.objectContaining({ selected: false }));
+    expect(screen.getByTestId('household-row-household-1').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true })
+    );
+  });
+
   it('switches on pressing a non-active household', async () => {
     switchHouseholdMock.mockResolvedValueOnce(undefined);
     render(<HouseholdsSection />);

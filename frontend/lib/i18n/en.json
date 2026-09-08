@@ -172,6 +172,7 @@
     "hidePassword": "Hide password",
     "householdsTitle": "Households",
     "activeBadge": "Active",
+    "switchTo": "Switch to",
     "memberCount": "%{count} members",
     "createReveal": "+ New household",
     "createPlaceholder": "Household name",
