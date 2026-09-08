@@ -86,6 +86,10 @@
     "discardConfirm": "Forkast",
     "discardCancel": "Fortsett å redigere",
     "saveError": "Kunne ikke lagre — prøv igjen.",
+    "changedElsewhereTitle": "Oppskriften er endret",
+    "changedElsewhereMessage": "Denne oppskriften ble endret på en annen enhet mens du redigerte. Vil du overskrive den nye versjonen med dine endringer?",
+    "changedElsewhereOverwrite": "Overskriv",
+    "changedElsewhereReload": "Vis ny versjon",
     "scalingLinear": "Skaleres med porsjoner",
     "scalingFixed": "Fast mengde"
   },
