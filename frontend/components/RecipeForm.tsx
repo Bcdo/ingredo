@@ -19,7 +19,7 @@ import {
 import { t } from '../lib/i18n';
 import { fetchRecipeFromUrl } from '../lib/import/fetchRecipe';
 import { usePalette } from '../lib/usePalette';
-import { UNITS } from '../lib/units';
+import { ENTRY_UNITS } from '../lib/units';
 
 type RecipeFormProps = {
   heading: string;
@@ -37,8 +37,9 @@ function UnitPicker({
   ingredient: IngredientDraft;
   onChange: (unit: string | null) => void;
 }) {
-  const isCanonical =
-    ingredient.unit === null || (UNITS as readonly string[]).includes(ingredient.unit);
+  const isChip = (unit: string | null) =>
+    unit === null || (ENTRY_UNITS as readonly string[]).includes(unit);
+  const isCanonical = isChip(ingredient.unit);
   const [otherMode, setOtherMode] = useState(!isCanonical);
 
   return (
@@ -53,7 +54,7 @@ function UnitPicker({
               onChange(null);
             }}
           />
-          {UNITS.map((code) => (
+          {ENTRY_UNITS.map((code) => (
             <UnitChip
               key={code}
               label={t(`units.${code}`)}
@@ -69,11 +70,7 @@ function UnitPicker({
             selected={otherMode}
             onPress={() => {
               setOtherMode(true);
-              onChange(
-                ingredient.unit && !(UNITS as readonly string[]).includes(ingredient.unit)
-                  ? ingredient.unit
-                  : ''
-              );
+              onChange(ingredient.unit && !isChip(ingredient.unit) ? ingredient.unit : '');
             }}
           />
         </View>

@@ -29,6 +29,26 @@ const FRACTIONS: [number, string][] = [
   [7 / 8, '⅞'],
 ];
 
+// Entry-side inverse of the US display: a US unit typed into the recipe form
+// becomes the metric value we store (cup → ml, oz/lb → g), rounded to one
+// decimal. Everything else passes through. Storage stays metric-canonical;
+// the US toggle shows the amount as cups/oz/lb again through displayQuantity,
+// which rounds to kitchen fractions, so "1 cup" survives the round trip.
+const US_TO_BASE: Record<string, { toBase: number; unit: 'ml' | 'g' }> = {
+  cup: { toBase: CUP_ML, unit: 'ml' },
+  oz: { toBase: OZ_G, unit: 'g' },
+  lb: { toBase: LB_G, unit: 'g' },
+};
+
+export function toCanonical(
+  quantity: number | null,
+  unit: string | null
+): { quantity: number | null; unit: string | null } {
+  const us = unit !== null && Object.hasOwn(US_TO_BASE, unit) ? US_TO_BASE[unit] : undefined;
+  if (quantity === null || !us) return { quantity, unit };
+  return { quantity: Math.round(quantity * us.toBase * 10) / 10, unit: us.unit };
+}
+
 export function formatFraction(value: number): string {
   let whole = Math.floor(value);
   const rest = value - whole;

@@ -32,6 +32,24 @@ describe('recipeInputFromForm', () => {
     ]);
   });
 
+  it('stores US-entered amounts as metric', () => {
+    // The form keeps what the user picked; storage is metric-canonical.
+    const state = emptyFormState();
+    state.title = 'Pie';
+    state.ingredients = [
+      { key: 'a', quantity: '1/2', unit: 'cup', name: 'Sugar', scaling: 'linear' },
+      { key: 'b', quantity: '8', unit: 'oz', name: 'Cream cheese', scaling: 'linear' },
+      { key: 'c', quantity: '1 1/2', unit: 'lb', name: 'Apples', scaling: 'fixed' },
+      { key: 'd', quantity: '1', unit: 'ts', name: 'Cinnamon', scaling: 'linear' },
+    ];
+    expect(recipeInputFromForm(state).ingredients).toEqual([
+      { name: 'Sugar', quantity: 118.3, unit: 'ml', scaling: 'linear' },
+      { name: 'Cream cheese', quantity: 226.8, unit: 'g', scaling: 'linear' },
+      { name: 'Apples', quantity: 680.4, unit: 'g', scaling: 'fixed' },
+      { name: 'Cinnamon', quantity: 1, unit: 'ts', scaling: 'linear' },
+    ]);
+  });
+
   it('drops nameless ingredient rows and empty instruction steps', () => {
     const state = emptyFormState();
     state.title = 'Soup';

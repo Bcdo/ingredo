@@ -1,4 +1,35 @@
-import { displayQuantity, formatFraction } from '../lib/measure';
+import { displayQuantity, formatFraction, toCanonical } from '../lib/measure';
+
+// Entry-side conversion: US units typed into the form are stored metric.
+describe('toCanonical', () => {
+  it.each([
+    [1, 'cup', 236.6, 'ml'],
+    [0.5, 'cup', 118.3, 'ml'],
+    [8, 'oz', 226.8, 'g'],
+    [1, 'lb', 453.6, 'g'],
+    [2.5, 'lb', 1134, 'g'],
+  ])('converts %f %s to %f %s', (quantity, unit, expectedQuantity, expectedUnit) => {
+    expect(toCanonical(quantity, unit)).toEqual({ quantity: expectedQuantity, unit: expectedUnit });
+  });
+
+  it('passes metric, count, free-text and unit-less values through untouched', () => {
+    expect(toCanonical(250, 'g')).toEqual({ quantity: 250, unit: 'g' });
+    expect(toCanonical(2, 'stk')).toEqual({ quantity: 2, unit: 'stk' });
+    expect(toCanonical(1, 'pinch')).toEqual({ quantity: 1, unit: 'pinch' });
+    expect(toCanonical(3, null)).toEqual({ quantity: 3, unit: null });
+    expect(toCanonical(null, 'cup')).toEqual({ quantity: null, unit: 'cup' });
+  });
+
+  it('round-trips a cup through storage and back to the US display', () => {
+    const stored = toCanonical(1, 'cup');
+    const shown = displayQuantity(stored.quantity, stored.unit, {
+      scaleFactor: 1,
+      system: 'us',
+      locale: 'en',
+    });
+    expect(shown).toEqual({ amountText: '1', unitCode: 'cup' });
+  });
+});
 
 describe('formatFraction', () => {
   it.each([

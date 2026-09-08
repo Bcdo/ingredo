@@ -1,9 +1,10 @@
-import type { UnitCode } from '../units';
+import { parseAmount } from '../quantity';
+import type { UnitCode, UsUnitCode } from '../units';
 
 // Closed bilingual token map onto canonical unit codes — a structured
 // mapping, not language parsing (bilingual principle). Tokens match
 // case-insensitively as whole words.
-const UNIT_TOKENS: Record<string, UnitCode> = {
+const UNIT_TOKENS: Record<string, UnitCode | UsUnitCode> = {
   g: 'g',
   gram: 'g',
   grams: 'g',
@@ -31,6 +32,16 @@ const UNIT_TOKENS: Record<string, UnitCode> = {
   tablespoons: 'ss',
   spiseskje: 'ss',
   spiseskjeer: 'ss',
+  // US units survive import as-is; the form converts them to metric on save.
+  cup: 'cup',
+  cups: 'cup',
+  oz: 'oz',
+  ounce: 'oz',
+  ounces: 'oz',
+  lb: 'lb',
+  lbs: 'lb',
+  pound: 'lb',
+  pounds: 'lb',
   stk: 'stk',
   stykk: 'stk',
   stykker: 'stk',
@@ -40,35 +51,11 @@ const UNIT_TOKENS: Record<string, UnitCode> = {
   pieces: 'stk',
 };
 
-const FRACTIONS: Record<string, number> = {
-  '½': 0.5,
-  '¼': 0.25,
-  '¾': 0.75,
-  '⅓': 1 / 3,
-  '⅔': 2 / 3,
-};
-
 export type ParsedIngredientLine = {
   quantity: number | null;
   unit: string | null;
   name: string;
 };
-
-function parseAmount(input: string): { value: number; rest: string } | null {
-  let m = input.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)/);
-  if (m) {
-    return { value: Number(m[1]) + Number(m[2]) / Number(m[3]), rest: input.slice(m[0].length) };
-  }
-  m = input.match(/^(\d+)\s*\/\s*(\d+)/);
-  if (m) return { value: Number(m[1]) / Number(m[2]), rest: input.slice(m[0].length) };
-  m = input.match(/^(\d+)\s*([½¼¾⅓⅔])/);
-  if (m) return { value: Number(m[1]) + FRACTIONS[m[2]], rest: input.slice(m[0].length) };
-  m = input.match(/^([½¼¾⅓⅔])/);
-  if (m) return { value: FRACTIONS[m[1]], rest: input.slice(m[0].length) };
-  m = input.match(/^(\d+(?:[.,]\d+)?)/);
-  if (m) return { value: Number(m[1].replace(',', '.')), rest: input.slice(m[0].length) };
-  return null;
-}
 
 // Conservative by design: only split what is unambiguous; anything else
 // degrades to name-only text the review-and-fix form absorbs. Never
