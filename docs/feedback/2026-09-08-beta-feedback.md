@@ -1,6 +1,6 @@
 # Beta feedback, 2026-09-08 (operator's own use, Android + iPhone)
 
-Six items, triaged with code investigation. B1 fixed on develop 2026-09-08 (commit e385746); the rest are open.
+Six items, triaged with code investigation. Status 2026-09-08: B1 fixed on develop (e385746); F3 and F4 done on feature/dinner-shopping-card, where F3 became a dinner-scoped reminder card ("Handle til middag") and the "I kveld" heading was dropped; B2, F1, F2 open.
 
 ## Bugs
 
