@@ -91,6 +91,19 @@ describe('RecipeForm', () => {
     expect(router.back).toHaveBeenCalledTimes(1);
   });
 
+  it('stays on the form when onSave declines the save', () => {
+    // A parent may refuse a save (e.g. the recipe changed elsewhere) and
+    // take over with its own prompt; the form must not navigate away.
+    const onSave = jest.fn(() => false);
+    render(<RecipeForm heading="Edit" initialState={titledState('Soup')} onSave={onSave} />);
+
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.queryByText(t('form.saveError'))).toBeNull();
+  });
+
   it('does not treat an untouched form as dirty when the parent re-renders with a fresh but equal initialState', () => {
     const onSave = jest.fn();
     const state1 = titledState('Soup');
@@ -142,6 +155,26 @@ describe('RecipeForm', () => {
     );
   });
 
+  it('offers US units alongside the metric chips and keeps the pick in the draft', () => {
+    const onSave = jest.fn();
+    const state = titledState('Pie');
+    state.ingredients = [
+      { key: 'i1', quantity: '2', unit: null, name: 'Flour', scaling: 'linear' },
+    ];
+    render(<RecipeForm heading="Edit" initialState={state} onSave={onSave} />);
+
+    fireEvent.press(screen.getByRole('button', { name: t('units.cup') }));
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: [expect.objectContaining({ name: 'Flour', quantity: '2', unit: 'cup' })],
+      })
+    );
+    // A US pick is a proper chip, not the free-text "other" escape hatch.
+    expect(screen.queryByPlaceholderText(t('form.unitOtherPlaceholder'))).toBeNull();
+  });
+
   it('avoids the keyboard so bottom fields stay visible', () => {
     const onSave = jest.fn();
     render(<RecipeForm heading="New" initialState={emptyFormState()} onSave={onSave} />);
@@ -175,6 +208,46 @@ describe('RecipeForm', () => {
         ],
       })
     );
+  });
+
+  it('keeps edits typed into two steps within the same tick', () => {
+    // Android keyboards can emit several change events before React commits.
+    // A handler that maps over the render's captured state drops all but the
+    // last one, leaving JS and the native field out of step.
+    const onSave = jest.fn();
+    render(<RecipeForm heading="Edit" initialState={threeStepState()} onSave={onSave} />);
+
+    const first = screen.getByDisplayValue('Chop the onions');
+    const second = screen.getByDisplayValue('Boil the stock');
+    act(() => {
+      fireEvent.changeText(first, 'Chop the onions finely');
+      fireEvent.changeText(second, 'Boil the stock gently');
+    });
+
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instructions: [
+          expect.objectContaining({ key: 's1', text: 'Chop the onions finely' }),
+          expect.objectContaining({ key: 's2', text: 'Boil the stock gently' }),
+          expect.objectContaining({ key: 's3', text: 'Serve hot' }),
+        ],
+      })
+    );
+  });
+
+  it('does not rebuild every step row on each keystroke', () => {
+    // Sortable.Grid recreates and re-notifies every row whenever renderItem
+    // changes identity, so an inline callback turns one keystroke into a
+    // rerender of the whole list — and a late value write into each field.
+    const { __getLastGridProps } = require('react-native-sortables') as any;
+    render(<RecipeForm heading="Edit" initialState={threeStepState()} onSave={jest.fn()} />);
+
+    const before = __getLastGridProps().renderItem;
+    fireEvent.changeText(screen.getByDisplayValue('Chop the onions'), 'Chop the onions finely');
+
+    expect(__getLastGridProps().renderItem).toBe(before);
   });
 
   it('renumbers steps from their current order after a reorder', () => {

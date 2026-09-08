@@ -16,11 +16,10 @@
     "groupOlder": "Tidligere"
   },
   "today": {
-    "tonight": "I kveld",
     "tomorrow": "I morgen",
     "nothingTonight": "Ingenting planlagt i kveld.",
     "planWeek": "Planlegg uken",
-    "shoppingTitle": "Handleliste",
+    "shopForDinner": "Handle til middag",
     "itemsToBuy": {
       "one": "1 vare å kjøpe",
       "other": "%{count} varer å kjøpe"
@@ -87,6 +86,10 @@
     "discardConfirm": "Forkast",
     "discardCancel": "Fortsett å redigere",
     "saveError": "Kunne ikke lagre — prøv igjen.",
+    "changedElsewhereTitle": "Oppskriften er endret",
+    "changedElsewhereMessage": "Denne oppskriften ble endret på en annen enhet mens du redigerte. Vil du overskrive den nye versjonen med dine endringer?",
+    "changedElsewhereOverwrite": "Overskriv",
+    "changedElsewhereReload": "Vis ny versjon",
     "scalingLinear": "Skaleres med porsjoner",
     "scalingFixed": "Fast mengde"
   },
@@ -173,6 +176,7 @@
     "hidePassword": "Skjul passord",
     "householdsTitle": "Husholdninger",
     "activeBadge": "Aktiv",
+    "switchTo": "Bytt til",
     "memberCount": "%{count} medlemmer",
     "createReveal": "+ Ny husholdning",
     "createPlaceholder": "Navn på husholdningen",

@@ -6,7 +6,10 @@ import { t } from '../../lib/i18n';
 import { usePalette } from '../../lib/usePalette';
 
 type InputProps = {
-  value: string;
+  value?: string;
+  // Uncontrolled mode: the native field owns its text and only reports up.
+  // Use where a controlled `value` would arrive late (see RecipeForm steps).
+  defaultValue?: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
   label?: string;
@@ -27,6 +30,7 @@ type InputProps = {
 
 export function Input({
   value,
+  defaultValue,
   onChangeText,
   placeholder,
   label,
@@ -51,6 +55,7 @@ export function Input({
       <View>
         <TextInput
           value={value}
+          defaultValue={defaultValue}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={palette.inkFaint}

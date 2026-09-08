@@ -7,6 +7,19 @@ describe('parseQuantity', () => {
   it('trims whitespace', () => expect(parseQuantity(' 3 ')).toBe(3));
   it('returns null for empty', () => expect(parseQuantity('')).toBeNull());
   it('returns null for non-numeric', () => expect(parseQuantity('en klype')).toBeNull());
+  // US recipes are written in fractions; the field accepts them directly.
+  it.each([
+    ['1/2', 0.5],
+    ['1 1/2', 1.5],
+    ['½', 0.5],
+    ['1½', 1.5],
+    ['1 ½', 1.5],
+    ['3/4', 0.75],
+  ])('parses the fraction %s as %f', (input, expected) => {
+    expect(parseQuantity(input)).toBeCloseTo(expected, 6);
+  });
+  it('returns null for a zero denominator', () => expect(parseQuantity('1/0')).toBeNull());
+  it('returns null when text trails the number', () => expect(parseQuantity('2 cups')).toBeNull());
   it('returns null for zero and negatives', () => {
     expect(parseQuantity('0')).toBeNull();
     expect(parseQuantity('-2')).toBeNull();

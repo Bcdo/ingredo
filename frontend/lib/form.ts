@@ -2,6 +2,7 @@ import { currentLocale } from './i18n';
 import { FIELD_LIMITS } from './fieldLimits';
 import type { ScalingMode } from './units';
 import type { RecipeInput, RecipeWithDetails } from './db/recipes';
+import { toCanonical } from './measure';
 import { parseQuantity, formatQuantity } from './quantity';
 import { parseIngredientLine } from './import/ingredientLine';
 import type { ImportedRecipe } from './import/recipeJsonLd';
@@ -89,12 +90,16 @@ export function recipeInputFromForm(state: RecipeFormState): RecipeInput {
     notes: orNull(state.notes),
     ingredients: state.ingredients
       .filter((ing) => ing.name.trim() !== '')
-      .map((ing) => ({
-        name: ing.name.trim(),
-        quantity: parseQuantity(ing.quantity),
-        unit: ing.unit,
-        scaling: ing.scaling,
-      })),
+      .map((ing) => {
+        // US chips are an entry convenience; storage is metric-canonical.
+        const stored = toCanonical(parseQuantity(ing.quantity), ing.unit);
+        return {
+          name: ing.name.trim(),
+          quantity: stored.quantity,
+          unit: stored.unit,
+          scaling: ing.scaling,
+        };
+      }),
     instructions: state.instructions
       .filter((step) => step.text.trim() !== '')
       .map((step) => ({ text: step.text.trim() })),

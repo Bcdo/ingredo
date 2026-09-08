@@ -8,6 +8,11 @@ describe('parseIngredientLine', () => {
     ['1.5 l vann', 1.5, 'l', 'vann'],
     ['1 1/2 ss olivenolje', 1.5, 'ss', 'olivenolje'],
     ['1½ ss olivenolje', 1.5, 'ss', 'olivenolje'],
+    ['2 cups flour', 2, 'cup', 'flour'],
+    ['1 cup sugar', 1, 'cup', 'sugar'],
+    ['8 oz cream cheese', 8, 'oz', 'cream cheese'],
+    ['1 lb ground beef', 1, 'lb', 'ground beef'],
+    ['2 pounds potatoes', 2, 'lb', 'potatoes'],
     ['½ ts salt', 0.5, 'ts', 'salt'],
     ['3/4 dl melk', 0.75, 'dl', 'melk'],
     ['2 tbsp olive oil', 2, 'ss', 'olive oil'],
@@ -20,10 +25,10 @@ describe('parseIngredientLine', () => {
   });
 
   it('keeps the quantity but folds an unrecognized unit token into the name', () => {
-    expect(parseIngredientLine('2 cups flour')).toEqual({
+    expect(parseIngredientLine('2 handfuls spinach')).toEqual({
       quantity: 2,
       unit: null,
-      name: 'cups flour',
+      name: 'handfuls spinach',
     });
   });
 

@@ -28,8 +28,9 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+const mockShoppingCard = jest.fn((_props: unknown) => null);
 jest.mock('../components/today/ShoppingCard', () => ({
-  ShoppingCard: () => null,
+  ShoppingCard: (props: unknown) => mockShoppingCard(props),
 }));
 
 const mockUseLiveQuery = useLiveQuery as jest.Mock;
@@ -54,7 +55,8 @@ describe('TodayScreen', () => {
 
     render(<TodayScreen />);
 
-    expect(screen.getByText('Tonight')).toBeTruthy();
+    // The screen title already says today; only tomorrow gets a heading.
+    expect(screen.queryByText('Tonight')).toBeNull();
     expect(screen.getByText('Tomato Soup')).toBeTruthy();
     expect(screen.getByText('Salad')).toBeTruthy();
     expect(screen.getByText('Tomorrow')).toBeTruthy();
@@ -83,6 +85,23 @@ describe('TodayScreen', () => {
     fireEvent.press(screen.getByText('Plan your week'));
     expect(mockPush).toHaveBeenCalledWith('/(tabs)/plan');
     expect(screen.queryByText('Tomorrow')).toBeNull();
+  });
+
+  it('hands tonight and tomorrow dinner titles to the shopping reminder card', () => {
+    mockUseLiveQuery.mockImplementation(() => ({
+      data: [
+        { id: 'e1', date: today, recipeId: 'r1', servings: 4, title: 'Tomato Soup' },
+        { id: 'e2', date: today, recipeId: 'r2', servings: 2, title: 'Salad' },
+        { id: 'e3', date: tomorrow, recipeId: 'r3', servings: 4, title: 'Beef Stew' },
+      ],
+      updatedAt: new Date(),
+    }));
+
+    render(<TodayScreen />);
+
+    expect(mockShoppingCard).toHaveBeenLastCalledWith(
+      expect.objectContaining({ dinnerTitles: ['Tomato Soup', 'Salad', 'Beef Stew'] })
+    );
   });
 
   it('shows empty state for tonight but still displays tomorrow peek with entries', () => {

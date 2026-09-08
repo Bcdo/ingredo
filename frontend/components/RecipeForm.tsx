@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,17 +13,20 @@ import {
   draftKey,
   formStateFromImport,
   type IngredientDraft,
+  type InstructionDraft,
   type RecipeFormState,
 } from '../lib/form';
 import { t } from '../lib/i18n';
 import { fetchRecipeFromUrl } from '../lib/import/fetchRecipe';
 import { usePalette } from '../lib/usePalette';
-import { UNITS } from '../lib/units';
+import { ENTRY_UNITS } from '../lib/units';
 
 type RecipeFormProps = {
   heading: string;
   initialState: RecipeFormState;
-  onSave: (state: RecipeFormState) => void;
+  // Return false to keep the form open (the parent has declined the save and
+  // taken over, e.g. with its own prompt); anything else navigates back.
+  onSave: (state: RecipeFormState) => void | boolean;
   allowImport?: boolean;
 };
 
@@ -34,8 +37,9 @@ function UnitPicker({
   ingredient: IngredientDraft;
   onChange: (unit: string | null) => void;
 }) {
-  const isCanonical =
-    ingredient.unit === null || (UNITS as readonly string[]).includes(ingredient.unit);
+  const isChip = (unit: string | null) =>
+    unit === null || (ENTRY_UNITS as readonly string[]).includes(unit);
+  const isCanonical = isChip(ingredient.unit);
   const [otherMode, setOtherMode] = useState(!isCanonical);
 
   return (
@@ -50,7 +54,7 @@ function UnitPicker({
               onChange(null);
             }}
           />
-          {UNITS.map((code) => (
+          {ENTRY_UNITS.map((code) => (
             <UnitChip
               key={code}
               label={t(`units.${code}`)}
@@ -66,11 +70,7 @@ function UnitPicker({
             selected={otherMode}
             onPress={() => {
               setOtherMode(true);
-              onChange(
-                ingredient.unit && !(UNITS as readonly string[]).includes(ingredient.unit)
-                  ? ingredient.unit
-                  : ''
-              );
+              onChange(ingredient.unit && !isChip(ingredient.unit) ? ingredient.unit : '');
             }}
           />
         </View>
@@ -109,6 +109,53 @@ function UnitChip({
     </Pressable>
   );
 }
+
+type StepRowProps = {
+  item: InstructionDraft;
+  index: number;
+  onChange: (key: string, text: string) => void;
+  onRemove: (key: string) => void;
+  inkColor: string;
+};
+
+// The field is uncontrolled: the native input owns its text and only reports
+// up. Sortable.Grid renders rows through a store that flushes in an effect, so
+// a controlled `value` would reach the field a commit late — on Android that
+// late write lands around text the keyboard has already committed and
+// duplicates it. Step keys are stable across reorders; an import replaces the
+// keys, which remounts the rows with their new text. Memoised so one keystroke
+// re-renders one row, not the whole list.
+const StepRow = React.memo(function StepRow({
+  item,
+  index,
+  onChange,
+  onRemove,
+  inkColor,
+}: StepRowProps) {
+  return (
+    <View className="flex-row items-start gap-3">
+      <Sortable.Handle>
+        <View className="min-h-14 w-8 items-center pt-3">
+          <Text className="font-display text-xl text-clay">{index + 1}</Text>
+        </View>
+      </Sortable.Handle>
+      <Input
+        defaultValue={item.text}
+        onChangeText={(text) => onChange(item.key, text)}
+        placeholder={t('form.stepPlaceholder')}
+        multiline
+        className="flex-1"
+      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('form.removeRow')}
+        onPress={() => onRemove(item.key)}
+        className="h-14 w-10 items-center justify-center">
+        <Ionicons name="close" size={20} color={inkColor} />
+      </Pressable>
+    </View>
+  );
+});
 
 export function RecipeForm({
   heading,
@@ -152,6 +199,35 @@ export function RecipeForm({
       ingredients: state.ingredients.map((ing) => (ing.key === key ? { ...ing, ...partial } : ing)),
     });
 
+  // Functional updates: several change events can land before a commit, and
+  // each must build on the previous one rather than on this render's state.
+  const changeStep = useCallback(
+    (key: string, text: string) =>
+      setState((s) => ({
+        ...s,
+        instructions: s.instructions.map((step) => (step.key === key ? { ...step, text } : step)),
+      })),
+    []
+  );
+  const removeStep = useCallback(
+    (key: string) =>
+      setState((s) => ({ ...s, instructions: s.instructions.filter((step) => step.key !== key) })),
+    []
+  );
+  // Stable identity: Sortable.Grid rebuilds every row when renderItem changes.
+  const renderStep = useCallback(
+    ({ item, index }: { item: InstructionDraft; index: number }) => (
+      <StepRow
+        item={item}
+        index={index}
+        onChange={changeStep}
+        onRemove={removeStep}
+        inkColor={palette.ink}
+      />
+    ),
+    [changeStep, removeStep, palette.ink]
+  );
+
   const handleCancel = () => {
     if (!dirty) {
       router.back();
@@ -165,7 +241,7 @@ export function RecipeForm({
 
   const handleSave = () => {
     try {
-      onSave(state);
+      if (onSave(state) === false) return;
       router.back();
     } catch {
       setSaveFailed(true);
@@ -335,42 +411,7 @@ export function RecipeForm({
               scrollableRef={scrollRef}
               rowGap={12}
               onDragEnd={({ data }) => patch({ instructions: [...data] })}
-              renderItem={({ item }) => {
-                const index = state.instructions.findIndex((s) => s.key === item.key);
-                return (
-                  <View className="flex-row items-start gap-3">
-                    <Sortable.Handle>
-                      <View className="min-h-14 w-8 items-center pt-3">
-                        <Text className="font-display text-xl text-clay">{index === -1 ? '' : index + 1}</Text>
-                      </View>
-                    </Sortable.Handle>
-                    <Input
-                      value={item.text}
-                      onChangeText={(text) =>
-                        patch({
-                          instructions: state.instructions.map((s) =>
-                            s.key === item.key ? { ...s, text } : s
-                          ),
-                        })
-                      }
-                      placeholder={t('form.stepPlaceholder')}
-                      multiline
-                      className="flex-1"
-                    />
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={t('form.removeRow')}
-                      onPress={() =>
-                        patch({
-                          instructions: state.instructions.filter((s) => s.key !== item.key),
-                        })
-                      }
-                      className="h-14 w-10 items-center justify-center">
-                      <Ionicons name="close" size={20} color={palette.ink} />
-                    </Pressable>
-                  </View>
-                );
-              }}
+              renderItem={renderStep}
             />
             <Pressable
               accessibilityRole="button"
