@@ -177,6 +177,46 @@ describe('RecipeForm', () => {
     );
   });
 
+  it('keeps edits typed into two steps within the same tick', () => {
+    // Android keyboards can emit several change events before React commits.
+    // A handler that maps over the render's captured state drops all but the
+    // last one, leaving JS and the native field out of step.
+    const onSave = jest.fn();
+    render(<RecipeForm heading="Edit" initialState={threeStepState()} onSave={onSave} />);
+
+    const first = screen.getByDisplayValue('Chop the onions');
+    const second = screen.getByDisplayValue('Boil the stock');
+    act(() => {
+      fireEvent.changeText(first, 'Chop the onions finely');
+      fireEvent.changeText(second, 'Boil the stock gently');
+    });
+
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instructions: [
+          expect.objectContaining({ key: 's1', text: 'Chop the onions finely' }),
+          expect.objectContaining({ key: 's2', text: 'Boil the stock gently' }),
+          expect.objectContaining({ key: 's3', text: 'Serve hot' }),
+        ],
+      })
+    );
+  });
+
+  it('does not rebuild every step row on each keystroke', () => {
+    // Sortable.Grid recreates and re-notifies every row whenever renderItem
+    // changes identity, so an inline callback turns one keystroke into a
+    // rerender of the whole list — and a late value write into each field.
+    const { __getLastGridProps } = require('react-native-sortables') as any;
+    render(<RecipeForm heading="Edit" initialState={threeStepState()} onSave={jest.fn()} />);
+
+    const before = __getLastGridProps().renderItem;
+    fireEvent.changeText(screen.getByDisplayValue('Chop the onions'), 'Chop the onions finely');
+
+    expect(__getLastGridProps().renderItem).toBe(before);
+  });
+
   it('renumbers steps from their current order after a reorder', () => {
     const { __getLastGridProps } = require('react-native-sortables') as any;
     const initial = threeStepState();
