@@ -16,11 +16,10 @@
     "groupOlder": "Tidligere"
   },
   "today": {
-    "tonight": "I kveld",
     "tomorrow": "I morgen",
     "nothingTonight": "Ingenting planlagt i kveld.",
     "planWeek": "Planlegg uken",
-    "shoppingTitle": "Handleliste",
+    "shopForDinner": "Handle til middag",
     "itemsToBuy": {
       "one": "1 vare å kjøpe",
       "other": "%{count} varer å kjøpe"
@@ -173,6 +172,7 @@
     "hidePassword": "Skjul passord",
     "householdsTitle": "Husholdninger",
     "activeBadge": "Aktiv",
+    "switchTo": "Bytt til",
     "memberCount": "%{count} medlemmer",
     "createReveal": "+ Ny husholdning",
     "createPlaceholder": "Navn på husholdningen",

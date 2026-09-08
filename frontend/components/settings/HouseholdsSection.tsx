@@ -182,6 +182,7 @@ export function HouseholdsSection() {
             <View
               key={item.id}
               testID={`household-row-${item.id}`}
+              accessibilityState={{ selected: true }}
               className="rounded-card border border-clay bg-linen px-3 py-2">
               {renaming ? (
                 <View className="flex-row items-center gap-2">
@@ -241,17 +242,25 @@ export function HouseholdsSection() {
               </View>
             </View>
           ) : (
+            // Same shell as the active row (minus the clay outline) so the two
+            // read as states of one thing, with an explicit switch affordance:
+            // switching repartitions every list, so it must not look like text.
             <Pressable
               key={item.id}
               testID={`household-row-${item.id}`}
               accessibilityRole="button"
+              accessibilityState={{ selected: false }}
               onPress={() => switchTo(item)}
-              className="flex-row items-center justify-between px-3 py-2">
-              <View>
+              className="min-h-14 flex-row items-center justify-between rounded-card bg-linen px-3 py-2 active:opacity-80">
+              <View className="flex-1">
                 <Text className="font-body-bold text-base text-ink">{item.name}</Text>
                 <Text className="font-body text-xs text-ink opacity-70">
                   {t('account.memberCount', { count: item.memberCount })}
                 </Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Text className="font-body-bold text-sm text-clay">{t('account.switchTo')}</Text>
+                <Ionicons name="chevron-forward" size={16} color={palette.clay} />
               </View>
             </Pressable>
           )
