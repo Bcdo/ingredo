@@ -52,9 +52,10 @@ export default function TodayScreen() {
   const hero = tonights[0];
 
   return (
-    <ScrollView className="flex-1 bg-cream" contentContainerClassName="gap-6 p-4">
+    <ScrollView className="flex-1 bg-cream" contentContainerClassName="gap-8 px-4 pb-4 pt-6">
+      {/* No "tonight" heading: the screen title already says today, and the
+          hero card carries the section on its own. */}
       <View className="gap-3">
-        <Text className="font-display text-xl text-ink">{t('today.tonight')}</Text>
         {hero ? (
           <>
             <Pressable

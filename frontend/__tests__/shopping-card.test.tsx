@@ -60,7 +60,7 @@ describe('ShoppingCard', () => {
 
     render(<ShoppingCard dinnerTitles={['Taco', 'Pancakes']} />);
 
-    expect(screen.getByText('Missing for dinner')).toBeTruthy();
+    expect(screen.getByText('Shop for dinner')).toBeTruthy();
     expect(screen.getByText('3 items to buy')).toBeTruthy();
     expect(screen.getByText('Milk, Tomatoes, Cheese')).toBeTruthy();
     expect(screen.queryByText(/Bread/)).toBeNull();

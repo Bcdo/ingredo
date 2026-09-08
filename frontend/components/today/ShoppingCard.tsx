@@ -56,7 +56,7 @@ export function ShoppingCard({ dinnerTitles }: ShoppingCardProps) {
 
   return (
     <View className="gap-3">
-      <Text className="font-display text-xl text-ink">{t('today.missingForDinner')}</Text>
+      <Text className="font-display text-xl text-ink">{t('today.shopForDinner')}</Text>
       <Pressable
         accessibilityRole="button"
         className="active:opacity-80"

@@ -55,7 +55,8 @@ describe('TodayScreen', () => {
 
     render(<TodayScreen />);
 
-    expect(screen.getByText('Tonight')).toBeTruthy();
+    // The screen title already says today; only tomorrow gets a heading.
+    expect(screen.queryByText('Tonight')).toBeNull();
     expect(screen.getByText('Tomato Soup')).toBeTruthy();
     expect(screen.getByText('Salad')).toBeTruthy();
     expect(screen.getByText('Tomorrow')).toBeTruthy();

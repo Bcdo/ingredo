@@ -16,11 +16,10 @@
     "groupOlder": "Earlier"
   },
   "today": {
-    "tonight": "Tonight",
     "tomorrow": "Tomorrow",
     "nothingTonight": "Nothing planned tonight.",
     "planWeek": "Plan your week",
-    "missingForDinner": "Missing for dinner",
+    "shopForDinner": "Shop for dinner",
     "itemsToBuy": {
       "one": "1 item to buy",
       "other": "%{count} items to buy"
