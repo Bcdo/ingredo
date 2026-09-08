@@ -91,6 +91,19 @@ describe('RecipeForm', () => {
     expect(router.back).toHaveBeenCalledTimes(1);
   });
 
+  it('stays on the form when onSave declines the save', () => {
+    // A parent may refuse a save (e.g. the recipe changed elsewhere) and
+    // take over with its own prompt; the form must not navigate away.
+    const onSave = jest.fn(() => false);
+    render(<RecipeForm heading="Edit" initialState={titledState('Soup')} onSave={onSave} />);
+
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.queryByText(t('form.saveError'))).toBeNull();
+  });
+
   it('does not treat an untouched form as dirty when the parent re-renders with a fresh but equal initialState', () => {
     const onSave = jest.fn();
     const state1 = titledState('Soup');

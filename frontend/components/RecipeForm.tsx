@@ -24,7 +24,9 @@ import { UNITS } from '../lib/units';
 type RecipeFormProps = {
   heading: string;
   initialState: RecipeFormState;
-  onSave: (state: RecipeFormState) => void;
+  // Return false to keep the form open (the parent has declined the save and
+  // taken over, e.g. with its own prompt); anything else navigates back.
+  onSave: (state: RecipeFormState) => void | boolean;
   allowImport?: boolean;
 };
 
@@ -242,7 +244,7 @@ export function RecipeForm({
 
   const handleSave = () => {
     try {
-      onSave(state);
+      if (onSave(state) === false) return;
       router.back();
     } catch {
       setSaveFailed(true);
