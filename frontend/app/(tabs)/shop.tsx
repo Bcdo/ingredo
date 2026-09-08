@@ -2,11 +2,12 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { QuantityEditor, type QuantityEditorItem } from '../../components/shop/QuantityEditor';
+import { ShoppingRow } from '../../components/shop/ShoppingRow';
 import { StaplesSection } from '../../components/shop/StaplesSection';
-import { Card } from '../../components/ui/Card';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { db } from '../../lib/db/client';
 import { FIELD_LIMITS } from '../../lib/fieldLimits';
@@ -78,20 +79,11 @@ export default function ShopScreen() {
     if (addManualItem(db, householdId, draft)) setDraft('');
   };
 
-  const purchase = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    purchaseItem(db, householdId, id);
-  };
-
-  const restore = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    restoreItem(db, householdId, id);
-  };
-
-  const readd = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    readdItem(db, householdId, id);
-  };
+  // Row movement is animated by Reanimated entering/exiting/layout props on
+  // the rows themselves, so the writes need no animation scheduling here.
+  const purchase = (id: string) => purchaseItem(db, householdId, id);
+  const restore = (id: string) => restoreItem(db, householdId, id);
+  const readd = (id: string) => readdItem(db, householdId, id);
 
   const quantityText = (quantity: number | null, unit: string | null) => {
     const display = displayQuantity(quantity, unit, { scaleFactor: 1, system, locale });
@@ -131,39 +123,24 @@ export default function ShopScreen() {
         <EmptyState title={t('shop.emptyTitle')} body={t('shop.emptyBody')} />
       ) : (
         <ScrollView className="flex-1" contentContainerClassName="gap-3 p-4">
-          {(activeItems ?? []).map((item) => {
-            const sources = parseSources(item.sources);
-            const quantity = quantityText(item.quantity, item.unit);
-            return (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                onPress={() => purchase(item.id)}
-                onLongPress={() =>
-                  setEditing({
-                    id: item.id,
-                    name: item.name,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                  })
-                }
-                className="active:opacity-80">
-                <Card className="min-h-14 flex-row items-center gap-3">
-                  {quantity ? (
-                    <Text className="font-display text-base text-clay">{quantity}</Text>
-                  ) : null}
-                  <View className="flex-1">
-                    <Text className="font-body-bold text-base text-ink">{item.name}</Text>
-                    {sources.length > 0 ? (
-                      <Text className="font-body text-xs text-ink opacity-60">
-                        {sources.join(' · ')}
-                      </Text>
-                    ) : null}
-                  </View>
-                </Card>
-              </Pressable>
-            );
-          })}
+          {(activeItems ?? []).map((item) => (
+            <ShoppingRow
+              key={item.id}
+              id={item.id}
+              name={item.name}
+              quantity={quantityText(item.quantity, item.unit)}
+              sources={parseSources(item.sources)}
+              onPurchase={purchase}
+              onLongPress={() =>
+                setEditing({
+                  id: item.id,
+                  name: item.name,
+                  quantity: item.quantity,
+                  unit: item.unit,
+                })
+              }
+            />
+          ))}
           <StaplesSection active={activeItems ?? []} purchased={purchasedItems ?? []} now={now} />
           {hasShelf ? (
             <>
@@ -177,13 +154,20 @@ export default function ShopScreen() {
                       {section.label}
                     </Text>
                     {section.rows.map((item) => (
-                      <Pressable
+                      <Animated.View
                         key={item.id}
-                        accessibilityRole="button"
-                        onPress={() => section.onTap(item.id)}
-                        className="min-h-14 justify-center rounded-card border-2 border-dashed border-linen px-4 active:opacity-80">
-                        <Text className="font-body text-base text-ink opacity-60">{item.name}</Text>
-                      </Pressable>
+                        entering={FadeIn.duration(200)}
+                        exiting={FadeOut.duration(160)}
+                        layout={LinearTransition.duration(220)}>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => section.onTap(item.id)}
+                          className="min-h-14 justify-center rounded-card border-2 border-dashed border-linen px-4 active:opacity-80">
+                          <Text className="font-body text-base text-ink opacity-60">
+                            {item.name}
+                          </Text>
+                        </Pressable>
+                      </Animated.View>
                     ))}
                   </React.Fragment>
                 ) : null
