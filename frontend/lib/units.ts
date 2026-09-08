@@ -20,9 +20,15 @@ export const CANONICAL_MEASURES: Record<string, { dimension: Dimension; toBase: 
   ss: { dimension: 'volume', toBase: 15 },
 };
 
-// Display-only US codes (never stored). Converted tsp/tbsp amounts reuse
-// the 'ts'/'ss' codes, whose English labels already read "tsp"/"tbsp".
+// US codes: shown by the US display mode and offered as chips when writing a
+// recipe, but never stored — the form converts them to metric on save (see
+// measure.toCanonical). Converted tsp/tbsp amounts reuse the 'ts'/'ss'
+// codes, whose English labels already read "tsp"/"tbsp".
 export const US_DISPLAY_UNITS = ['oz', 'lb', 'cup'] as const;
+export type UsUnitCode = (typeof US_DISPLAY_UNITS)[number];
+
+// Everything the recipe form offers as a chip, in chip order.
+export const ENTRY_UNITS = [...UNITS, ...US_DISPLAY_UNITS] as const;
 
 export function isLocalizableUnit(code: string): boolean {
   return (

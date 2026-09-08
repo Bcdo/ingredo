@@ -155,6 +155,26 @@ describe('RecipeForm', () => {
     );
   });
 
+  it('offers US units alongside the metric chips and keeps the pick in the draft', () => {
+    const onSave = jest.fn();
+    const state = titledState('Pie');
+    state.ingredients = [
+      { key: 'i1', quantity: '2', unit: null, name: 'Flour', scaling: 'linear' },
+    ];
+    render(<RecipeForm heading="Edit" initialState={state} onSave={onSave} />);
+
+    fireEvent.press(screen.getByRole('button', { name: t('units.cup') }));
+    fireEvent.press(screen.getByRole('button', { name: t('form.save') }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: [expect.objectContaining({ name: 'Flour', quantity: '2', unit: 'cup' })],
+      })
+    );
+    // A US pick is a proper chip, not the free-text "other" escape hatch.
+    expect(screen.queryByPlaceholderText(t('form.unitOtherPlaceholder'))).toBeNull();
+  });
+
   it('avoids the keyboard so bottom fields stay visible', () => {
     const onSave = jest.fn();
     render(<RecipeForm heading="New" initialState={emptyFormState()} onSave={onSave} />);

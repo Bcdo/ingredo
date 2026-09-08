@@ -1,6 +1,6 @@
 # Beta feedback, 2026-09-08 (operator's own use, Android + iPhone)
 
-Six items, triaged with code investigation. Status 2026-09-08: B1 fixed on develop (e385746); F3 and F4 done on feature/dinner-shopping-card, where F3 became a dinner-scoped reminder card ("Handle til middag") and the "I kveld" heading was dropped; F2 done on feature/shop-checkoff-animation (sage tick moment, Reanimated layout transitions, legacy LayoutAnimation removed); B2 guarded on fix/stale-edit-overwrite (edit screen refuses to save over a recipe changed elsewhere; the superseded-row idea was dropped because keeping such rows dirty would re-push in a loop, and the cursor-gap race stays a documented server tradeoff); F1 open.
+Six items, triaged with code investigation. Status 2026-09-08: B1 fixed on develop (e385746); F3 and F4 done on feature/dinner-shopping-card, where F3 became a dinner-scoped reminder card ("Handle til middag") and the "I kveld" heading was dropped; F2 done on feature/shop-checkoff-animation (sage tick moment, Reanimated layout transitions, legacy LayoutAnimation removed); B2 guarded on fix/stale-edit-overwrite (edit screen refuses to save over a recipe changed elsewhere; the superseded-row idea was dropped because keeping such rows dirty would re-push in a loop, and the cursor-gap race stays a documented server tradeoff); F1 done on feature/us-units (cup/oz/lb chips in the recipe form, fractions in the quantity field, metric-canonical storage with snap-back, importer knows cup/oz/lb). All six items addressed.
 
 ## Bugs
 
