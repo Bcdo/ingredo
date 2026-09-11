@@ -33,7 +33,11 @@ describe('app.config', () => {
 
   it('uses the cream ground for splash and adaptive icon', () => {
     const cfg = appConfig(ctx);
-    expect(cfg.splash?.backgroundColor).toBe('#FBF7F1');
+    const splash = (cfg.plugins ?? []).find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen'
+    ) as [string, { backgroundColor: string; image: string }] | undefined;
+    expect(splash?.[1].backgroundColor).toBe('#FBF7F1');
+    expect(splash?.[1].image).toBe('./assets/splash.png');
     expect(cfg.android?.adaptiveIcon?.backgroundColor).toBe('#FBF7F1');
     expect(cfg.android?.adaptiveIcon?.foregroundImage).toBe('./assets/adaptive-icon.png');
   });
