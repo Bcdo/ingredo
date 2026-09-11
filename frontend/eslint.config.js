@@ -9,6 +9,11 @@ module.exports = defineConfig([
   {
     rules: {
       'react/display-name': 'off',
+      // React Compiler rule, new in eslint-config-expo 56. The two hits are
+      // deliberate "reset local state when a dependency changes" effects
+      // (root migrations retry, households on session change); keep them
+      // visible as warnings until those are restructured.
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
   {

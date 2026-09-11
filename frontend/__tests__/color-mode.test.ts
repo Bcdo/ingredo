@@ -11,7 +11,7 @@ describe('applyColorMode', () => {
     applyColorMode('dark');
     expect(spy).toHaveBeenLastCalledWith('dark');
     applyColorMode('system');
-    expect(spy).toHaveBeenLastCalledWith(null);
+    expect(spy).toHaveBeenLastCalledWith('unspecified');
 
     spy.mockRestore();
   });
