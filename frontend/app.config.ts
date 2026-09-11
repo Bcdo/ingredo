@@ -27,14 +27,26 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
   icon: './assets/icon.png',
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#FBF7F1',
-  },
   assetBundlePatterns: ['**/*'],
   platforms: ['ios', 'android'],
-  plugins: ['expo-router', 'expo-localization', 'expo-sqlite', 'expo-font', 'expo-secure-store'],
+  plugins: [
+    'expo-router',
+    'expo-localization',
+    'expo-sqlite',
+    'expo-font',
+    'expo-secure-store',
+    'expo-web-browser',
+    'expo-status-bar',
+    // The top-level `splash` field went away in SDK 56; the plugin owns it.
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        resizeMode: 'contain',
+        backgroundColor: '#FBF7F1',
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
     tsconfigPaths: true,
@@ -45,7 +57,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'no.kodesmien.ingredo',
-    versionCode: 2,
+    versionCode: 3,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#FBF7F1',

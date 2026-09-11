@@ -8,6 +8,8 @@ export function __getLastGridProps() {
 }
 
 function Grid(props: any) {
+  // Test-only capture so specs can drive onDragEnd; not a real component.
+  // eslint-disable-next-line react-hooks/globals
   lastGridProps = props;
   return (
     <View>
