@@ -26,7 +26,7 @@ describe('app.config', () => {
     expect(cfg.name).toBe('Ingredo');
     expect(cfg.slug).toBe('ingredo');
     expect(cfg.android?.package).toBe('no.kodesmien.ingredo');
-    expect(cfg.android?.versionCode).toBe(2);
+    expect(cfg.android?.versionCode).toBe(3);
     expect(cfg.ios?.bundleIdentifier).toBe('no.kodesmien.ingredo');
     expect(cfg.runtimeVersion).toEqual({ policy: 'sdkVersion' });
   });
