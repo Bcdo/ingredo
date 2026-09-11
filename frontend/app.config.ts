@@ -34,7 +34,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   assetBundlePatterns: ['**/*'],
   platforms: ['ios', 'android'],
-  plugins: ['expo-router', 'expo-localization', 'expo-sqlite', 'expo-font', 'expo-secure-store'],
+  plugins: [
+    'expo-router',
+    'expo-localization',
+    'expo-sqlite',
+    'expo-font',
+    'expo-secure-store',
+    'expo-web-browser',
+  ],
   experiments: {
     typedRoutes: true,
     tsconfigPaths: true,
